@@ -1,0 +1,2 @@
+# ShortLifePlugin
+The ShortLifeServer plugin

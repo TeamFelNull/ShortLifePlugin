@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'checkstyle'
+    id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 group = 'dev.felnull'
@@ -8,6 +9,17 @@ version = '1.0.0'
 
 checkstyle {
     toolVersion = "10.12.2"
+}
+
+configurations {
+    implementation.extendsFrom shadowIn
+}
+
+repositories {
+    maven {
+        name = 'felnull maven'
+        url = 'https://maven.felnull.dev/'
+    }
 }
 
 repositories {
@@ -24,6 +36,8 @@ repositories {
 
 dependencies {
     compileOnly "io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT"
+
+    shadowIn "net.kunmc.lab:ikisugi-logger:1.3"
 }
 
 def targetJavaVersion = 17
@@ -51,6 +65,19 @@ processResources {
     }
 }
 
+shadowJar {
+    configurations = [project.configurations.shadowIn]
+    relocate 'net.kunmc.lab.ikisugilogger', 'dev.felnull.shortlifeplugin.include.net.kunmc.lab.ikisugilogger'
+    relocate 'xyz.xenondevs', 'dev.felnull.shortlifeplugin.include.xyz.xenondevs'
+    relocate 'org.jetbrains.annotations', 'dev.felnull.shortlifeplugin.include.org.jetbrains.annotations'
+    relocate 'org.intellij.lang.annotations', 'dev.felnull.shortlifeplugin.include.org.intellij.lang.annotations'
+
+    archiveClassifier.set("")
+}
+
+tasks.named("build") {
+    dependsOn(tasks.named("shadowJar"))
+}
 
 // ビルドしたJarファイルをサーバーのプラグインフォルダへコピー
 tasks.register('copyJar', Copy) {

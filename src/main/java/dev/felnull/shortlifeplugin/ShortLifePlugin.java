@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin;
 
+import net.kunmc.lab.ikisugilogger.IkisugiLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -11,12 +12,18 @@ public final class ShortLifePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Plugin startup logic
-        System.out.println("ｳｧｧ!!ｵﾚﾓｲｯﾁｬｳｩｩｩ!!!ｳｳｳｳｳｳｳｳｳｩｩｩｩｩｩｩｩｳｳｳｳｳｳｳｳ!ｲｨｨｲｨｨｨｲｲｲｨｲｲｲｲ");
+
+        // IKISUGI LOGGER
+        IkisugiLogger logger = new IkisugiLogger("very ikisugi\nshort life");
+        logger.setColorType(IkisugiLogger.ColorType.RAINBOW);
+        logger.setCenter(true);
+        getLogger().info(logger.createLn());
+
+        getLogger().info("ShortLife Plugin has started");
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        getLogger().info("ShortLife Plugin has stopped");
     }
 }

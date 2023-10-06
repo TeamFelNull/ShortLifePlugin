@@ -3,4 +3,12 @@ version: '${version}'
 main: dev.felnull.shortlifeplugin.ShortLifePlugin
 api-version: '1.20'
 authors: [ MORIMORI0317, FelNull Developers ]
-description : The ikisugi gun server plugin...
+description: The ikisugi gun server plugin...
+dependencies:
+  server:
+    CommandAPI:
+      load: BEFORE
+      required: true
+    WorldEdit:
+      load: BEFORE
+      required: true

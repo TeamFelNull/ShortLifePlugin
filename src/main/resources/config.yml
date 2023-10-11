@@ -1,0 +1,5 @@
+match: # 試合関係
+  leave: # 退出
+    perform-command: spawn # 退出時に実行するコマンド
+    force-teleport-world: minecraft:overworld # 退出時の強制移動先ワールド
+    force-teleport-pos: [ 0, 100, 0 ] # 退出時の強制移動先座標

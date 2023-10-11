@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin.match.map;
 import com.google.common.base.Suppliers;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
@@ -35,6 +36,7 @@ import org.bukkit.block.data.BlockData;
 import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -186,6 +188,12 @@ public class MatchMapLoader {
         return this.maps.get(mapId);
     }
 
+    @Unmodifiable
+    @NotNull
+    public Map<String, MatchMap> getAllMap() {
+        return ImmutableMap.copyOf(this.maps);
+    }
+
     private void clearMatchWorldFolder() {
         File matchWorldFolder = new File("./" + WORLD_NAME_PREFIX);
 
@@ -209,7 +217,7 @@ public class MatchMapLoader {
                     try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {
                         Operation operation = new ClipboardHolder(clipboardMapMarkerSetPair.getLeft())
                                 .createPaste(editSession)
-                                .to(BlockVector3.at(0, 60, 0))
+                                .to(matchMap.offset())
                                 .copyEntities(true)
                                 .copyBiomes(true)
                                 .build();
@@ -220,7 +228,7 @@ public class MatchMapLoader {
 
                     SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)の準備完了", worldId));
 
-                    return new MatchMapWorld(world, clipboardMapMarkerSetPair.getRight());
+                    return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
                 }, tickExecutor);
     }
 
@@ -256,11 +264,12 @@ public class MatchMapLoader {
             return Pair.of(clipboard, hashCode);
         }, asyncExecutor).thenApplyAsync(clipboardAndHashCode -> {
             /* 非同期でマーカーの集まりを取得する */
+            Clipboard clipboard = clipboardAndHashCode.getLeft();
             MapMarkerSet markerSet;
 
             // キャッシュを参照して、存在しなければマーカーの集まりを取得する
             try {
-                markerSet = mapMarkerCache.get(clipboardAndHashCode.getRight(), () -> computeMarkerSet(clipboardAndHashCode.getLeft()));
+                markerSet = mapMarkerCache.get(clipboardAndHashCode.getRight(), () -> computeMarkerSet(clipboard));
             } catch (ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
@@ -272,7 +281,7 @@ public class MatchMapLoader {
                     if (replaceMaterial != null && replaceMaterial.isBlock()) {
                         BlockState replaceBlock = BukkitAdapter.adapt(replaceMaterial.createBlockData());
                         try {
-                            clipboardAndHashCode.getLeft().setBlock(jigsawMapMarker.position(), replaceBlock);
+                            clipboard.setBlock(jigsawMapMarker.position().add(clipboard.getOrigin()), replaceBlock);
                         } catch (WorldEditException e) {
                             throw new RuntimeException(e);
                         }
@@ -281,7 +290,7 @@ public class MatchMapLoader {
             }
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のマーカー読み込み完了", worldId));
-            return Pair.of(clipboardAndHashCode.getLeft(), markerSet);
+            return Pair.of(clipboard, markerSet);
         }, asyncExecutor);
     }
 
@@ -313,7 +322,7 @@ public class MatchMapLoader {
 
                     if (blockData.getMaterial() == Material.JIGSAW) {
                         BaseBlock baseBlock = clipboard.getFullBlock(pos);
-                        JigsawMapMarker jigsawMapMarker = JigsawMapMarker.of(pos, baseBlock, blockData);
+                        JigsawMapMarker jigsawMapMarker = JigsawMapMarker.of(pos.subtract(clipboard.getOrigin()), baseBlock, blockData);
 
                         if (jigsawMapMarker != null) {
                             mapMarksersBuilder.put(jigsawMapMarker.pointName(), jigsawMapMarker);

@@ -6,6 +6,7 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
+import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
@@ -40,7 +41,7 @@ public final class MatchCommand {
                 .withSubcommands(new CommandAPICommand("open")
                         .withArguments(guiArgument("gui"))
                         .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-                        .executes(MatchCommand::openGui));
+                        .executes(MatchCommand::guiOpen));
 
         CommandAPICommand list = new CommandAPICommand("list")
                 .executes(MatchCommand::matchList);
@@ -71,24 +72,43 @@ public final class MatchCommand {
                 .withArguments(matchArgument("match"))
                 .executes(MatchCommand::matchRemove);
 
+        CommandAPICommand map = new CommandAPICommand("map")
+                .withSubcommands(new CommandAPICommand("list")
+                        .executes(MatchCommand::mapList))
+                .withSubcommands(new CommandAPICommand("info")
+                        .withArguments(mapArgument("map"))
+                        .executes(MatchCommand::mapInfo));
+
         // FIXME リリース前に削除
         CommandAPICommand test = new CommandAPICommand("aikiso")
                 .executes((sender, args) -> {
+
+                    if (sender instanceof Player player) {
+                        MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap("test");
+                        SLUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player);
+                    }
                 /*    if (sender instanceof Player player) {
                         MapTest.test(player);
                     }*/
 
-                    if (sender instanceof Player player) {
-                        MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap("test");
-                        SLUtils.getMatchManager().addMatch("ikisugi", MatchModes.TEST, matchMap).join(player);
-                    }
+                    /*if (sender instanceof Player player) {
+                     *//* MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap("test");
+                        SLUtils.getMatchManager().addMatch("team-test", MatchModes.TEAM, matchMap).join(player);*//*
+
+                        ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
+                        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
+
+                        Team ikisugiTeam = scoreboard.registerNewTeam("ikisugi");
+
+                        // scoreboard.getS()
+                    }*/
                 });
 
 
         return new CommandAPICommand("match")
                 .withAliases("slm")
                 .withPermission(CommandPermission.OP)
-                .withSubcommands(gui, list, info, join, leave, finish, start, remove, test);
+                .withSubcommands(gui, list, info, join, leave, finish, start, remove, map, test);
     }
 
     private static Argument<SLGuis.WindowProvider> guiArgument(String nodeName) {
@@ -117,6 +137,18 @@ public final class MatchCommand {
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> SLUtils.getMatchManager().getAllMatch().keySet().toArray(String[]::new)));
     }
 
+    private static Argument<MatchMap> mapArgument(String nodeName) {
+        return new CustomArgument<>(new StringArgument(nodeName), info -> {
+            MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap(info.input());
+
+            if (matchMap == null) {
+                throw CustomArgument.CustomArgumentException
+                        .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown match map: ").appendArgInput());
+            } else {
+                return matchMap;
+            }
+        }).replaceSuggestions(ArgumentSuggestions.strings(info -> SLUtils.getMatchManager().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
+    }
 
     /**
      * 実行者もしくは引数でプレイヤーセレクタで指定されたプレイヤーを取得
@@ -142,7 +174,7 @@ public final class MatchCommand {
         return players;
     }
 
-    private static void openGui(CommandSender sender, CommandArguments args) {
+    private static void guiOpen(CommandSender sender, CommandArguments args) {
         getSenderOrSelectedPlayers(sender, args).ifPresent(players -> players.forEach(player -> {
             Window window = ((SLGuis.WindowProvider) Objects.requireNonNull(args.get("gui"))).provide(player);
             window.open();
@@ -286,5 +318,28 @@ public final class MatchCommand {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
         match.destroy();
         sender.sendRichMessage(String.format("%sを削除します", match.getId()));
+    }
+
+    private static void mapList(CommandSender sender, CommandArguments args) {
+        MatchManager matchManager = SLUtils.getMatchManager();
+        MatchMapLoader mapLoader = matchManager.getMapLoader();
+        Map<String, MatchMap> maps = mapLoader.getAllMap();
+
+        if (maps.isEmpty()) {
+            sender.sendRichMessage("試合用マップは存在しません");
+        } else {
+            sender.sendRichMessage(String.format("%d個の試合用マップが存在します", maps.size()));
+            maps.values().forEach(match -> sender.sendMessage(Component.text(String.format("- %s (", match.id()))
+                    .append(match.name())
+                    .append(Component.text(")"))));
+        }
+    }
+
+    private static void mapInfo(CommandSender sender, CommandArguments args) {
+        MatchMap map = (MatchMap) Objects.requireNonNull(args.get("map"));
+
+        sender.sendRichMessage(String.format("%sの試合用マップ情報:", map.id()));
+        sender.sendRichMessage("スケマティック: " + map.schematic());
+        sender.sendRichMessage("オフセット: " + String.format("[%s, %s, %s]", map.offset().getX(), map.offset().getY(), map.offset().getZ()));
     }
 }

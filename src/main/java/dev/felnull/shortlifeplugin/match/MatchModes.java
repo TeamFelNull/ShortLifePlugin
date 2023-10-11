@@ -20,6 +20,11 @@ public final class MatchModes {
     public static final MatchMode TEST = new MatchMode("test", Component.text("テスト"), MatchType.PVP, 1000 * 60 * 3, 1, 1, TestMatch::new);
 
     /**
+     * チームポイント制試合モード
+     */
+    public static final MatchMode TEAM = new MatchMode("team", Component.text("チーム"), MatchType.PVP, 1000 * 60 * 10, 2, 2, TeamMatch::new);
+
+    /**
      * 試合モードのレジストリマップ
      */
     private static final Map<String, MatchMode> MODE_REGISTRY = new HashMap<>();
@@ -32,6 +37,7 @@ public final class MatchModes {
      */
     public static void init() {
         register(TEST);
+        register(TEAM);
     }
 
     public static Map<String, MatchMode> getAllModes() {

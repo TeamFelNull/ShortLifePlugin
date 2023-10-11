@@ -1,6 +1,9 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
+import com.sk89q.worldedit.math.BlockVector3;
+import dev.felnull.shortlifeplugin.SLConfig;
+import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
@@ -8,11 +11,14 @@ import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.apache.commons.lang3.tuple.Triple;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
@@ -36,9 +42,14 @@ public abstract class Match {
     private static final long START_WAIT_TIME = 1000 * 30;
 
     /**
+     * 試合終了後にテレポートするまでの時間
+     */
+    private static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
+
+    /**
      * 試合終了から破棄されるまでの時間(ms)
      */
-    private static final long DISPOSE_WAIT_TIME = 1000 * 20;
+    private static final long DISPOSE_WAIT_TIME = FINISH_WAIT_FOR_TELEPORT + (1000 * 5);
 
     /**
      * 試合参加時のメッセージ
@@ -72,6 +83,10 @@ public abstract class Match {
      */
     private static final Component MATCH_FINISH_MESSAGE = Component.text("試合終了...").color(NamedTextColor.GREEN);
 
+    /**
+     * 開始時のワールド読み込み待ちメッセージ
+     */
+    private static final Component MATCH_WAIT_LOAD_WORLD_MESSAGE = Component.text("マップの準備が終わるまでお待ちください").color(NamedTextColor.BLUE);
 
     /**
      * ワールド読み込み失敗で試合を中止する際のメッセージ
@@ -82,6 +97,11 @@ public abstract class Match {
      * 人不足で試合を終了する際のメッセージ
      */
     private static final Component MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE = Component.text("参加人数が不足したため試合を終了します").color(NamedTextColor.RED);
+
+    /**
+     * デフォルトの退出時強制移動先ワールド
+     */
+    private static final NamespacedKey DEFAULT_FORCE_TELEPORT_WORLD = NamespacedKey.minecraft("overworld");
 
     /**
      * 参加しているプレイヤー
@@ -126,6 +146,17 @@ public abstract class Match {
      * 試合用マップ
      */
     private MatchMapInstance matchMapInstance;
+
+    /**
+     * マップの読み込まれ待ちを通知したかどうか
+     */
+    private boolean waitLoadMapNotified;
+
+
+    /**
+     * 試合終了後のテレポートを行ったかどうか
+     */
+    private boolean finishTeleport;
 
     /**
      * コンストラクタ
@@ -207,12 +238,23 @@ public abstract class Match {
             return;
         }
 
-        // 開始待機時間が過ぎた場合、試合を開始
+        boolean start = false;
+
         if (this.statusTick >= SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME)) {
-            if (!start()) {
-                SLUtils.reportError(new RuntimeException("試合を開始できませんでした。"));
-                destroy();
+            // 開始待機時間が過ぎた場合の処理
+            if (matchMapInstance.isReady()) {
+                // マップの準備が終わっていれば試合開始
+                start = true;
+            } else if (!waitLoadMapNotified) {
+                // マップの準備が終わっていなければ、1度だけ通知
+                waitLoadMapNotified = true;
+                broadcast(MATCH_WAIT_LOAD_WORLD_MESSAGE);
             }
+        }
+
+        if (start && !start()) {
+            SLUtils.reportError(new RuntimeException("試合を開始できませんでした。"));
+            destroy();
         }
     }
 
@@ -232,11 +274,9 @@ public abstract class Match {
             finish = true;
         }
 
-        if (finish) {
-            if (!finish()) {
-                SLUtils.reportError(new RuntimeException("試合を終了できませんでした。"));
-                destroy();
-            }
+        if (finish && !finish()) {
+            SLUtils.reportError(new RuntimeException("試合を終了できませんでした。"));
+            destroy();
         }
     }
 
@@ -244,6 +284,16 @@ public abstract class Match {
      * 試合終了後のTick処理
      */
     protected void afterFinishTick() {
+
+        // 終了後のテレポート
+        if (!finishTeleport && this.statusTick >= SLUtils.toTick(TimeUnit.MILLISECONDS, FINISH_WAIT_FOR_TELEPORT)) {
+            finishTeleport = true;
+
+            for (final Player player : players) {
+                teleportToLeave(player);
+            }
+        }
+
         // 破棄されるまでしばらく待機
         if (this.statusTick >= SLUtils.toTick(TimeUnit.MILLISECONDS, DISPOSE_WAIT_TIME)) {
             destroy();
@@ -295,6 +345,23 @@ public abstract class Match {
             return false;
         }
 
+        // 開始前、試合中以外は参加不可
+        if (status != Status.NONE && status != Status.STARTED) {
+            return false;
+        }
+
+        // 既に試合が開始されていれば、試合用マップへ移動
+        if (status == Status.STARTED && matchMapInstance.isReady()) {
+            Location respawnLocation = lotteryRespawnLocation(player);
+            if (respawnLocation != null) {
+                player.teleport(respawnLocation);
+            } else {
+                SLUtils.reportError(new RuntimeException("リスポーン地点を取得できませんでした"));
+                return false;
+            }
+        }
+
+
         this.players.add(player);
 
         player.sendMessage(MATCH_JOIN_MESSAGE);
@@ -322,10 +389,10 @@ public abstract class Match {
 
         this.players.remove(player);
 
+        // 試合用ワールドにいる場合、ワールド外にテレポート
         Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
-
         if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
-            leaveTeleport(player);
+            teleportToLeave(player);
         }
 
         if (sendMessage) {
@@ -365,13 +432,13 @@ public abstract class Match {
             return false;
         }
 
-        Optional<MatchMapWorld> mapWorld = this.matchMapInstance.getMapWorld();
-
-        if (mapWorld.isPresent()) {
-            World world = mapWorld.get().getWorld();
-            Location location = new Location(world, 0, 70, 0);
+        // 参加中のプレイヤー全員を試合用マップへテレポート
+        if (this.matchMapInstance.getMapWorld().isPresent()) {
             for (Player player : this.players) {
-                player.teleport(location);
+                Location respawnPoint = lotteryRespawnLocation(player);
+                if (respawnPoint != null) {
+                    player.teleport(respawnPoint);
+                }
             }
         } else {
             SLUtils.reportError(new RuntimeException("ワールドの取得に失敗"));
@@ -472,7 +539,6 @@ public abstract class Match {
         this.statusTick = 0;
     }
 
-
     /**
      * リストに情報説明の追加を行う
      *
@@ -488,9 +554,29 @@ public abstract class Match {
      *
      * @param player 対象のプレイヤー
      */
-    protected void leaveTeleport(Player player) {
-        Location location = new Location(Bukkit.getWorld("world"), 0, 75, 0);
-        player.teleport(location);
+    protected void teleportToLeave(Player player) {
+
+        boolean needForceTeleport = false;
+
+        if (!player.performCommand(SLConfig.getMatchLeavePerformCommand())) {
+            // コマンドの実行に失敗した場合
+            needForceTeleport = true;
+        } else if (matchMapInstance.getMapWorld().isPresent() && matchMapInstance.getMapWorld().get().getWorld() == player.getWorld()) {
+            // コマンドの実行は出来たが、試合用ワールドから退出していない場合
+            needForceTeleport = true;
+        }
+
+        // コマンドでテレポートができなかった場合の強制移動
+        if (needForceTeleport) {
+            World backWorld = Bukkit.getWorld(Objects.requireNonNull(NamespacedKey.fromString(SLConfig.getMatchLeaveForceTeleportWorld())));
+            if (backWorld == null) {
+                backWorld = Bukkit.getWorld(DEFAULT_FORCE_TELEPORT_WORLD);
+            }
+
+            Triple<Integer, Integer, Integer> backPos = SLConfig.getMatchLeaveForceTeleportPos();
+            Location location = new Location(backWorld, backPos.getLeft(), backPos.getMiddle(), backPos.getRight());
+            player.teleport(location);
+        }
     }
 
     /**
@@ -498,7 +584,7 @@ public abstract class Match {
      *
      * @param component メッセージ
      */
-    public void broadcast(Component component) {
+    public void broadcast(@NotNull Component component) {
         Audience.audience(players).sendMessage(component);
     }
 
@@ -508,10 +594,40 @@ public abstract class Match {
      * @param component                メッセージ
      * @param exclusionPlayerPredicate プレイヤーフィルター
      */
-    public void broadcast(Component component, Predicate<Player> exclusionPlayerPredicate) {
+    public void broadcast(@NotNull Component component, @NotNull Predicate<Player> exclusionPlayerPredicate) {
         Audience.audience(players.stream()
                 .filter(exclusionPlayerPredicate)
                 .toList()).sendMessage(component);
+    }
+
+    /**
+     * プレイヤーのリスポーン地点を抽選<br/>
+     * リスポーン地点を定義していない場合はnullを返す
+     *
+     * @param player プレイヤー
+     * @return 場所
+     */
+    @Nullable
+    public Location lotteryRespawnLocation(@NotNull Player player) {
+        return this.matchMapInstance.getMapWorld().map(matchMapWorld -> {
+            World world = matchMapWorld.getWorld();
+            BlockVector3 spawnPos = matchMapWorld.offsetCorrection(Objects.requireNonNull(matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN)).getPosition());
+            return new Location(world, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+        }).orElse(null);
+    }
+
+    /**
+     * 指定されたプレイヤーが無敵かどうか
+     *
+     * @param player プレイヤー
+     * @return 無敵かどうか
+     */
+    public boolean isInvinciblePlayer(Player player) {
+        if (status == Status.FINISHED) {
+            Optional<MatchMapWorld> matchMapWorld = matchMapInstance.getMapWorld();
+            return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
+        }
+        return false;
     }
 
     /**
@@ -556,5 +672,4 @@ public abstract class Match {
             return name;
         }
     }
-
 }

@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.commands.SLCommands;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
+import dev.felnull.shortlifeplugin.listener.MatchListener;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
@@ -43,10 +44,12 @@ public final class ShortLifePlugin extends JavaPlugin {
         logger.setCenter(true);
         getLogger().info(logger.createLn());
 
+        SLConfig.init(this);
         clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
         SLCommands.init();
+        MatchListener.init(this);
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);

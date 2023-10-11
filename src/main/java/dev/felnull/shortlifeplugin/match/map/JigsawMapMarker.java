@@ -26,6 +26,30 @@ public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKe
                               @NotNull NamespacedKey replaceBlockId, @NotNull BlockVector3 position,
                               @NotNull BlockFace direction) implements MapMarker {
 
+    @NotNull
+    @Override
+    public NamespacedKey getName() {
+        return name;
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getPointName() {
+        return pointName;
+    }
+
+    @NotNull
+    @Override
+    public BlockVector3 getPosition() {
+        return position;
+    }
+
+    @NotNull
+    @Override
+    public BlockFace getDirection() {
+        return direction;
+    }
+
     /**
      * ジグソーのブロックベースからマーカを作成
      *
@@ -58,29 +82,5 @@ public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKe
         };
 
         return new JigsawMapMarker(name, pointName, replaceBlockId, position, blockFace);
-    }
-
-    @NotNull
-    @Override
-    public NamespacedKey getName() {
-        return name;
-    }
-
-    @NotNull
-    @Override
-    public NamespacedKey getPointName() {
-        return pointName;
-    }
-
-    @NotNull
-    @Override
-    public BlockVector3 getPosition() {
-        return position;
-    }
-
-    @NotNull
-    @Override
-    public BlockFace getDirection() {
-        return direction;
     }
 }

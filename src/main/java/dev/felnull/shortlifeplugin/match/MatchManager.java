@@ -1,19 +1,19 @@
 package dev.felnull.shortlifeplugin.match;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
+import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * 試合管理システム
@@ -47,14 +47,41 @@ public final class MatchManager {
      * 1Tickごとの処理
      */
     private void tick() {
-        this.matches.values().forEach(Match::tick);
+        Set<Map.Entry<String, Match>> allMatch = this.matches.entrySet();
+        Set<String> removeMatches = new HashSet<>();
+
+        for (final Map.Entry<String, Match> matchEntry : allMatch) {
+            boolean removeFlag = false;
+            Match match = matchEntry.getValue();
+
+            try {
+                match.tick();
+
+                // 試合の破棄フラグがtrueであれば試合を削除
+                if (match.isDestroyed()) {
+                    removeFlag = true;
+                }
+
+            } catch (Exception ex) {
+                SLUtils.reportError(ex, "試合Tick処理中に想定外のエラーが発生");
+
+                try {
+                    match.unexpectedError();
+                    match.destroy();
+                } catch (Exception e) {
+                    SLUtils.reportError(e, "試合Tickの想定外エラー処理に失敗");
+                }
+
+                // 試合の処理中にエラーがあれば試合を削除 (無限エラーログ編を回避)
+                removeFlag = true;
+            }
+
+            if (removeFlag) {
+                removeMatches.add(matchEntry.getKey());
+            }
+        }
 
         // 破棄されるべき試合を削除
-        Set<String> removeMatches = this.matches.entrySet().stream()
-                .filter(it -> it.getValue().isDestroyed())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-
         removeMatches.forEach(this::removeMatch);
     }
 
@@ -79,7 +106,7 @@ public final class MatchManager {
     }
 
     /**
-     * 試合を削除
+     * 試合を破棄して削除
      *
      * @param matchId 試合ID
      */
@@ -87,7 +114,13 @@ public final class MatchManager {
         Match match = this.matches.get(matchId);
 
         if (match != null) {
-            match.dispose();
+
+            try {
+                match.dispose();
+            } catch (Exception ex) {
+                SLUtils.reportError(ex, "試合の破棄に失敗");
+            }
+
             this.matches.remove(matchId);
         }
     }
@@ -96,8 +129,14 @@ public final class MatchManager {
      * 破棄処理
      */
     public void dispose() {
+
         // 全試合を破棄
-        this.matches.values().forEach(Match::dispose);
+        List<String> allMatchId = ImmutableList.copyOf(this.matches.keySet());
+
+        for (String matchId : allMatchId) {
+            removeMatch(matchId);
+        }
+
         this.matches.clear();
 
         this.mapLoader.dispose();
@@ -132,9 +171,24 @@ public final class MatchManager {
      * @return 対象のプレイヤーが参加する試合 (未参加の場合はnull)
      */
     @Nullable
-    public Match getJointedMach(Player player) {
+    public Match getJointedMach(@NotNull Player player) {
         return matches.values().stream()
                 .filter(match -> match.getAllJoinPlayers().contains(player))
+                .limit(1)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * 指定したワールドで開催されている試合を取得
+     *
+     * @param world ワールド
+     * @return 試合
+     */
+    @Nullable
+    public Match getMachByWorld(@NotNull World world) {
+        return matches.values().stream()
+                .filter(match -> match.getMatchMapInstance().isStrictWorldMatch(world))
                 .limit(1)
                 .findFirst()
                 .orElse(null);

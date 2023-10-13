@@ -1,0 +1,71 @@
+package dev.felnull.shortlifeplugin.utils;
+
+import dev.felnull.shortlifeplugin.SLConfig;
+import dev.felnull.shortlifeplugin.match.MatchManager;
+import org.apache.commons.lang3.tuple.Triple;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
+
+/**
+ * 試合関係のユーティリティクラス
+ *
+ * @author MORIMORI0317
+ */
+public final class MatchUtils {
+    /**
+     * デフォルトの退出時強制移動先ワールド
+     */
+    private static final NamespacedKey DEFAULT_FORCE_TELEPORT_WORLD = NamespacedKey.minecraft("overworld");
+
+    private MatchUtils() {
+    }
+
+    /**
+     * 試合マネージャーを取得
+     *
+     * @return 試合マネージャー
+     */
+    public static MatchManager getMatchManager() {
+        return SLUtils.getSLPlugin().getMatchManager();
+    }
+
+    /**
+     * プレイヤーを試合から退出するためにテレポートさせる
+     *
+     * @param player     プレイヤー
+     * @param leaveWorld 退出したいワールド
+     */
+    public static void teleportToLeave(@NotNull Player player, @Nullable World leaveWorld) {
+        boolean needForceTeleport = false;
+
+        if (!player.performCommand(SLConfig.getMatchLeavePerformCommand())) {
+            // コマンドの実行に失敗した場合
+            needForceTeleport = true;
+        } else if (leaveWorld != null && leaveWorld == player.getWorld()) {
+            // コマンドの実行は出来たが、まだ退出したいワールドにいる場合
+            needForceTeleport = true;
+        }
+
+        // コマンドでテレポートができなかった場合の強制移動
+        if (needForceTeleport) {
+            World backWorld = Bukkit.getWorld(Objects.requireNonNull(NamespacedKey.fromString(SLConfig.getMatchLeaveForceTeleportWorld())));
+
+            // コンフィグで指定したワールドが存在しなあい場合
+            if (backWorld == null) {
+                backWorld = Bukkit.getWorld(DEFAULT_FORCE_TELEPORT_WORLD);
+            }
+
+            Triple<Integer, Integer, Integer> backPos = SLConfig.getMatchLeaveForceTeleportPos();
+            Location location = new Location(backWorld, backPos.getLeft(), backPos.getMiddle(), backPos.getRight());
+
+            player.teleport(location);
+        }
+    }
+}

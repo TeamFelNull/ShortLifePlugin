@@ -101,7 +101,6 @@ public class MatchMapWorld {
      * @return 補正済み座標
      */
     public BlockVector3 offsetCorrection(BlockVector3 position) {
-        System.out.println(position);
         return position.add(matchMap.offset());
     }
 }

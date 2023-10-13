@@ -8,6 +8,8 @@ import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import net.kunmc.lab.ikisugilogger.IkisugiLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.codehaus.plexus.util.FileUtils;
@@ -37,6 +39,12 @@ public final class ShortLifePlugin extends JavaPlugin {
     private MatchManager matchManager;
 
     @Override
+    public void onLoad() {
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true));
+        SLCommands.register();
+    }
+
+    @Override
     public void onEnable() {
         // IKISUGI LOG
         IkisugiLogger logger = new IkisugiLogger("very ikisugi\nshort life");
@@ -48,17 +56,23 @@ public final class ShortLifePlugin extends JavaPlugin {
         clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
-        SLCommands.init();
         MatchListener.init(this);
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);
+
+        CommandAPI.onEnable();
 
         getLogger().info("ShortLife Pluginが開始しました");
     }
 
     @Override
     public void onDisable() {
+
+        // リロード後に補完が動かくなるため、必ずコマンドを登録解除してください。
+        SLCommands.unregister();
+
+        CommandAPI.onDisable();
 
         if (this.matchManager != null) {
             this.matchManager.dispose();

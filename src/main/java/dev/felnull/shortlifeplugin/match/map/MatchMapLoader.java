@@ -372,7 +372,7 @@ public class MatchMapLoader {
             // ワールド生成
             WorldCreator worldCreator = matchWorldCreator(worldName, worldId);
             World world = Objects.requireNonNull(worldCreator.createWorld());
-            matchMapInstance.setDisposableWorld(world);
+            matchMapInstance.setStrictWorld(world);
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のワールド生成完了", worldId));
 
@@ -424,7 +424,7 @@ public class MatchMapLoader {
     }
 
     private WorldCreator matchWorldCreator(String worldName, String worldId) {
-        WorldCreator worldCreator = new WorldCreator(worldName, new NamespacedKey(ShortLifePlugin.PLUGIN_ID, worldId));
+        WorldCreator worldCreator = new WorldCreator(worldName, SLUtils.plLoc(worldId));
         worldCreator.generator(new MatchChunkGenerator());
         worldCreator.environment(World.Environment.NORMAL);
         return worldCreator;

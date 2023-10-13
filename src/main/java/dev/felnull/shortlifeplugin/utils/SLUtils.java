@@ -2,8 +2,8 @@ package dev.felnull.shortlifeplugin.utils;
 
 import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
-import dev.felnull.shortlifeplugin.match.MatchManager;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  * @author MORIMORI0317
  */
 public final class SLUtils {
+
     private SLUtils() {
     }
 
@@ -30,15 +31,6 @@ public final class SLUtils {
      */
     public static ShortLifePlugin getSLPlugin() {
         return (ShortLifePlugin) Bukkit.getPluginManager().getPlugin(ShortLifePlugin.PLUGIN_NAME);
-    }
-
-    /**
-     * 試合マネージャーを取得
-     *
-     * @return 試合マネージャー
-     */
-    public static MatchManager getMatchManager() {
-        return getSLPlugin().getMatchManager();
     }
 
     /**
@@ -63,7 +55,7 @@ public final class SLUtils {
 
     /**
      * エラー報告<br/>
-     * 開発環境の場合はクラッシュさせ、本番環境ではログ出力のみ行う
+     * エラーに関する報告を行う
      *
      * @param throwable 例外
      * @throws RuntimeException 投げられた例外
@@ -74,7 +66,7 @@ public final class SLUtils {
 
     /**
      * エラー報告<br/>
-     * 開発環境の場合はクラッシュさせ、本番環境ではログ出力のみ行う
+     * エラーに関する報告を行う
      *
      * @param throwable 例外
      * @param message   例外メッセージ
@@ -141,5 +133,15 @@ public final class SLUtils {
         }
 
         return id;
+    }
+
+    /**
+     * このプラグインのNamespacedKeyを作成
+     *
+     * @param path パス
+     * @return NamespacedKey
+     */
+    public static NamespacedKey plLoc(String path) {
+        return new NamespacedKey(ShortLifePlugin.PLUGIN_ID, path);
     }
 }

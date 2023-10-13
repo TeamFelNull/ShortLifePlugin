@@ -1,13 +1,15 @@
 package dev.felnull.shortlifeplugin.commands;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
-import dev.felnull.shortlifeplugin.utils.SLUtils;
+import dev.felnull.shortlifeplugin.utils.MatchUtils;
+import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.*;
@@ -84,16 +86,16 @@ public final class MatchCommand {
                 .executes((sender, args) -> {
 
                     if (sender instanceof Player player) {
-                        MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap("test");
-                        SLUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player);
+                        MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
+                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player);
                     }
                 /*    if (sender instanceof Player player) {
                         MapTest.test(player);
                     }*/
 
                     /*if (sender instanceof Player player) {
-                     *//* MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap("test");
-                        SLUtils.getMatchManager().addMatch("team-test", MatchModes.TEAM, matchMap).join(player);*//*
+                     *//* MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
+                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEAM, matchMap).join(player);*//*
 
                         ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
                         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
@@ -107,8 +109,16 @@ public final class MatchCommand {
 
         return new CommandAPICommand("match")
                 .withAliases("slm")
+                .withPermission(SLPermissions.COMMANDS_MATCH)
                 .withPermission(CommandPermission.OP)
                 .withSubcommands(gui, list, info, join, leave, finish, start, remove, map, test);
+    }
+
+    /**
+     * 登録解除
+     */
+    static void unregister() {
+        CommandAPI.unregister("match");
     }
 
     private static Argument<SLGuis.WindowProvider> guiArgument(String nodeName) {
@@ -126,7 +136,7 @@ public final class MatchCommand {
 
     private static Argument<Match> matchArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            Match match = SLUtils.getMatchManager().getMatch(info.input());
+            Match match = MatchUtils.getMatchManager().getMatch(info.input());
 
             if (match == null) {
                 throw CustomArgument.CustomArgumentException
@@ -134,12 +144,12 @@ public final class MatchCommand {
             } else {
                 return match;
             }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> SLUtils.getMatchManager().getAllMatch().keySet().toArray(String[]::new)));
+        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchUtils.getMatchManager().getAllMatch().keySet().toArray(String[]::new)));
     }
 
     private static Argument<MatchMap> mapArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            MatchMap matchMap = SLUtils.getMatchManager().getMapLoader().getMap(info.input());
+            MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap(info.input());
 
             if (matchMap == null) {
                 throw CustomArgument.CustomArgumentException
@@ -147,7 +157,7 @@ public final class MatchCommand {
             } else {
                 return matchMap;
             }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> SLUtils.getMatchManager().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
+        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchUtils.getMatchManager().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
     }
 
     /**
@@ -182,7 +192,7 @@ public final class MatchCommand {
     }
 
     private static void matchList(CommandSender sender, CommandArguments args) {
-        MatchManager matchManager = SLUtils.getMatchManager();
+        MatchManager matchManager = MatchUtils.getMatchManager();
         Map<String, Match> matches = matchManager.getAllMatch();
 
         if (matches.isEmpty()) {
@@ -217,7 +227,7 @@ public final class MatchCommand {
                     return;
                 }
 
-                Match jointedMatch = SLUtils.getMatchManager().getJointedMach(player);
+                Match jointedMatch = MatchUtils.getMatchManager().getJointedMach(player);
 
                 if (jointedMatch != null) {
                     sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), jointedMatch.getId()));
@@ -321,7 +331,7 @@ public final class MatchCommand {
     }
 
     private static void mapList(CommandSender sender, CommandArguments args) {
-        MatchManager matchManager = SLUtils.getMatchManager();
+        MatchManager matchManager = MatchUtils.getMatchManager();
         MatchMapLoader mapLoader = matchManager.getMapLoader();
         Map<String, MatchMap> maps = mapLoader.getAllMap();
 

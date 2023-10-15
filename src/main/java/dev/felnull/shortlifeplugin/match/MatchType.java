@@ -9,10 +9,23 @@ public enum MatchType {
     /**
      * Player VS Player
      */
-    PVP,
+    PVP("pvp"),
 
     /**
      * Player VS Environment
      */
-    PVE
+    PVE("pve");
+
+    /**
+     * 名前
+     */
+    private final String name;
+
+    MatchType(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

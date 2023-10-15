@@ -1,14 +1,15 @@
 package dev.felnull.shortlifeplugin.gui;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.gui.item.SLPageItem;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
-import xyz.xenondevs.invui.gui.Gui;
+import xyz.xenondevs.invui.gui.structure.Structure;
+import xyz.xenondevs.invui.item.ItemProvider;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
-import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
 import java.util.HashMap;
@@ -42,8 +43,17 @@ public final class SLGuis {
     /**
      * 初期化
      */
+    @SuppressWarnings("checkstyle:WhitespaceAfter")
     public static void init() {
-        GUI_REGISTRY.put(TEST, SLGuis::test);
+
+        // Invuiのグローバルアイテム登録
+        // 英数字の登録は避けてください
+        Structure.addGlobalIngredient('<', () -> new SLPageItem(false));
+        Structure.addGlobalIngredient('>', () -> new SLPageItem(true));
+        Structure.addGlobalIngredient('#', getBorderItem());
+
+
+        GUI_REGISTRY.put(TEST, new TestGui());
         GUI_REGISTRY.put(MATCH_SELECTOR, new MatchSelectorGui());
     }
 
@@ -64,23 +74,9 @@ public final class SLGuis {
         return ImmutableList.copyOf(GUI_REGISTRY.keySet());
     }
 
-    @NotNull
-    private static Window test(@NotNull Player player) {
-        Gui gui = Gui.normal()
-                .setStructure(
-                        "###.#.###",
-                        "#.#.#.#.#",
-                        "###.#.#.#",
-                        "#.#.#.#.#",
-                        "###.#.###")
-                .addIngredient('#', new SimpleItem(new ItemBuilder(Material.POTATO)))
-                .build();
-
-        return Window.single()
-                .setViewer(player)
-                .setTitle("ｳｧｧ!!ｵﾚﾓｲｯﾁｬｳｩｩｩ!!!ｳｳｳｳｳｳｳｳｳｩｩｩｩｩｩｩｩｳｳｳｳｳｳｳｳ!ｲｨｨｲｨｨｨｲｲｲｨｲｲｲｲ")
-                .setGui(gui)
-                .build();
+    public static ItemProvider getBorderItem() {
+        return new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)
+                .setDisplayName("§r");
     }
 
     /**

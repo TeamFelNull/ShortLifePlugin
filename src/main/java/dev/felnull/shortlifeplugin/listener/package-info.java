@@ -1,4 +1,4 @@
 /**
- * リスナー用パッケージ
+ * イベントリスナー用パッケージ
  */
 package dev.felnull.shortlifeplugin.listener;

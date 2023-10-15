@@ -333,11 +333,17 @@ public abstract class Match {
     /**
      * 指定のプレイヤーを試合へ参加させる
      *
-     * @param player プレイヤー
+     * @param player      プレイヤー
+     * @param sendMessage 参加メッセージを本人に送信するかどうか
      * @return 参加できたかどうか
      */
-    public boolean join(@NotNull Player player) {
+    public boolean join(@NotNull Player player, boolean sendMessage) {
         Objects.requireNonNull(player);
+
+        // 最大参加人数を超えるか確認
+        if (players.size() >= matchMode.maxPlayerCount()) {
+            return false;
+        }
 
         // すでにどれかしらの試合に参加しているプレイヤーは参加不可
         if (MatchUtils.getMatchManager().getJointedMach(player) != null) {
@@ -348,6 +354,7 @@ public abstract class Match {
         if (status != Status.NONE && status != Status.STARTED) {
             return false;
         }
+
 
         // 既に試合が開始されていれば、試合用マップへ移動
         if (status == Status.STARTED && matchMapInstance.isReady()) {
@@ -363,7 +370,10 @@ public abstract class Match {
 
         this.players.add(player);
 
-        player.sendMessage(MATCH_JOIN_MESSAGE);
+        if (sendMessage) {
+            player.sendMessage(MATCH_JOIN_MESSAGE);
+        }
+
         broadcast(MATCH_JOIN_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
 
         SLUtils.getLogger().info(String.format("%sが試合(%s)に参加しました", player.getName(), getId()));
@@ -554,6 +564,7 @@ public abstract class Match {
      */
     public void appendInfoDesc(@NotNull List<Component> componentList) {
         componentList.add(Component.text("モード: ").append(matchMode.name()));
+        componentList.add(Component.text("参加人数: ").append(Component.text(String.format("%d/%d", players.size(), matchMode.maxPlayerCount()))));
         componentList.add(Component.text("状態: ").append(getStatus().getName()));
     }
 
@@ -626,7 +637,7 @@ public abstract class Match {
      * @param player プレイヤー
      * @return 無敵かどうか
      */
-    public boolean isInvinciblePlayer(Player player) {
+    public boolean isInvinciblePlayer(@NotNull Player player) {
         if (status == Status.FINISHED) {
             Optional<MatchMapWorld> matchMapWorld = matchMapInstance.getMapWorld();
             return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();

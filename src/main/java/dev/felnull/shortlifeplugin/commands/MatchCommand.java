@@ -5,13 +5,13 @@ import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
+import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -87,7 +87,7 @@ public final class MatchCommand {
 
                     if (sender instanceof Player player) {
                         MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
-                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player);
+                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player, true);
                     }
                 /*    if (sender instanceof Player player) {
                         MapTest.test(player);
@@ -110,7 +110,6 @@ public final class MatchCommand {
         return new CommandAPICommand("match")
                 .withAliases("slm")
                 .withPermission(SLPermissions.COMMANDS_MATCH)
-                .withPermission(CommandPermission.OP)
                 .withSubcommands(gui, list, info, join, leave, finish, start, remove, map, test);
     }
 
@@ -234,7 +233,7 @@ public final class MatchCommand {
                     return;
                 }
 
-                if (match.join(player)) {
+                if (match.join(player, true)) {
                     sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
                 } else {
                     sender.sendRichMessage(String.format("%sを%sに参加できませんでした", player.getName(), match.getId()));
@@ -244,7 +243,7 @@ public final class MatchCommand {
                 int joinCount = 0;
 
                 for (Player player : players) {
-                    if (match.join(player)) {
+                    if (match.join(player, true)) {
                         joinCount++;
                     }
                 }
@@ -347,9 +346,13 @@ public final class MatchCommand {
 
     private static void mapInfo(CommandSender sender, CommandArguments args) {
         MatchMap map = (MatchMap) Objects.requireNonNull(args.get("map"));
+        String availableMatchModesText = "[" + String.join(",", map.availableMatchModes().stream()
+                .map(MatchMode::id)
+                .toList()) + "]";
 
         sender.sendRichMessage(String.format("%sの試合用マップ情報:", map.id()));
         sender.sendRichMessage("スケマティック: " + map.schematic());
         sender.sendRichMessage("オフセット: " + String.format("[%s, %s, %s]", map.offset().getX(), map.offset().getY(), map.offset().getZ()));
+        sender.sendRichMessage("利用可能なマップ: " + availableMatchModesText);
     }
 }

@@ -27,6 +27,7 @@ import com.sk89q.worldedit.world.block.BlockState;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
+import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -41,10 +42,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -60,6 +58,11 @@ public class MatchMapLoader {
      * GSON
      */
     private static final Gson GSON = new Gson();
+
+    /**
+     * ランダム
+     */
+    private static final Random RANDOM = new Random();
 
     /**
      * ワールド名の接頭辞
@@ -192,6 +195,27 @@ public class MatchMapLoader {
     @NotNull
     public Map<String, MatchMap> getAllMap() {
         return ImmutableMap.copyOf(this.maps);
+    }
+
+    /**
+     * 指定した試合モードが利用可能なマップをランダムで取得
+     *
+     * @param matchMode 試合モード
+     * @return 試合マップ
+     */
+    @Nullable
+    public MatchMap getRandomMap(@NotNull MatchMode matchMode) {
+        List<MatchMap> availableMaps = this.maps.values().stream()
+                .filter(map -> map.availableMatchModes().contains(matchMode))
+                .toList();
+
+        if (availableMaps.isEmpty()) {
+            return null;
+        } else if (availableMaps.size() == 1) {
+            return availableMaps.get(0);
+        } else {
+            return availableMaps.get(RANDOM.nextInt(availableMaps.size()));
+        }
     }
 
     private void clearMatchWorldFolder() {
@@ -371,7 +395,12 @@ public class MatchMapLoader {
 
             // ワールド生成
             WorldCreator worldCreator = matchWorldCreator(worldName, worldId);
-            World world = Objects.requireNonNull(worldCreator.createWorld());
+            World world = worldCreator.createWorld();
+
+            if (world == null) {
+                throw new RuntimeException("ワールドの生成に失敗");
+            }
+
             matchMapInstance.setStrictWorld(world);
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のワールド生成完了", worldId));
@@ -417,6 +446,12 @@ public class MatchMapLoader {
                 FileUtils.rename(worldFolder, tmpWorldFolder);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+
+            // uid.datを削除
+            File uidFile = new File(tmpWorldFolder, "uid.dat");
+            if (!uidFile.delete()) {
+                throw new RuntimeException("uid.datの削除に失敗");
             }
 
             return tmpWorldFolder;

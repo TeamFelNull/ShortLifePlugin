@@ -23,6 +23,7 @@ import java.io.IOException;
  * @author IDEA自動生成, MORIMORI0317
  */
 public final class ShortLifePlugin extends JavaPlugin {
+
     /**
      * このプラグインの名前
      */

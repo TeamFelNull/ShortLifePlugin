@@ -43,6 +43,12 @@ public final class MatchUtils {
      * @param leaveWorld 退出したいワールド
      */
     public static void teleportToLeave(@NotNull Player player, @Nullable World leaveWorld) {
+
+        // 死亡している場合は強制リスポーン
+        if (player.isDead()) {
+            player.spigot().respawn();
+        }
+
         boolean needForceTeleport = false;
 
         if (!player.performCommand(SLConfig.getMatchLeavePerformCommand())) {

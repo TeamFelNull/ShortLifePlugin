@@ -27,6 +27,7 @@ import com.sk89q.worldedit.world.block.BlockState;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
+import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -148,13 +149,14 @@ public class MatchMapLoader {
     /**
      * マップインスタンスを作成
      *
+     * @param match         試合
      * @param mapInstanceId マップインスタンスID
      * @param matchMap      試合用マップ
      * @return マップインスタンス
      */
-    public MatchMapInstance createMapInstance(@NotNull String mapInstanceId, @NotNull MatchMap matchMap) {
+    public MatchMapInstance createMapInstance(@NotNull Match match, @NotNull String mapInstanceId, @NotNull MatchMap matchMap) {
         MatchMapInstance matchMapInstance = new MatchMapInstance();
-        matchMapInstance.setMapWorld(load(matchMapInstance, mapInstanceId, matchMap));
+        matchMapInstance.setMapWorld(load(match.getMatchMode(), matchMapInstance, mapInstanceId, matchMap));
         return matchMapInstance;
     }
 
@@ -228,7 +230,8 @@ public class MatchMapLoader {
         }
     }
 
-    private CompletableFuture<MatchMapWorld> load(@NotNull MatchMapInstance matchMapInstance, @NotNull String worldId, @NotNull MatchMap matchMap) {
+    private CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance,
+                                                  @NotNull String worldId, @NotNull MatchMap matchMap) {
         CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(worldId, matchMap);
         CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance, worldId);
 
@@ -253,6 +256,14 @@ public class MatchMapLoader {
                     SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)の準備完了", worldId));
 
                     return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
+                }, tickExecutor).thenApplyAsync(matchMapWorld -> {
+                    /* Tick同期でマップ検証 */
+
+                    if (!matchMode.mapValidator().test(matchMapWorld)) {
+                        throw new RuntimeException("マップの検証に失敗");
+                    }
+
+                    return matchMapWorld;
                 }, tickExecutor);
     }
 

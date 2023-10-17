@@ -131,7 +131,7 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
 
         return Window.single()
                 .setViewer(player)
-                .setTitle("試合選択")
+                .setTitle("試合作成")
                 .setGui(gui)
                 .build();
     }

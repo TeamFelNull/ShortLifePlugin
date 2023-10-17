@@ -1,9 +1,12 @@
 package dev.felnull.shortlifeplugin.match;
 
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
+import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Predicate;
 
 
 /**
@@ -17,11 +20,13 @@ import org.jetbrains.annotations.NotNull;
  * @param minPlayerCount 最低参加プレイヤー数
  * @param maxPlayerCount 最大参加プレイヤー数
  * @param matchProvider  試合インスタンスプロバイダー
+ * @param mapValidator   マップ検証
  * @author MORIMORI0317
  */
 public record MatchMode(@NotNull String id, @NotNull Component name, @NotNull Material iconItem,
                         @NotNull MatchType matchType, long limitTime,
-                        int minPlayerCount, int maxPlayerCount, @NotNull MatchMode.MatchProvider matchProvider) {
+                        int minPlayerCount, int maxPlayerCount, @NotNull MatchMode.MatchProvider matchProvider,
+                        @NotNull Predicate<MatchMapWorld> mapValidator) {
 
     /**
      * 試合プロバイダー

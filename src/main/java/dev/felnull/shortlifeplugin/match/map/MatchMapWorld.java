@@ -65,7 +65,7 @@ public class MatchMapWorld {
      * @param pointName ポイント名
      * @return マーカーのコレクション
      */
-    @Nullable
+    @NotNull
     @Unmodifiable
     public Collection<MapMarker> getMarker(NamespacedKey pointName) {
         return markerSet.makers().get(pointName);
@@ -81,7 +81,7 @@ public class MatchMapWorld {
     public MapMarker getMakerRandom(NamespacedKey pointName) {
         Collection<MapMarker> markers = getMarker(pointName);
 
-        if (markers == null || markers.isEmpty()) {
+        if (markers.isEmpty()) {
             return null;
         }
 

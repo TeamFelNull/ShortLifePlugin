@@ -82,7 +82,7 @@ public class MatchModeSelectItem extends AbstractItem {
             boolean failure = false;
 
             if (match != null) {
-                if (match.join(player, true)) {
+                if (match.join(player, false)) {
                     player.sendMessage(CREATE_AND_JOIN_MATCH_MESSAGE);
                 } else {
                     failure = true;

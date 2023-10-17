@@ -1,11 +1,17 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import com.sk89q.worldedit.math.BlockVector3;
-import dev.felnull.shortlifeplugin.match.map.*;
+import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.shortlifeplugin.match.map.MapMarker;
+import dev.felnull.shortlifeplugin.match.map.MatchMap;
+import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
+import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
@@ -15,10 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -29,6 +32,11 @@ import java.util.function.Predicate;
  * @author MORIMORI0317
  */
 public abstract class Match {
+
+    /**
+     * ランダム
+     */
+    protected static final Random RANDOM = new Random();
 
     /**
      * 試合が開始するまでの時間(ms)
@@ -93,12 +101,10 @@ public abstract class Match {
     private static final Component MATCH_CANCEL_UNEXPECTED_ERROR_MESSAGE = Component.text("想定外のエラーが発生したため試合を中止します").color(NamedTextColor.DARK_RED).appendNewline()
             .append(Component.text("この事を運営に報告してください！").color(NamedTextColor.GOLD));
 
-
     /**
      * 人不足で試合を終了する際のメッセージ
      */
     private static final Component MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE = Component.text("参加人数が不足したため試合を終了します").color(NamedTextColor.RED);
-
 
     /**
      * 参加しているプレイヤー
@@ -109,6 +115,11 @@ public abstract class Match {
      * 同じ状態の経過Tick
      */
     protected int statusTick;
+
+    /**
+     * 試合用マップ
+     */
+    protected MatchMapInstance matchMapInstance;
 
     /**
      * 試合のID
@@ -129,6 +140,11 @@ public abstract class Match {
     private final MatchMap matchMap;
 
     /**
+     * カウントダウンを表示用ボスバー
+     */
+    private final BossBar countDownBossbar = BossBar.bossBar(Component.empty(), 1f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+
+    /**
      * 状態
      */
     @NotNull
@@ -140,15 +156,9 @@ public abstract class Match {
     private boolean destroyed = false;
 
     /**
-     * 試合用マップ
-     */
-    private MatchMapInstance matchMapInstance;
-
-    /**
      * マップの読み込まれ待ちを通知したかどうか
      */
     private boolean waitLoadMapNotified;
-
 
     /**
      * 試合終了後のテレポートを行ったかどうか
@@ -172,27 +182,20 @@ public abstract class Match {
      * 初期化処理
      */
     protected void init() {
-        this.matchMapInstance = MatchUtils.getMatchManager().getMapLoader().createMapInstance(this.id, this.matchMap);
-
+        updateCountDownStatus();
+        this.matchMapInstance = MatchUtils.getMatchManager().getMapLoader().createMapInstance(this, this.id, this.matchMap);
         SLUtils.getLogger().info(String.format("試合(%s)が作成されました", getId()));
     }
 
     /**
      * 1Tickごとの処理
      */
-    protected final void tick() {
-
-        // 状態が破棄ならばTick処理を行わない
-        if (getStatus() == Status.DISCARDED) {
-            return;
-        }
-
+    protected void tick() {
         // 参加を維持できないプレイヤーを退出させる
         List<Player> leavePlayers = players.stream()
                 .filter(pl -> !canMaintainJoinPlayer(pl))
                 .toList();
         leavePlayers.forEach(player -> leave(player, true));
-
 
         // 試合参加者0人になれば試合破棄
         if (this.players.isEmpty()) {
@@ -200,9 +203,9 @@ public abstract class Match {
             return;
         }
 
-        baseTick();
-
         this.statusTick++;
+
+        baseTick();
 
         // 状態ごとの処理
         switch (getStatus()) {
@@ -237,7 +240,11 @@ public abstract class Match {
 
         boolean start = false;
 
-        if (this.statusTick >= SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME)) {
+        int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
+
+        updateCountDownTime(this.statusTick, totalTime);
+
+        if (this.statusTick >= totalTime) {
             // 開始待機時間が過ぎた場合の処理
             if (matchMapInstance.isReady()) {
                 // マップの準備が終わっていれば試合開始
@@ -262,11 +269,14 @@ public abstract class Match {
 
         boolean finish = false;
 
+        int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, getMatchMode().limitTime());
+        updateCountDownTime(this.statusTick, totalTime);
+
         if (players.size() < getMatchMode().minPlayerCount()) {
             // 参加プレイヤーの人数が、最低参加人数より少なければ試合を終了
             broadcast(MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE);
             finish = true;
-        } else if (this.statusTick >= SLUtils.toTick(TimeUnit.MILLISECONDS, getMatchMode().limitTime())) {
+        } else if (this.statusTick >= totalTime) {
             // 試合制限時間を過ぎた場合、試合を終了
             finish = true;
         }
@@ -282,8 +292,11 @@ public abstract class Match {
      */
     protected void afterFinishTick() {
 
+        int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, FINISH_WAIT_FOR_TELEPORT);
+        updateCountDownTime(this.statusTick, totalTime);
+
         // 終了後のテレポート
-        if (!finishTeleport && this.statusTick >= SLUtils.toTick(TimeUnit.MILLISECONDS, FINISH_WAIT_FOR_TELEPORT)) {
+        if (!finishTeleport && this.statusTick >= totalTime) {
             finishTeleport = true;
 
             for (final Player player : players) {
@@ -358,17 +371,17 @@ public abstract class Match {
 
         // 既に試合が開始されていれば、試合用マップへ移動
         if (status == Status.STARTED && matchMapInstance.isReady()) {
-            Location respawnLocation = lotterySpawnLocation(player);
-            if (respawnLocation != null) {
-                player.teleport(respawnLocation);
-            } else {
-                SLUtils.reportError(new RuntimeException("リスポーン地点を取得できませんでした"));
+
+            if (!teleportToJoin(player)) {
+                SLUtils.reportError(new RuntimeException(String.format("プレイヤー(%s)をスポーンさせることができませんでした", player.getName())));
                 return false;
             }
         }
 
-
         this.players.add(player);
+
+        // カウントダウン用ボスバーを表示
+        Audience.audience(player).showBossBar(countDownBossbar);
 
         if (sendMessage) {
             player.sendMessage(MATCH_JOIN_MESSAGE);
@@ -398,6 +411,9 @@ public abstract class Match {
 
         this.players.remove(player);
 
+        // カウントダウン用ボスバーを非表示化
+        Audience.audience(player).hideBossBar(countDownBossbar);
+
         // 試合用ワールドにいる場合、ワールド外にテレポート
         Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
         if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
@@ -426,6 +442,7 @@ public abstract class Match {
         return ImmutableList.copyOf(players);
     }
 
+
     /**
      * 試合を開始
      *
@@ -446,10 +463,7 @@ public abstract class Match {
         // 参加中のプレイヤー全員を試合用マップへテレポート
         if (this.matchMapInstance.getMapWorld().isPresent()) {
             for (Player player : this.players) {
-                Location respawnPoint = lotterySpawnLocation(player);
-                if (respawnPoint != null) {
-                    player.teleport(respawnPoint);
-                }
+                teleportToJoin(player);
             }
         } else {
             SLUtils.reportError(new RuntimeException("ワールドの取得に失敗"));
@@ -500,9 +514,18 @@ public abstract class Match {
     protected void dispose() {
         changeStatus(Status.DISCARDED);
 
+        // 全プレイヤー退出
         List<Player> leavePlayers = ImmutableList.copyOf(this.players);
         leavePlayers.forEach(player -> leave(player, false));
 
+        // カウントダウン用ボスバーの表示を全プレイヤーから消す
+        List<Player> bossbarViewers = Streams.stream(countDownBossbar.viewers())
+                .filter(viewer -> viewer instanceof Player)
+                .map(viewer -> (Player) viewer)
+                .toList();
+        Audience.audience(bossbarViewers).hideBossBar(countDownBossbar);
+
+        // マップ破棄
         if (this.matchMapInstance != null) {
             this.matchMapInstance.dispose();
         }
@@ -555,6 +578,19 @@ public abstract class Match {
 
         this.status = status;
         this.statusTick = 0;
+
+        updateCountDownStatus();
+    }
+
+    private void updateCountDownStatus() {
+        // カウントダウン用ボスバー更新
+        this.countDownBossbar.color(status.getCountDownBossbarColor());
+        this.countDownBossbar.name(status.getCountDownBossbarName());
+    }
+
+    private void updateCountDownTime(int compTime, int totalTime) {
+        float progress = FNMath.clamp((float) compTime / (float) totalTime, 0, 1);
+        this.countDownBossbar.progress(1f - progress);
     }
 
     /**
@@ -613,7 +649,7 @@ public abstract class Match {
         if (this.matchMapInstance.getMapWorld().isPresent()) {
             MatchMapWorld matchMapWorld = this.matchMapInstance.getMapWorld().get();
             World world = matchMapWorld.getWorld();
-            MapMarker spawnMarker = matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN);
+            MapMarker spawnMarker = getSpawnMaker(matchMapWorld, player);
 
             // スポーン地点のマーカーを取得できない場合はnullを返す
             if (spawnMarker == null) {
@@ -622,13 +658,39 @@ public abstract class Match {
 
             BlockVector3 spawnPos = matchMapWorld.offsetCorrection(spawnMarker.getPosition());
 
-            Location location = new Location(world, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+            Location location = new Location(world, spawnPos.getX() + 0.5f, spawnPos.getY(), spawnPos.getZ() + 0.5f);
             location.setDirection(spawnMarker.getDirection().getDirection());
 
             return location;
         }
 
         return null;
+    }
+
+
+    /**
+     * スポーン地点のマーカーを取得
+     *
+     * @param matchMapWorld 試合用ワールド
+     * @param player        プレイヤー
+     * @return マーカー
+     */
+    @Nullable
+    protected abstract MapMarker getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player);
+
+    private boolean teleportToJoin(@NotNull Player player) {
+        Location respawnPoint = lotterySpawnLocation(player);
+        if (respawnPoint != null) {
+            // 死亡している場合は強制リスポーン
+            if (player.isDead()) {
+                player.spigot().respawn();
+            }
+
+            player.teleport(respawnPoint);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -655,23 +717,26 @@ public abstract class Match {
      * @author MORIMORI0317
      */
     public enum Status {
+
         /**
          * 開始前
          */
-        NONE(Component.text("無し")),
+        NONE(Component.text("無し"), Component.text("試合開始待ち"), BossBar.Color.YELLOW),
+
         /**
          * 開始
          */
-        STARTED(Component.text("開始")),
+        STARTED(Component.text("開始"), Component.text("試合中"), BossBar.Color.GREEN),
+
         /**
          * 終了
          */
-        FINISHED(Component.text("終了")),
+        FINISHED(Component.text("終了"), Component.text("試合終了"), BossBar.Color.BLUE),
 
         /**
          * 破棄済み
          */
-        DISCARDED(Component.text("破棄"));
+        DISCARDED(Component.text("破棄"), Component.empty(), BossBar.Color.RED);
 
         /**
          * 状態名
@@ -679,16 +744,39 @@ public abstract class Match {
         private final Component name;
 
         /**
+         * カウントダウン用ボスバーの表示名
+         */
+        private final Component countDownBossbarName;
+
+        /**
+         * カウントダウン用ボスバーの色
+         */
+        private final BossBar.Color countDownBossbarColor;
+
+
+        /**
          * コンストラクタ
          *
-         * @param name 状態名
+         * @param name                  状態名
+         * @param countDownBossbarName  カウントダウン用ボスバーの表示名
+         * @param countDownBossbarColor カウントダウン用ボスバーの色
          */
-        Status(Component name) {
+        Status(Component name, Component countDownBossbarName, BossBar.Color countDownBossbarColor) {
             this.name = name;
+            this.countDownBossbarName = countDownBossbarName;
+            this.countDownBossbarColor = countDownBossbarColor;
         }
 
         public Component getName() {
             return name;
+        }
+
+        public BossBar.Color getCountDownBossbarColor() {
+            return countDownBossbarColor;
+        }
+
+        public Component getCountDownBossbarName() {
+            return countDownBossbarName;
         }
     }
 }

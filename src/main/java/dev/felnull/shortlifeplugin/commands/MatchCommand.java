@@ -6,7 +6,6 @@ import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
-import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
@@ -84,11 +83,13 @@ public final class MatchCommand {
         // FIXME リリース前に削除
         CommandAPICommand test = new CommandAPICommand("aikiso")
                 .executes((sender, args) -> {
-
-                    if (sender instanceof Player player) {
+                 /*   if (sender instanceof Player player) {
+                        mainIkisugi(player);
+                    }*/
+                   /* if (sender instanceof Player player) {
                         MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
                         MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player, true);
-                    }
+                    }*/
                 /*    if (sender instanceof Player player) {
                         MapTest.test(player);
                     }*/
@@ -112,6 +113,20 @@ public final class MatchCommand {
                 .withPermission(SLPermissions.COMMANDS_MATCH)
                 .withSubcommands(gui, list, info, join, leave, finish, start, remove, map, test);
     }
+
+    /*private static void mainIkisugi(Player player) {
+        //System.out.println("Hello World");
+
+        int x = 10043;
+        int y = 110;
+        int z = 2000;
+
+        player.teleport(new Location(player.getWorld(), x, y, z));
+
+       *//* for (int i = 0; i < 10; i++) {
+            player.sendRichMessage("マッチ");
+        }*//*
+    }*/
 
     /**
      * 登録解除

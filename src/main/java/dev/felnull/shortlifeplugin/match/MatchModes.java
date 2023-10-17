@@ -1,13 +1,17 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableMap;
+import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
+import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * 試合モードのレジストリ
@@ -20,13 +24,15 @@ public final class MatchModes {
      * テスト用試合モード
      */
     public static final MatchMode TEST =
-            new MatchMode("test", Component.text("テスト"), Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3, 1, 114514, TestMatch::new);
+            new MatchMode("test", Component.text("テスト"), Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
+                    1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN));
 
     /**
      * チームポイント制試合モード
      */
     public static final MatchMode TEAM_POINT =
-            new MatchMode("team_point", Component.text("チーム-ポイント制"), Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10, 2, 30, TeamMatch::new);
+            new MatchMode("team_point", Component.text("チーム-ポイント制"), Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
+                    2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1, MapMarkerPoints.SPAWN_TEAM2));
 
     /**
      * 試合モードのレジストリマップ
@@ -62,5 +68,22 @@ public final class MatchModes {
 
     private static void register(@NotNull MatchMode matchMode) {
         MODE_REGISTRY.put(matchMode.id(), matchMode);
+    }
+
+
+    private static Predicate<MatchMapWorld> mapPointCheck(NamespacedKey point, NamespacedKey... points) {
+        return matchMapWorld -> {
+            if (matchMapWorld.getMarker(point).isEmpty()) {
+                return false;
+            }
+
+            for (NamespacedKey key : points) {
+                if (matchMapWorld.getMarker(key).isEmpty()) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
     }
 }

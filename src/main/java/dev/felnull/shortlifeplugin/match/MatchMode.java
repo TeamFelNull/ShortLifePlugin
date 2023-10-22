@@ -2,7 +2,6 @@ package dev.felnull.shortlifeplugin.match;
 
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,7 +22,7 @@ import java.util.function.Predicate;
  * @param mapValidator   マップ検証
  * @author MORIMORI0317
  */
-public record MatchMode(@NotNull String id, @NotNull Component name, @NotNull Material iconItem,
+public record MatchMode(@NotNull String id, @NotNull String name, @NotNull Material iconItem,
                         @NotNull MatchType matchType, long limitTime,
                         int minPlayerCount, int maxPlayerCount, @NotNull MatchMode.MatchProvider matchProvider,
                         @NotNull Predicate<MatchMapWorld> mapValidator) {

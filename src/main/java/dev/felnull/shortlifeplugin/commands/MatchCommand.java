@@ -215,7 +215,7 @@ public final class MatchCommand {
             sender.sendRichMessage(String.format("%d個の試合が存在します", matches.size()));
 
             matches.values().forEach(match -> sender.sendMessage(Component.text(String.format("- %s (", match.getId()))
-                    .append(match.getMatchMode().name())
+                    .append(Component.text(match.getMatchMode().name()))
                     .append(Component.text(")"))));
 
         }
@@ -237,21 +237,37 @@ public final class MatchCommand {
                 Player player = players.get(0);
 
                 if (match.hasParticipation(player)) {
-                    sender.sendRichMessage(String.format("%sは既に参加済みです", player.getName()));
+                    if (player == sender) {
+                        sender.sendRichMessage("既に参加済みです");
+                    } else {
+                        sender.sendRichMessage(String.format("%sは既に参加済みです", player.getName()));
+                    }
                     return;
                 }
 
                 Match jointedMatch = MatchUtils.getMatchManager().getJointedMach(player);
 
                 if (jointedMatch != null) {
-                    sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), jointedMatch.getId()));
+                    if (player == sender) {
+                        sender.sendRichMessage(String.format("%sに参加済みです", jointedMatch.getId()));
+                    } else {
+                        sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), jointedMatch.getId()));
+                    }
                     return;
                 }
 
-                if (match.join(player, true)) {
-                    sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                if (match.join(player, player != sender)) {
+                    if (player == sender) {
+                        sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                    } else {
+                        sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                    }
                 } else {
-                    sender.sendRichMessage(String.format("%sを%sに参加できませんでした", player.getName(), match.getId()));
+                    if (player == sender) {
+                        sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
+                    } else {
+                        sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
+                    }
                 }
 
             } else {
@@ -266,7 +282,7 @@ public final class MatchCommand {
                 if (joinCount != 0) {
                     sender.sendRichMessage(String.format("%d人のプレイヤーを%sに参加させました", joinCount, match.getId()));
                 } else {
-                    sender.sendRichMessage(String.format("プレイヤーを%sに参加できませんでした", match.getId()));
+                    sender.sendRichMessage(String.format("プレイヤーを%sに参加させられませんでした", match.getId()));
                 }
             }
         });
@@ -354,7 +370,7 @@ public final class MatchCommand {
         } else {
             sender.sendRichMessage(String.format("%d個の試合用マップが存在します", maps.size()));
             maps.values().forEach(match -> sender.sendMessage(Component.text(String.format("- %s (", match.id()))
-                    .append(match.name())
+                    .append(Component.text(match.name()))
                     .append(Component.text(")"))));
         }
     }

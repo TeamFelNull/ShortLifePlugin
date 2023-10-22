@@ -3,7 +3,6 @@ package dev.felnull.shortlifeplugin.match;
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
@@ -24,14 +23,14 @@ public final class MatchModes {
      * テスト用試合モード
      */
     public static final MatchMode TEST =
-            new MatchMode("test", Component.text("テスト"), Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
+            new MatchMode("test", "テスト", Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
                     1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN));
 
     /**
      * チームポイント制試合モード
      */
     public static final MatchMode TEAM_POINT =
-            new MatchMode("team_point", Component.text("チーム-ポイント制"), Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
+            new MatchMode("team_point", "チーム-ポイント制", Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
                     2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1, MapMarkerPoints.SPAWN_TEAM2));
 
     /**

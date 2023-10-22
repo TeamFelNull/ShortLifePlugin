@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -23,6 +24,11 @@ import java.util.logging.Logger;
  * @author MORIMORI0317
  */
 public final class SLUtils {
+
+    /**
+     * toranpfan6433のUUID
+     */
+    public static final UUID TORANPFAN_UUID = UUID.fromString("5c751dd1-0882-4f31-ad61-c4ee928c4595");
 
     private SLUtils() {
     }

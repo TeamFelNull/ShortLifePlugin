@@ -18,6 +18,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -174,6 +175,11 @@ public abstract class Match {
     private boolean waitLoadMapNotified;
 
     /**
+     * マップの読み込みが完了したフラグ
+     */
+    private boolean loadMapCompletion;
+
+    /**
      * 試合終了後のテレポートを行ったかどうか
      */
     private boolean finishTeleport;
@@ -272,6 +278,12 @@ public abstract class Match {
 
         int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
         updateCountDownTime(this.statusTick, totalTime);
+
+        // マップの読み込みが終わった場合
+        if (!loadMapCompletion && matchMapInstance.isReady()) {
+            loadMapCompletion = true;
+            dirtyAllInfo();
+        }
 
         if (this.statusTick >= totalTime) {
             // 開始待機時間が過ぎた場合の処理
@@ -473,6 +485,12 @@ public abstract class Match {
         // カウントダウン用ボスバーを非表示化
         Audience.audience(player).hideBossBar(countDownBossbar);
 
+        // ゲームモードを元に戻す
+        GameMode preGameMode = playerData.getPreGameMode();
+        if (preGameMode != null) {
+            player.setGameMode(preGameMode);
+        }
+
         // 試合用ワールドにいる場合、ワールド外にテレポート
         Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
         if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
@@ -547,6 +565,15 @@ public abstract class Match {
      * @param player プレイヤー
      */
     protected void playerStart(@NotNull Player player) {
+        PlayerData playerData = getPlayerData(player);
+
+        // ゲームモードを変更
+        if (playerData != null) {
+            playerData.setPreGameMode(player.getGameMode());
+        }
+        player.setGameMode(GameMode.ADVENTURE);
+
+
         // プレイヤーを試合用ワールドにテレポート
         if (this.matchMapInstance.isReady()) {
             if (!teleportToJoin(player)) {
@@ -685,7 +712,7 @@ public abstract class Match {
     private void updateCountDownStatus() {
         // カウントダウン用ボスバー更新
         this.countDownBossbar.color(status.getCountDownBossbarColor());
-        this.countDownBossbar.name(status.getShowName());
+        this.countDownBossbar.name(Component.text(status.getShowName()));
     }
 
     private void updateCountDownTime(int compTime, int totalTime) {
@@ -708,7 +735,7 @@ public abstract class Match {
      * @param componentList 情報説明コンポーネントのリスト
      */
     public void appendInfoDesc(@NotNull List<Component> componentList) {
-        componentList.add(Component.text("モード: ").append(matchMode.name()));
+        componentList.add(Component.text("モード: ").append(Component.text(matchMode.name())));
         componentList.add(Component.text("参加人数: ").append(Component.text(String.format("%d/%d", players.size(), matchMode.maxPlayerCount()))));
         componentList.add(Component.text("状態: ").append(getStatus().getName()));
     }
@@ -888,6 +915,11 @@ public abstract class Match {
         private Scoreboard preScoreboard;
 
         /**
+         * 試合開始前のゲームモード
+         */
+        private GameMode preGameMode;
+
+        /**
          * キル数
          */
         private int killCount;
@@ -965,9 +997,18 @@ public abstract class Match {
          * @param sidebarInfos サイドバー情報の文字列リスト
          */
         protected void appendSidebarMatchInfo(@NotNull List<String> sidebarInfos) {
-            sidebarInfos.add(String.format("試合モード: %s", Match.this.matchMode.id()));
-            sidebarInfos.add(String.format("状態: %s", Match.this.getStatus().name()));
-            sidebarInfos.add(String.format("残り試合時間: %s", FNStringUtil.getTimeFormat(Match.this.countDownTime)));
+            sidebarInfos.add(String.format("モード: %s", Match.this.matchMode.name()));
+            sidebarInfos.add(String.format("状態: %s", Match.this.getStatus().getShowName()));
+
+            String mapText = matchMap.name();
+
+            if (!matchMapInstance.isReady()) {
+                mapText += "(読み込み中)";
+            }
+
+            sidebarInfos.add(String.format("マップ: %s", mapText));
+            sidebarInfos.add(String.format("参加人数: %d/%d", players.size(), matchMode.maxPlayerCount()));
+            sidebarInfos.add(String.format("残り時間: %s", FNStringUtil.getTimeFormat(Match.this.countDownTime)));
         }
 
         /**
@@ -1042,7 +1083,7 @@ public abstract class Match {
             this.dirtyInfo = true;
         }
 
-        public Player getPlayer() {
+        public @NotNull Player getPlayer() {
             return player;
         }
 
@@ -1052,6 +1093,14 @@ public abstract class Match {
 
         public void setLifeTime(int lifeTime) {
             this.lifeTime = lifeTime;
+        }
+
+        public GameMode getPreGameMode() {
+            return preGameMode;
+        }
+
+        public void setPreGameMode(GameMode preGameMode) {
+            this.preGameMode = preGameMode;
         }
     }
 
@@ -1065,22 +1114,22 @@ public abstract class Match {
         /**
          * 開始前
          */
-        NONE(Component.text("無し"), Component.text("試合開始待ち"), BossBar.Color.YELLOW),
+        NONE(Component.text("無し"), "試合開始待ち", BossBar.Color.YELLOW),
 
         /**
          * 開始
          */
-        STARTED(Component.text("開始"), Component.text("試合中"), BossBar.Color.GREEN),
+        STARTED(Component.text("開始"), "試合中", BossBar.Color.GREEN),
 
         /**
          * 終了
          */
-        FINISHED(Component.text("終了"), Component.text("試合終了"), BossBar.Color.BLUE),
+        FINISHED(Component.text("終了"), "試合終了", BossBar.Color.BLUE),
 
         /**
          * 破棄済み
          */
-        DISCARDED(Component.text("破棄"), Component.empty(), BossBar.Color.RED);
+        DISCARDED(Component.text("破棄"), "破棄済み", BossBar.Color.RED);
 
         /**
          * 状態名
@@ -1090,7 +1139,7 @@ public abstract class Match {
         /**
          * 表示名
          */
-        private final Component showName;
+        private final String showName;
 
         /**
          * カウントダウン用ボスバーの色
@@ -1101,12 +1150,12 @@ public abstract class Match {
          * コンストラクタ
          *
          * @param name                  状態名
-         * @param countDownBossbarName  カウントダウン用ボスバーの表示名
+         * @param showName              カウントダウン用ボスバーの表示名
          * @param countDownBossbarColor カウントダウン用ボスバーの色
          */
-        Status(Component name, Component countDownBossbarName, BossBar.Color countDownBossbarColor) {
+        Status(Component name, String showName, BossBar.Color countDownBossbarColor) {
             this.name = name;
-            this.showName = countDownBossbarName;
+            this.showName = showName;
             this.countDownBossbarColor = countDownBossbarColor;
         }
 
@@ -1118,7 +1167,7 @@ public abstract class Match {
             return countDownBossbarColor;
         }
 
-        public Component getShowName() {
+        public String getShowName() {
             return showName;
         }
     }

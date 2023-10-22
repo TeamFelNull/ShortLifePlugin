@@ -5,8 +5,13 @@ import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
+import dev.felnull.shortlifeplugin.utils.SLUtils;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -65,7 +70,7 @@ public class MatchModeSelectItem extends AbstractItem {
     @Override
     public ItemProvider getItemProvider() {
         ItemBuilder builder = new ItemBuilder(matchMode.iconItem());
-        builder.setDisplayName(new AdventureComponentWrapper(matchMode.name()));
+        builder.setDisplayName(new AdventureComponentWrapper(Component.text(matchMode.name())));
         return builder;
     }
 
@@ -84,6 +89,7 @@ public class MatchModeSelectItem extends AbstractItem {
             if (match != null) {
                 if (match.join(player, false)) {
                     player.sendMessage(CREATE_AND_JOIN_MATCH_MESSAGE);
+                    broadcastCreateMatch(player, match);
                 } else {
                     failure = true;
                 }
@@ -97,5 +103,37 @@ public class MatchModeSelectItem extends AbstractItem {
         }
 
         getWindows().forEach(Window::close);
+    }
+
+    private void broadcastCreateMatch(@NotNull Player player, @NotNull Match match) {
+        Audience sendAaudience = Audience.audience(Bukkit.getOnlinePlayers().stream()
+                .filter(pl -> pl != player)
+                .toList());
+
+        Component notifierMessage = Component.text(player.getName())
+                .append(Component.text("が試合("))
+                .append(Component.text(match.getMatchMode().name()))
+                .append(Component.text(")を作成しました"))
+                .color(NamedTextColor.GREEN);
+
+        sendAaudience.sendMessage(notifierMessage);
+
+        String clickHereText;
+        if (SLUtils.TORANPFAN_UUID.equals(player.getUniqueId())) {
+            clickHereText = "[こ↑こ↓をクリック]";
+        } else {
+            clickHereText = "[ここをクリック]";
+        }
+
+        // 今後専用のコマンドを追加したほうがいいかもしれない
+        Component clickHere = Component.text(clickHereText)
+                .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + match.getId())).build());
+
+        Component joinHereMessage = Component.text("参加するには")
+                .append(clickHere)
+                .append(Component.text("してください"))
+                .color(NamedTextColor.LIGHT_PURPLE);
+
+        sendAaudience.sendMessage(joinHereMessage);
     }
 }

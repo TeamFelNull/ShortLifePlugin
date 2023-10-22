@@ -42,7 +42,6 @@ public final class ShortLifePlugin extends JavaPlugin {
     @Override
     public void onLoad() {
         CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true));
-        SLCommands.register();
     }
 
     @Override
@@ -53,6 +52,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         logger.setCenter(true);
         getLogger().info(logger.createLn());
 
+        SLCommands.register();
         SLConfig.init(this);
         clearTmpFolder(true);
         SLGuis.init();

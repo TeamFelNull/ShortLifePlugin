@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.MatchModes;
-import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -23,7 +22,7 @@ import java.util.List;
  * @param availableMatchModes 使用可能な試合モード
  * @author MORIMORI0317
  */
-public record MatchMap(@NotNull String id, @NotNull Component name, @NotNull String schematic,
+public record MatchMap(@NotNull String id, @NotNull String name, @NotNull String schematic,
                        @NotNull BlockVector3 offset, @NotNull @Unmodifiable List<MatchMode> availableMatchModes) {
 
     /**
@@ -70,7 +69,7 @@ public record MatchMap(@NotNull String id, @NotNull Component name, @NotNull Str
             }
         }
 
-        return new MatchMap(id, Component.text(name), schematic, offset, availableMatchModes.build());
+        return new MatchMap(id, name, schematic, offset, availableMatchModes.build());
     }
 
 
@@ -81,6 +80,6 @@ public record MatchMap(@NotNull String id, @NotNull Component name, @NotNull Str
         JsonArray offsetArray = jsonObject.getAsJsonArray("offset");
         BlockVector3 offset = BlockVector3.at(offsetArray.get(0).getAsInt(), offsetArray.get(1).getAsInt(), offsetArray.get(2).getAsInt());
 
-        return new MatchMap(id, Component.text(name), schematic, offset, ImmutableList.of());
+        return new MatchMap(id, name, schematic, offset, ImmutableList.of());
     }
 }

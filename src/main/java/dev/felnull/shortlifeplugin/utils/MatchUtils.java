@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.utils;
 
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.match.MatchManager;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,6 +20,29 @@ import java.util.Objects;
  * @author MORIMORI0317
  */
 public final class MatchUtils {
+
+    /**
+     * チーム選定で、優先的に使用される順番に格納されたチームカラー
+     */
+    public static final NamedTextColor[] TEAM_COLORS = {
+            NamedTextColor.RED,
+            NamedTextColor.BLUE,
+            NamedTextColor.GREEN,
+            NamedTextColor.YELLOW,
+            NamedTextColor.LIGHT_PURPLE,
+            NamedTextColor.AQUA,
+            NamedTextColor.WHITE,
+            NamedTextColor.BLACK,
+            NamedTextColor.DARK_RED,
+            NamedTextColor.DARK_BLUE,
+            NamedTextColor.DARK_GREEN,
+            NamedTextColor.GOLD,
+            NamedTextColor.DARK_PURPLE,
+            NamedTextColor.DARK_AQUA,
+            NamedTextColor.GRAY,
+            NamedTextColor.DARK_GRAY
+    };
+
     /**
      * デフォルトの退出時強制移動先ワールド
      */
@@ -43,13 +67,14 @@ public final class MatchUtils {
      * @param leaveWorld 退出したいワールド
      */
     public static void teleportToLeave(@NotNull Player player, @Nullable World leaveWorld) {
+        boolean needForceTeleport = false;
 
         // 死亡している場合は強制リスポーン
         if (player.isDead()) {
             player.spigot().respawn();
+            needForceTeleport = true;
         }
 
-        boolean needForceTeleport = false;
 
         if (!player.performCommand(SLConfig.getMatchLeavePerformCommand())) {
             // コマンドの実行に失敗した場合
@@ -59,11 +84,11 @@ public final class MatchUtils {
             needForceTeleport = true;
         }
 
-        // コマンドでテレポートができなかった場合の強制移動
+        // 強制移動
         if (needForceTeleport) {
             World backWorld = Bukkit.getWorld(Objects.requireNonNull(NamespacedKey.fromString(SLConfig.getMatchLeaveForceTeleportWorld())));
 
-            // コンフィグで指定したワールドが存在しなあい場合
+            // コンフィグで指定したワールドが存在しない場合
             if (backWorld == null) {
                 backWorld = Bukkit.getWorld(DEFAULT_FORCE_TELEPORT_WORLD);
             }

@@ -173,7 +173,7 @@ public final class MatchManager {
     @Nullable
     public Match getJointedMach(@NotNull Player player) {
         return matches.values().stream()
-                .filter(match -> match.getAllJoinPlayers().contains(player))
+                .filter(match -> match.hasParticipation(player))
                 .limit(1)
                 .findFirst()
                 .orElse(null);

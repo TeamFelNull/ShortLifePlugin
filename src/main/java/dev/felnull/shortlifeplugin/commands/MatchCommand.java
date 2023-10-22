@@ -236,7 +236,7 @@ public final class MatchCommand {
             if (players.size() == 1) {
                 Player player = players.get(0);
 
-                if (match.getAllJoinPlayers().contains(player)) {
+                if (match.hasParticipation(player)) {
                     sender.sendRichMessage(String.format("%sは既に参加済みです", player.getName()));
                     return;
                 }
@@ -280,7 +280,7 @@ public final class MatchCommand {
             if (players.size() == 1) {
                 Player player = players.get(0);
 
-                if (!match.getAllJoinPlayers().contains(player)) {
+                if (!match.hasParticipation(player)) {
                     sender.sendRichMessage(String.format("%sは試合に参加していません", player.getName()));
                     return;
                 }

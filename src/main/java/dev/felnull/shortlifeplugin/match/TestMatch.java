@@ -5,7 +5,6 @@ import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +33,7 @@ public class TestMatch extends Match {
         super.baseTick();
 
         Component timeComponent = Component.text(FNStringUtil.getTimeFormat(this.statusTick * 50L));
-        Audience.audience(players).sendActionBar(timeComponent);
+        allPlayerAudience().sendActionBar(timeComponent);
     }
 
     @Override

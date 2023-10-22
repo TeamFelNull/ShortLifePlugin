@@ -4,6 +4,9 @@ import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -141,7 +144,19 @@ public final class SLUtils {
      * @param path パス
      * @return NamespacedKey
      */
-    public static NamespacedKey plLoc(String path) {
+    public static NamespacedKey plLoc(@NotNull String path) {
         return new NamespacedKey(ShortLifePlugin.PLUGIN_ID, path);
+    }
+
+    /**
+     * 指定したチームが登録されているか確認
+     *
+     * @param team チーム
+     * @return 登録されていればtrue、なければfalse
+     */
+    public static boolean isTeamRegistered(@NotNull Team team) {
+        ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
+        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
+        return scoreboard.getTeams().contains(team);
     }
 }

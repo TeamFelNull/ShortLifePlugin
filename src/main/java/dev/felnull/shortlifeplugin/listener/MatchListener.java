@@ -11,6 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
@@ -80,6 +81,23 @@ public final class MatchListener implements Listener {
         // 試合に参加してないプレイヤーが、試合ワールドに参加した場合に強制退出
         if (worldMatch != null) {
             MatchUtils.teleportToLeave(e.getPlayer(), worldMatch.getMatchMapInstance().getStrictWorld());
+        }
+    }
+
+    /**
+     * プレイヤーが死亡した際のイベント
+     *
+     * @param e プレイヤー死亡イベント
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerDeath(PlayerDeathEvent e) {
+        Player target = e.getPlayer();
+        MatchManager matchManager = MatchUtils.getMatchManager();
+        Match match = matchManager.getJointedMach(target);
+
+        // 参加者が死亡した場合、試合の死亡処理を呼ぶ
+        if (match != null) {
+            match.onDeath(target);
         }
     }
 }

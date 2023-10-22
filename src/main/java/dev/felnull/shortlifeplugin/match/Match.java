@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
@@ -14,9 +15,16 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -52,6 +60,11 @@ public abstract class Match {
      * 試合終了から破棄されるまでの時間(ms)
      */
     private static final long DISPOSE_WAIT_TIME = FINISH_WAIT_FOR_TELEPORT + (1000 * 5);
+
+    /**
+     * スポーン後の無敵時間
+     */
+    private static final long SPAWN_INVINCIBILITY_TIME = 1000 * 5;
 
     /**
      * 試合参加時のメッセージ
@@ -107,9 +120,9 @@ public abstract class Match {
     private static final Component MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE = Component.text("参加人数が不足したため試合を終了します").color(NamedTextColor.RED);
 
     /**
-     * 参加しているプレイヤー
+     * 参加しているプレイヤーとプレイヤーデータ
      */
-    protected final List<Player> players = new ArrayList<>();
+    protected final Map<Player, PlayerData> players = new HashMap<>();
 
     /**
      * 同じ状態の経過Tick
@@ -140,7 +153,7 @@ public abstract class Match {
     private final MatchMap matchMap;
 
     /**
-     * カウントダウンを表示用ボスバー
+     * カウントダウン表示用ボスバー
      */
     private final BossBar countDownBossbar = BossBar.bossBar(Component.empty(), 1f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
 
@@ -164,6 +177,16 @@ public abstract class Match {
      * 試合終了後のテレポートを行ったかどうか
      */
     private boolean finishTeleport;
+
+    /**
+     * カウントダウンに表示する時間(ms)
+     */
+    private long countDownTime;
+
+    /**
+     * 情報表示の更新が必要であるフラグ
+     */
+    private boolean dirtyAllInfo;
 
     /**
      * コンストラクタ
@@ -192,7 +215,7 @@ public abstract class Match {
      */
     protected void tick() {
         // 参加を維持できないプレイヤーを退出させる
-        List<Player> leavePlayers = players.stream()
+        List<Player> leavePlayers = players.keySet().stream()
                 .filter(pl -> !canMaintainJoinPlayer(pl))
                 .toList();
         leavePlayers.forEach(player -> leave(player, true));
@@ -207,7 +230,7 @@ public abstract class Match {
 
         baseTick();
 
-        // 状態ごとの処理
+        // 状態別の処理
         switch (getStatus()) {
             case NONE -> beforeStartTick();
             case STARTED -> duringMatchTick();
@@ -215,6 +238,13 @@ public abstract class Match {
             default -> {
             }
         }
+
+        // プレイヤーごとの処理
+        this.players.forEach((player, playerData) -> {
+            playerData.setLifeTime(playerData.getLifeTime() + 1);
+            playerData.updateCheckAndInfo();
+        });
+        Match.this.dirtyAllInfo = false;
     }
 
     /**
@@ -241,7 +271,6 @@ public abstract class Match {
         boolean start = false;
 
         int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
-
         updateCountDownTime(this.statusTick, totalTime);
 
         if (this.statusTick >= totalTime) {
@@ -299,7 +328,7 @@ public abstract class Match {
         if (!finishTeleport && this.statusTick >= totalTime) {
             finishTeleport = true;
 
-            for (final Player player : players) {
+            for (final Player player : players.keySet()) {
                 MatchUtils.teleportToLeave(player, this.matchMapInstance.getMapWorld()
                         .map(MatchMapWorld::getWorld)
                         .orElse(null));
@@ -368,17 +397,17 @@ public abstract class Match {
             return false;
         }
 
+        PlayerData playerData = createPlayerData(player);
+        this.players.put(player, playerData);
 
-        // 既に試合が開始されていれば、試合用マップへ移動
-        if (status == Status.STARTED && matchMapInstance.isReady()) {
+        // プレイヤーのスコアボードを試合用スコアボードに変更
+        playerData.setPreScoreboard(player.getScoreboard());
+        player.setScoreboard(playerData.getScoreboard());
 
-            if (!teleportToJoin(player)) {
-                SLUtils.reportError(new RuntimeException(String.format("プレイヤー(%s)をスポーンさせることができませんでした", player.getName())));
-                return false;
-            }
+        // 試合が既に開始しているならば開始処理
+        if (status == Status.STARTED) {
+            playerStart(player);
         }
-
-        this.players.add(player);
 
         // カウントダウン用ボスバーを表示
         Audience.audience(player).showBossBar(countDownBossbar);
@@ -395,6 +424,27 @@ public abstract class Match {
     }
 
     /**
+     * プレイヤーデータを作成
+     *
+     * @param player プレイヤー
+     * @return プレイヤーデータ
+     */
+    protected PlayerData createPlayerData(@NotNull Player player) {
+        return new PlayerData(player);
+    }
+
+    /**
+     * 指定されたプレイヤーのデータを取得
+     *
+     * @param player プレイヤー
+     * @return プレイヤーデータ
+     */
+    @Nullable
+    public PlayerData getPlayerData(@NotNull Player player) {
+        return this.players.get(player);
+    }
+
+    /**
      * 指定のプレイヤーを試合から退出させる
      *
      * @param player      プレイヤー
@@ -405,9 +455,18 @@ public abstract class Match {
         Objects.requireNonNull(player);
 
         // 参加していないプレイヤーは退出不可
-        if (!this.players.contains(player)) {
+        if (!this.players.containsKey(player)) {
             return false;
         }
+
+        PlayerData playerData = players.get(player);
+
+        // 試合用スコアボードを参加前のスコアボードに戻す
+        Scoreboard preScoreboard = playerData.getPreScoreboard();
+        if (preScoreboard == null) {
+            preScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
+        }
+        player.setScoreboard(preScoreboard);
 
         this.players.remove(player);
 
@@ -439,9 +498,18 @@ public abstract class Match {
     @Unmodifiable
     @NotNull
     public List<Player> getAllJoinPlayers() {
-        return ImmutableList.copyOf(players);
+        return ImmutableList.copyOf(players.keySet());
     }
 
+    /**
+     * 指定されたプレイヤーが参加しているかどうか
+     *
+     * @param player プレイヤー
+     * @return 参加していればtrue、そうでなければfalse
+     */
+    public boolean hasParticipation(@NotNull Player player) {
+        return players.containsKey(player);
+    }
 
     /**
      * 試合を開始
@@ -460,22 +528,54 @@ public abstract class Match {
             return false;
         }
 
-        // 参加中のプレイヤー全員を試合用マップへテレポート
-        if (this.matchMapInstance.getMapWorld().isPresent()) {
-            for (Player player : this.players) {
-                teleportToJoin(player);
-            }
-        } else {
-            SLUtils.reportError(new RuntimeException("ワールドの取得に失敗"));
-            return false;
-        }
-
         changeStatus(Status.STARTED);
+
+        // 参加中のプレイヤーに開始処理
+        for (Player player : this.players.keySet()) {
+            playerStart(player);
+        }
 
         broadcast(MATCH_START_MESSAGE);
 
         SLUtils.getLogger().info(String.format("試合(%s)が開始しました", getId()));
         return true;
+    }
+
+    /**
+     * プレイヤーの開始処理
+     *
+     * @param player プレイヤー
+     */
+    protected void playerStart(@NotNull Player player) {
+        // プレイヤーを試合用ワールドにテレポート
+        if (this.matchMapInstance.isReady()) {
+            if (!teleportToJoin(player)) {
+                SLUtils.reportError(new RuntimeException(String.format("プレイヤー(%s)をスポーンさせることができませんでした", player.getName())));
+            }
+        } else {
+            SLUtils.reportError(new RuntimeException("ワールドの用意が出来ていません"));
+        }
+    }
+
+    /**
+     * 試合開始時のテレポート処理
+     *
+     * @param player プレイヤー
+     * @return 結果
+     */
+    private boolean teleportToJoin(@NotNull Player player) {
+        Location respawnPoint = lotterySpawnLocation(player);
+        if (respawnPoint != null) {
+            // 死亡している場合は強制リスポーン
+            if (player.isDead()) {
+                player.spigot().respawn();
+            }
+
+            player.teleport(respawnPoint);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -515,7 +615,7 @@ public abstract class Match {
         changeStatus(Status.DISCARDED);
 
         // 全プレイヤー退出
-        List<Player> leavePlayers = ImmutableList.copyOf(this.players);
+        List<Player> leavePlayers = ImmutableList.copyOf(this.players.keySet());
         leavePlayers.forEach(player -> leave(player, false));
 
         // カウントダウン用ボスバーの表示を全プレイヤーから消す
@@ -585,12 +685,21 @@ public abstract class Match {
     private void updateCountDownStatus() {
         // カウントダウン用ボスバー更新
         this.countDownBossbar.color(status.getCountDownBossbarColor());
-        this.countDownBossbar.name(status.getCountDownBossbarName());
+        this.countDownBossbar.name(status.getShowName());
     }
 
     private void updateCountDownTime(int compTime, int totalTime) {
+        // カウントダウン用ボスバー更新
         float progress = FNMath.clamp((float) compTime / (float) totalTime, 0, 1);
         this.countDownBossbar.progress(1f - progress);
+
+        long tmpCountDownTime = this.countDownTime;
+        this.countDownTime = Math.max(totalTime - compTime, 0) * 50L;
+
+        //1秒ごとに更新
+        if (tmpCountDownTime / 1000L != this.countDownTime / 1000L) {
+            dirtyAllInfo();
+        }
     }
 
     /**
@@ -620,7 +729,7 @@ public abstract class Match {
      * @param exclusionPlayerPredicate プレイヤーフィルター
      */
     public void broadcast(@NotNull Component component, @NotNull Predicate<Player> exclusionPlayerPredicate) {
-        Audience.audience(players.stream()
+        Audience.audience(players.keySet().stream()
                 .filter(exclusionPlayerPredicate)
                 .toList()).sendMessage(component);
     }
@@ -632,7 +741,7 @@ public abstract class Match {
      * @return オーディエンス
      */
     public Audience allPlayerAudience() {
-        return Audience.audience(players);
+        return Audience.audience(players.keySet());
     }
 
     /**
@@ -678,21 +787,6 @@ public abstract class Match {
     @Nullable
     protected abstract MapMarker getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player);
 
-    private boolean teleportToJoin(@NotNull Player player) {
-        Location respawnPoint = lotterySpawnLocation(player);
-        if (respawnPoint != null) {
-            // 死亡している場合は強制リスポーン
-            if (player.isDead()) {
-                player.spigot().respawn();
-            }
-
-            player.teleport(respawnPoint);
-            return true;
-        }
-
-        return false;
-    }
-
     /**
      * 指定されたプレイヤーが無敵かどうか
      *
@@ -701,14 +795,264 @@ public abstract class Match {
      */
     public boolean isInvinciblePlayer(@NotNull Player player) {
         if (status == Status.FINISHED) {
+            // 試合終了後、試合ワールドにいる場合は無敵
             Optional<MatchMapWorld> matchMapWorld = matchMapInstance.getMapWorld();
             return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
+        } else if (status == Status.STARTED) {
+            // 試合中、スポーン直後は無敵
+            PlayerData playerData = getPlayerData(player);
+
+            if (playerData != null) {
+                int invTick = SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME);
+                return playerData.getLifeTime() <= invTick;
+            }
+
+            return false;
         }
         return false;
     }
 
     public MatchMapInstance getMatchMapInstance() {
         return matchMapInstance;
+    }
+
+    /**
+     * プレイヤー死亡時に呼び出し
+     *
+     * @param target 死亡したプレイヤー
+     */
+    public void onDeath(@NotNull Player target) {
+        PlayerData targetData = players.get(target);
+
+        if (targetData != null) {
+            targetData.setDeathCount(targetData.getDeathCount() + 1);
+            targetData.setKillStreakCount(0);
+            targetData.setLifeTime(0);
+        }
+
+        Player attacker = target.getKiller();
+        if (attacker != null && players.containsKey(attacker)) {
+            onPlayerKill(target, attacker);
+        }
+    }
+
+    /**
+     * プレイヤーキル時に呼び出し
+     *
+     * @param target   対象
+     * @param attacker 攻撃者
+     */
+    protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) {
+        PlayerData attackerData = players.get(attacker);
+
+        if (attackerData != null) {
+            attackerData.setKillCount(attackerData.getKillCount() + 1);
+            attackerData.setKillStreakCount(attackerData.getKillStreakCount() + 1);
+        }
+    }
+
+    /**
+     * 情報表示を更新するフラグを立てる
+     */
+    protected void dirtyAllInfo() {
+        this.dirtyAllInfo = true;
+    }
+
+    /**
+     * プレイヤーごとのデータ
+     *
+     * @author MORIMORI0317
+     */
+    public class PlayerData {
+
+        /**
+         * このデータのプレイヤー
+         */
+        @NotNull
+        private final Player player;
+
+        /**
+         * プレイヤーごとの試合用スコアボード<br/>
+         */
+        private final Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+
+        /**
+         * 情報表示用サイドバーのディスプレイ
+         */
+        @NotNull
+        private final SidebarDisplay infoSidebarDisplay;
+
+        /**
+         * 試合用スコアボードにセットされる前のスコアボード
+         */
+        private Scoreboard preScoreboard;
+
+        /**
+         * キル数
+         */
+        private int killCount;
+
+        /**
+         * 連続キル数
+         */
+        private int killStreakCount;
+
+        /**
+         * 死亡数
+         */
+        private int deathCount;
+
+        /**
+         * 情報表示の更新が必要であるフラグ
+         */
+        private boolean dirtyInfo;
+
+        /**
+         * 生存時間 (Tick)
+         */
+        private int lifeTime;
+
+        /**
+         * コンストラクタ
+         *
+         * @param player プレイヤー
+         */
+        protected PlayerData(@NotNull Player player) {
+            this.player = player;
+            Objective sidebarObjective = scoreboard.registerNewObjective("sidebar-info", Criteria.DUMMY,
+                    Component.text("試合情報").style(Style.style().color(NamedTextColor.BLUE).decorate(TextDecoration.BOLD).build()));
+            sidebarObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+            this.infoSidebarDisplay = new SidebarDisplay(sidebarObjective);
+        }
+
+        /**
+         * サイドバー情報の確認と更新
+         */
+        public void updateCheckAndInfo() {
+            // 表示更新フラグの確認とリセット
+            if (!(this.dirtyInfo || Match.this.dirtyAllInfo)) {
+                return;
+            }
+            this.dirtyInfo = false;
+
+            updateInfo();
+        }
+
+        /**
+         * 表示情報を更新
+         */
+        protected void updateInfo() {
+            // サイドバーを更新
+            List<String> sidebarInfos = new LinkedList<>();
+            appendSidebarInfo(sidebarInfos);
+            this.infoSidebarDisplay.update(sidebarInfos);
+        }
+
+        /**
+         * サイドバー情報として、表示する文字列をリストに追加する
+         *
+         * @param sidebarInfos 情報表示の文字列リスト
+         */
+        protected void appendSidebarInfo(@NotNull List<String> sidebarInfos) {
+            appendSidebarMatchInfo(sidebarInfos);
+            sidebarInfos.add("");
+            appendSidebarPlayerInfo(sidebarInfos);
+        }
+
+        /**
+         * 試合関係の情報をサイドバーに追加
+         *
+         * @param sidebarInfos サイドバー情報の文字列リスト
+         */
+        protected void appendSidebarMatchInfo(@NotNull List<String> sidebarInfos) {
+            sidebarInfos.add(String.format("試合モード: %s", Match.this.matchMode.id()));
+            sidebarInfos.add(String.format("状態: %s", Match.this.getStatus().name()));
+            sidebarInfos.add(String.format("残り試合時間: %s", FNStringUtil.getTimeFormat(Match.this.countDownTime)));
+        }
+
+        /**
+         * プレイヤー関係の情報をサイドバーに追加
+         *
+         * @param sidebarInfos サイドバー情報の文字列リスト
+         */
+        protected void appendSidebarPlayerInfo(@NotNull List<String> sidebarInfos) {
+            sidebarInfos.add(String.format("キル数: %s", this.killCount));
+            sidebarInfos.add(String.format("連続キル数: %s", this.killStreakCount));
+            sidebarInfos.add(String.format("死亡数: %s", this.deathCount));
+        }
+
+        public Scoreboard getPreScoreboard() {
+            return preScoreboard;
+        }
+
+        public void setPreScoreboard(Scoreboard preScoreboard) {
+            this.preScoreboard = preScoreboard;
+        }
+
+        public Scoreboard getScoreboard() {
+            return scoreboard;
+        }
+
+        public int getDeathCount() {
+            return deathCount;
+        }
+
+        /**
+         * 死亡数セットと表示更新フラグを立てる
+         *
+         * @param deathCount 死亡数
+         */
+        public void setDeathCount(int deathCount) {
+            this.deathCount = deathCount;
+            dirtyInfo();
+        }
+
+        public int getKillCount() {
+            return killCount;
+        }
+
+        /**
+         * キル数セットと表示更新フラグを立てる
+         *
+         * @param killCount キル数
+         */
+        public void setKillCount(int killCount) {
+            this.killCount = killCount;
+            dirtyInfo();
+        }
+
+        public int getKillStreakCount() {
+            return killStreakCount;
+        }
+
+        /**
+         * 連続キル数セットと表示更新フラグを立てる
+         *
+         * @param killStreakCount 連続キル数
+         */
+        public void setKillStreakCount(int killStreakCount) {
+            this.killStreakCount = killStreakCount;
+            dirtyInfo();
+        }
+
+        /**
+         * 情報表示を更新するフラグを立てる
+         */
+        protected void dirtyInfo() {
+            this.dirtyInfo = true;
+        }
+
+        public Player getPlayer() {
+            return player;
+        }
+
+        public int getLifeTime() {
+            return lifeTime;
+        }
+
+        public void setLifeTime(int lifeTime) {
+            this.lifeTime = lifeTime;
+        }
     }
 
     /**
@@ -744,15 +1088,14 @@ public abstract class Match {
         private final Component name;
 
         /**
-         * カウントダウン用ボスバーの表示名
+         * 表示名
          */
-        private final Component countDownBossbarName;
+        private final Component showName;
 
         /**
          * カウントダウン用ボスバーの色
          */
         private final BossBar.Color countDownBossbarColor;
-
 
         /**
          * コンストラクタ
@@ -763,7 +1106,7 @@ public abstract class Match {
          */
         Status(Component name, Component countDownBossbarName, BossBar.Color countDownBossbarColor) {
             this.name = name;
-            this.countDownBossbarName = countDownBossbarName;
+            this.showName = countDownBossbarName;
             this.countDownBossbarColor = countDownBossbarColor;
         }
 
@@ -775,8 +1118,8 @@ public abstract class Match {
             return countDownBossbarColor;
         }
 
-        public Component getCountDownBossbarName() {
-            return countDownBossbarName;
+        public Component getShowName() {
+            return showName;
         }
     }
 }

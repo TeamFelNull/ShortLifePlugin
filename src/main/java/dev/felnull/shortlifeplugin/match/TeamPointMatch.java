@@ -18,7 +18,7 @@ import java.util.List;
  * @author MORIMORI0317
  */
 public class TeamPointMatch extends TeamBaseMatch {
-    
+
     /**
      * コンストラクタ
      *
@@ -94,16 +94,20 @@ public class TeamPointMatch extends TeamBaseMatch {
         // 勝敗処理
         for (MatchTeam team : teams) {
             Component retText;
+            String subtitle;
 
             if (draw) {
                 retText = Component.text("引き分け").color(NamedTextColor.GRAY);
+                subtitle = "これもぉわかんねぇな";
             } else if (mostPointTeams.contains((PointMatchTeam) team)) {
                 retText = Component.text("勝利").color(NamedTextColor.RED);
+                subtitle = "やりますねぇ！";
             } else {
                 retText = Component.text("敗北").color(NamedTextColor.BLUE);
+                subtitle = "何で負けたか、次の試合まで考えといてください";
             }
 
-            Title title = Title.title(retText, Component.text("試合終了!"));
+            Title title = Title.title(retText, Component.text(subtitle));
             team.audience().showTitle(title);
         }
     }

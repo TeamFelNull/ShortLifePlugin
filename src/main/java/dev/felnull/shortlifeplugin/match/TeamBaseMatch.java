@@ -5,6 +5,7 @@ import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
@@ -21,7 +22,7 @@ import java.util.*;
  *
  * @author MORIMORI0317
  */
-public abstract class TeamBaseMatch extends Match {
+public abstract class TeamBaseMatch extends PVPBaseMatch {
 
     /**
      * チームの参加者が存在しない場合のメッセージ
@@ -31,7 +32,7 @@ public abstract class TeamBaseMatch extends Match {
     /**
      * チームのリスト
      */
-    private final List<MatchTeam> teams = new ArrayList<>();
+    protected final List<MatchTeam> teams = new ArrayList<>();
 
     /**
      * コンストラクタ
@@ -66,9 +67,22 @@ public abstract class TeamBaseMatch extends Match {
         super.init();
 
         // チーム初期化
-        teams.add(new MatchTeam("赤", NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1));
-        teams.add(new MatchTeam("青", NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2));
+        teams.add(createMatchTeam("赤", NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1));
+        teams.add(createMatchTeam("青", NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2));
     }
+
+    /**
+     * チーム作成
+     *
+     * @param name              チーム名
+     * @param color             チームカラー
+     * @param respawnPointMaker リスポーン地点マーカー
+     * @return チーム
+     */
+    protected MatchTeam createMatchTeam(@NotNull String name, @NotNull NamedTextColor color, @NotNull NamespacedKey respawnPointMaker) {
+        return new MatchTeam(name, color, respawnPointMaker);
+    }
+
 
     @Override
     protected void tick() {
@@ -199,16 +213,19 @@ public abstract class TeamBaseMatch extends Match {
         /**
          * チーム名
          */
+        @NotNull
         private final String name;
 
         /**
          * チームカラー
          */
+        @NotNull
         private final NamedTextColor color;
 
         /**
          * リスポーン地点のマーカー
          */
+        @NotNull
         private final NamespacedKey respawnPoint;
 
         /**
@@ -223,16 +240,18 @@ public abstract class TeamBaseMatch extends Match {
          * @param color             チームカラー
          * @param respawnPointMaker リスポーン地点
          */
-        public MatchTeam(String name, NamedTextColor color, NamespacedKey respawnPointMaker) {
+        public MatchTeam(@NotNull String name, @NotNull NamedTextColor color, @NotNull NamespacedKey respawnPointMaker) {
             this.name = name;
             this.color = color;
             this.respawnPoint = respawnPointMaker;
         }
 
+        @NotNull
         public NamedTextColor getColor() {
             return color;
         }
 
+        @NotNull
         public NamespacedKey getRespawnPoint() {
             return respawnPoint;
         }
@@ -280,13 +299,24 @@ public abstract class TeamBaseMatch extends Match {
             this.participationPlayers.remove(player);
         }
 
+        @NotNull
         public String getName() {
             return name;
+        }
+
+
+        /**
+         * チームのメンバーオーディエンスを取得
+         *
+         * @return オーディエンス
+         */
+        public Audience audience() {
+            return Audience.audience(this.participationPlayers);
         }
     }
 
     /**
-     * チーム戦のプレイヤーデータ
+     * チーム試合のプレイヤーデータ
      *
      * @author MORIMORI0317
      */
@@ -336,13 +366,21 @@ public abstract class TeamBaseMatch extends Match {
 
         @Override
         protected void appendSidebarPlayerInfo(@NotNull List<String> sidebarInfos) {
+            appendSidebarTeamInfo(sidebarInfos);
+            super.appendSidebarPlayerInfo(sidebarInfos);
+        }
+
+        /**
+         * チーム関係の情報をサイドバーに追加
+         *
+         * @param sidebarInfos サイドバー情報の文字列リスト
+         */
+        protected void appendSidebarTeamInfo(@NotNull List<String> sidebarInfos) {
             MatchTeam team = getTeamByPlayer(getPlayer());
 
             if (team != null) {
                 sidebarInfos.add(String.format("チーム: %s", team.getName()));
             }
-
-            super.appendSidebarPlayerInfo(sidebarInfos);
         }
     }
 }

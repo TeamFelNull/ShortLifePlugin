@@ -5,7 +5,6 @@ import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
-import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -22,12 +21,19 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.window.Window;
 
+import java.util.Random;
+
 /**
  * 試合モード選択GUIアイテム
  *
  * @author MORIMORI0317
  */
 public class MatchModeSelectItem extends AbstractItem {
+
+    /**
+     * ランダム
+     */
+    private static final Random RANDOM = new Random();
 
     /**
      * 試合を作成して参加する際のメッセージ
@@ -119,7 +125,7 @@ public class MatchModeSelectItem extends AbstractItem {
         sendAaudience.sendMessage(notifierMessage);
 
         String clickHereText;
-        if (SLUtils.TORANPFAN_UUID.equals(player.getUniqueId())) {
+        if (RANDOM.nextInt(810) == 0) {
             clickHereText = "[こ↑こ↓をクリック]";
         } else {
             clickHereText = "[ここをクリック]";

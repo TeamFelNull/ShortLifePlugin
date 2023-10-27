@@ -1,3 +1,5 @@
+test-mode: false # テストモードを有効にするかどうか >>>>> 本番環境では必ずfalseにしてください！ <<<<<
+
 match: # 試合関係
   leave: # 退出
     perform-command: spawn # 退出時に実行するコマンド

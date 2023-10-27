@@ -13,6 +13,7 @@ import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
@@ -66,6 +67,11 @@ public abstract class Match {
      * スポーン後の無敵時間
      */
     private static final long SPAWN_INVINCIBILITY_TIME = 1000 * 5;
+
+    /**
+     * カウントを開始する残り秒数
+     */
+    private static final int COUNT_START_REMNANT_SECOND = 10;
 
     /**
      * 試合参加時のメッセージ
@@ -582,6 +588,9 @@ public abstract class Match {
         } else {
             SLUtils.reportError(new RuntimeException("ワールドの用意が出来ていません"));
         }
+
+        // 開始音
+        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP.key(), Sound.Source.MASTER, 1, 0.1f));
     }
 
     /**
@@ -619,11 +628,23 @@ public abstract class Match {
 
         changeStatus(Status.FINISHED);
 
+        // 終了音
+        allPlayerAudience()
+                .playSound(Sound.sound(org.bukkit.Sound.BLOCK_ANVIL_PLACE.key(), Sound.Source.MASTER, 1, 0.5f));
+
+        matchEnd();
+
         broadcast(MATCH_FINISH_MESSAGE);
 
         SLUtils.getLogger().info(String.format("試合(%s)が終了しました", getId()));
         return true;
     }
+
+
+    /**
+     * 試合終了処理
+     */
+    protected abstract void matchEnd();
 
     /**
      * 試合を破棄するフラグを立てる
@@ -720,13 +741,24 @@ public abstract class Match {
         float progress = FNMath.clamp((float) compTime / (float) totalTime, 0, 1);
         this.countDownBossbar.progress(1f - progress);
 
+        int remnantTick = totalTime - compTime;
         long tmpCountDownTime = this.countDownTime;
-        this.countDownTime = Math.max(totalTime - compTime, 0) * 50L;
+        this.countDownTime = Math.max(remnantTick, 0) * 50L;
 
         //1秒ごとに更新
         if (tmpCountDownTime / 1000L != this.countDownTime / 1000L) {
             dirtyAllInfo();
         }
+
+        if (status == Status.NONE || status == Status.STARTED) {
+            // カウントダウン音
+            int remnantSecond = remnantTick / 20;
+            if (remnantTick >= 0 && COUNT_START_REMNANT_SECOND >= remnantSecond && remnantTick % 20 == 0) {
+                allPlayerAudience()
+                        .playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_HARP.key(), Sound.Source.MASTER, 1, 0.5f));
+            }
+        }
+
     }
 
     /**

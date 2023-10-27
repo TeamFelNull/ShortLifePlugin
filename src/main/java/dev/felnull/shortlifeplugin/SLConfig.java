@@ -26,6 +26,15 @@ public final class SLConfig {
     }
 
     /**
+     * テストモードかどうか
+     *
+     * @return テストモードであればtrue、でなければfalse
+     */
+    public static boolean isTestMode() {
+        return getConfig().getBoolean("test-mode");
+    }
+
+    /**
      * 試合から退出する際に実行されるコマンド
      *
      * @return コマンド

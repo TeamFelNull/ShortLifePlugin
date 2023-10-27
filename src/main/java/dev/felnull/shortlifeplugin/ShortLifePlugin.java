@@ -11,6 +11,7 @@ import dev.felnull.shortlifeplugin.utils.SLUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import net.kunmc.lab.ikisugilogger.IkisugiLogger;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.codehaus.plexus.util.FileUtils;
 
@@ -46,6 +47,9 @@ public final class ShortLifePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        SLConfig.init(this);
+        versionCheck();
+
         // IKISUGI LOG
         IkisugiLogger logger = new IkisugiLogger("very ikisugi\nshort life");
         logger.setColorType(IkisugiLogger.ColorType.RAINBOW);
@@ -53,7 +57,6 @@ public final class ShortLifePlugin extends JavaPlugin {
         getLogger().info(logger.createLn());
 
         SLCommands.register();
-        SLConfig.init(this);
         clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
@@ -65,6 +68,41 @@ public final class ShortLifePlugin extends JavaPlugin {
         CommandAPI.onEnable();
 
         getLogger().info("ShortLife Pluginが開始しました");
+    }
+
+
+    /**
+     * バージョン確認
+     */
+    private void versionCheck() {
+        // テストモードではバージョン確認をスキップ
+        if (!SLConfig.isTestMode()) {
+            String version = this.getPluginMeta().getVersion();
+            DefaultArtifactVersion artifactVersion = new DefaultArtifactVersion(version);
+
+            boolean unstableVersion = false;
+
+            if (artifactVersion.getQualifier().contains("+")) {
+                // 1.x.x-alpha.x+pre.x のようにビルドメタデータが存在する場合は、不安定バージョンとみなす
+                unstableVersion = true;
+            } else if (artifactVersion.getMinorVersion() == 0 && artifactVersion.getMajorVersion() == 0
+                    && artifactVersion.getIncrementalVersion() == 0 && artifactVersion.getBuildNumber() == 0) {
+                // 全てのバージョン値が0であれば、不正な形のバージョンであるため、不安定バージョンとみなす
+                unstableVersion = true;
+            }
+
+            if (unstableVersion) {
+                getLogger().warning("本番環境では、このバージョンを起動できません");
+                getLogger().warning("もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください");
+
+                IkisugiLogger logger = new IkisugiLogger("not ikisugi\nshort life");
+                logger.setColorType(IkisugiLogger.ColorType.CHRISTMAS);
+                logger.setCenter(true);
+                getLogger().info(logger.createLn());
+
+                throw new RuntimeException("このバージョンはテストモードでのみ起動可能です");
+            }
+        }
     }
 
     @Override

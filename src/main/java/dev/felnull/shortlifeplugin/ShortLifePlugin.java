@@ -21,7 +21,7 @@ import java.io.IOException;
 /**
  * プラグインが有効、無効になった際の処理を行うクラス
  *
- * @author IDEA自動生成, MORIMORI0317, nin8995
+ * @author IDEA自動生成, MORIMORI0317, miyabi0333
  */
 public final class ShortLifePlugin extends JavaPlugin {
 
@@ -51,7 +51,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         versionCheck();
 
         // IKISUGI LOG
-        IkisugiLogger logger = new IkisugiLogger("h.ikisugi\nshort life");
+        IkisugiLogger logger = new IkisugiLogger("very ikisugi\nshort life");
         logger.setColorType(IkisugiLogger.ColorType.RAINBOW);
         logger.setCenter(true);
         getLogger().info(logger.createLn());

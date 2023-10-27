@@ -21,7 +21,7 @@ import java.io.IOException;
 /**
  * プラグインが有効、無効になった際の処理を行うクラス
  *
- * @author IDEA自動生成, MORIMORI0317, miyabi0333
+ * @author IDEA自動生成, MORIMORI0317, miyabi0333, nin8995
  */
 public final class ShortLifePlugin extends JavaPlugin {
 

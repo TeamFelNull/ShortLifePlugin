@@ -49,14 +49,14 @@ public abstract class Match {
     protected static final Random RANDOM = new Random();
 
     /**
+     * 試合終了後にテレポートするまでの時間
+     */
+    protected static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
+
+    /**
      * 試合が開始するまでの時間(ms)
      */
     private static final long START_WAIT_TIME = 1000 * 30;
-
-    /**
-     * 試合終了後にテレポートするまでの時間
-     */
-    private static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
 
     /**
      * 試合終了から破棄されるまでの時間(ms)

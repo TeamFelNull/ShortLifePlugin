@@ -1,11 +1,9 @@
 package dev.felnull.shortlifeplugin.match;
 
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
-import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
+import dev.felnull.shortlifeplugin.match.map.MatchMapValidator;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.function.Predicate;
 
 
 /**
@@ -20,12 +18,13 @@ import java.util.function.Predicate;
  * @param maxPlayerCount 最大参加プレイヤー数
  * @param matchProvider  試合インスタンスプロバイダー
  * @param mapValidator   マップ検証
+ * @param testOnly       テスト用モードかどうか
  * @author MORIMORI0317
  */
 public record MatchMode(@NotNull String id, @NotNull String name, @NotNull Material iconItem,
                         @NotNull MatchType matchType, long limitTime,
                         int minPlayerCount, int maxPlayerCount, @NotNull MatchMode.MatchProvider matchProvider,
-                        @NotNull Predicate<MatchMapWorld> mapValidator) {
+                        @NotNull MatchMapValidator mapValidator, boolean testOnly) {
 
     /**
      * 試合プロバイダー

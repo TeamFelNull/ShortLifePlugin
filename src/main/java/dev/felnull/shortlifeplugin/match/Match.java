@@ -434,6 +434,8 @@ public abstract class Match {
             player.sendMessage(MATCH_JOIN_MESSAGE);
         }
 
+        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 1.1f));
+
         broadcast(MATCH_JOIN_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
 
         SLUtils.getLogger().info(String.format("%sが試合(%s)に参加しました", player.getName(), getId()));
@@ -509,6 +511,8 @@ public abstract class Match {
             player.sendMessage(MATCH_LEAVE_MESSAGE);
             broadcast(MATCH_LEAVE_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
         }
+
+        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 0.9f));
 
         SLUtils.getLogger().info(String.format("%sが試合(%s)から退出しました", player.getName(), getId()));
         return true;

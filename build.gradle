@@ -7,7 +7,6 @@ plugins {
 }
 
 group = 'dev.felnull'
-version = '1.0.0-alpha.1+pre.4'
 
 checkstyle {
     toolVersion = "10.12.2"

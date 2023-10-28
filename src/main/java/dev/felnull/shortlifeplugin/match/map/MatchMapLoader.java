@@ -259,9 +259,7 @@ public class MatchMapLoader {
                 }, tickExecutor).thenApplyAsync(matchMapWorld -> {
                     /* Tick同期でマップ検証 */
 
-                    if (!matchMode.mapValidator().test(matchMapWorld)) {
-                        throw new RuntimeException("マップの検証に失敗");
-                    }
+                    matchMode.mapValidator().validate(matchMapWorld);
 
                     return matchMapWorld;
                 }, tickExecutor);

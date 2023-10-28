@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.gui;
 
 import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeIconItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeSelectItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchRoomSelectItem;
@@ -122,6 +123,7 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
 
         List<MatchMode> modes = MatchModes.getAllModes().values().stream()
                 .filter(mode -> mode.matchType() == matchType)
+                .filter(mode -> SLConfig.isTestMode() || !mode.testOnly()) // テスト時のみテストモードを表示
                 .limit(gui.getSize())
                 .toList();
 

@@ -22,6 +22,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -49,14 +51,14 @@ public abstract class Match {
     protected static final Random RANDOM = new Random();
 
     /**
+     * 試合終了後にテレポートするまでの時間
+     */
+    protected static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
+
+    /**
      * 試合が開始するまでの時間(ms)
      */
     private static final long START_WAIT_TIME = 1000 * 30;
-
-    /**
-     * 試合終了後にテレポートするまでの時間
-     */
-    private static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
 
     /**
      * 試合終了から破棄されるまでの時間(ms)
@@ -434,6 +436,8 @@ public abstract class Match {
             player.sendMessage(MATCH_JOIN_MESSAGE);
         }
 
+        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 1.1f));
+
         broadcast(MATCH_JOIN_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
 
         SLUtils.getLogger().info(String.format("%sが試合(%s)に参加しました", player.getName(), getId()));
@@ -510,6 +514,8 @@ public abstract class Match {
             broadcast(MATCH_LEAVE_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
         }
 
+        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 0.9f));
+
         SLUtils.getLogger().info(String.format("%sが試合(%s)から退出しました", player.getName(), getId()));
         return true;
     }
@@ -579,6 +585,16 @@ public abstract class Match {
         }
         player.setGameMode(GameMode.ADVENTURE);
 
+        // 体力全回復
+        AttributeInstance healthAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        if (healthAttribute != null) {
+            double maxHealth = healthAttribute.getValue();
+            player.setHealth(maxHealth);
+        }
+
+        // 食料値全回復
+        player.setFoodLevel(20);
+        player.setSaturation(20);
 
         // プレイヤーを試合用ワールドにテレポート
         if (this.matchMapInstance.isReady()) {

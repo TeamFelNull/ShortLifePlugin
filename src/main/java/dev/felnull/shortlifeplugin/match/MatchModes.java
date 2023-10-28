@@ -2,7 +2,7 @@ package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
-import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
+import dev.felnull.shortlifeplugin.match.map.MatchMapValidator;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * 試合モードのレジストリ
@@ -24,14 +23,14 @@ public final class MatchModes {
      */
     public static final MatchMode TEST =
             new MatchMode("test", "テスト", Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
-                    1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN));
+                    1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN), true);
 
     /**
      * チームポイント制試合モード
      */
     public static final MatchMode TEAM_POINT =
             new MatchMode("team_point", "チーム-ポイント制", Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
-                    2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1, MapMarkerPoints.SPAWN_TEAM2));
+                    2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1, MapMarkerPoints.SPAWN_TEAM2), false);
 
     /*
      FFA試合モード
@@ -79,19 +78,18 @@ public final class MatchModes {
     }
 
 
-    private static Predicate<MatchMapWorld> mapPointCheck(NamespacedKey point, NamespacedKey... points) {
+    private static MatchMapValidator mapPointCheck(NamespacedKey point, NamespacedKey... points) {
         return matchMapWorld -> {
+
             if (matchMapWorld.getMarker(point).isEmpty()) {
-                return false;
+                throw new RuntimeException(String.format("必要なマーカー地点(%s)が存在しません", point.asString()));
             }
 
             for (NamespacedKey key : points) {
                 if (matchMapWorld.getMarker(key).isEmpty()) {
-                    return false;
+                    throw new RuntimeException(String.format("必要なマーカー地点(%s)が存在しません", key.asString()));
                 }
             }
-
-            return true;
         };
     }
 }

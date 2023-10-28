@@ -4,11 +4,15 @@ import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
+import net.kyori.adventure.util.Ticks;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
+import java.time.Duration;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -18,6 +22,37 @@ import java.util.List;
  * @author MORIMORI0317
  */
 public class TeamPointMatch extends TeamBaseMatch {
+
+    /**
+     * 勝利時のテキスト
+     */
+    private static final MatchEndTextProvider[] WIN_TEXTS = {
+            (myTeam, winners, losers) -> "おめでとう！",
+            (myTeam, winners, losers) -> String.format("%sチームに勝ち目はありません", losers.stream()
+                    .min(Comparator.comparing(PointMatchTeam::getPoint))
+                    .map(MatchTeam::getName)
+                    .orElse("負けた"))
+    };
+
+    /**
+     * 敗北時のテキスト
+     */
+    private static final MatchEndTextProvider[] LOSE_TEXTS = {
+            (myTeam, winners, losers) -> "残念！",
+            (myTeam, winners, losers) -> "次は頑張ろう",
+            (myTeam, winners, losers) -> "何で負けたか、次の試合まで考えといてください",
+            (myTeam, winners, losers) -> "ああ逃れられない!",
+            (myTeam, winners, losers) -> "なかなか難しいねんな...",
+            (myTeam, winners, losers) -> "いやーキツイっす"
+    };
+
+    /**
+     * 引き分け時のテキスト
+     */
+    private static final MatchEndTextProvider[] DRAW_TEXTS = {
+            (myTeam, winners, losers) -> "こんなんじゃ勝負になんないよ",
+            (myTeam, winners, losers) -> "あほくさ"
+    };
 
     /**
      * コンストラクタ
@@ -91,23 +126,38 @@ public class TeamPointMatch extends TeamBaseMatch {
             }
         }
 
+        // 負けチーム、引き分け時は空
+        List<PointMatchTeam> losers = new LinkedList<>();
+
+        if (!draw) {
+            // 負けチームのみ抽出
+            losers.addAll(teams.stream()
+                    .filter(it -> it instanceof PointMatchTeam)
+                    .map(it -> (PointMatchTeam) it)
+                    .filter(team -> !mostPointTeams.contains(team))
+                    .limit(teams.size() - mostPointTeams.size())
+                    .toList());
+        }
+
         // 勝敗処理
         for (MatchTeam team : teams) {
             Component retText;
-            String subtitle;
+            MatchEndTextProvider subtitleProvider;
 
             if (draw) {
                 retText = Component.text("引き分け").color(NamedTextColor.GRAY);
-                subtitle = "これもぉわかんねぇな";
+                subtitleProvider = DRAW_TEXTS[RANDOM.nextInt(DRAW_TEXTS.length)];
             } else if (mostPointTeams.contains((PointMatchTeam) team)) {
                 retText = Component.text("勝利").color(NamedTextColor.RED);
-                subtitle = "やりますねぇ！";
+                subtitleProvider = WIN_TEXTS[RANDOM.nextInt(WIN_TEXTS.length)];
             } else {
                 retText = Component.text("敗北").color(NamedTextColor.BLUE);
-                subtitle = "何で負けたか、次の試合まで考えといてください";
+                subtitleProvider = LOSE_TEXTS[RANDOM.nextInt(LOSE_TEXTS.length)];
             }
 
-            Title title = Title.title(retText, Component.text(subtitle));
+            String subtitle = subtitleProvider.provide((PointMatchTeam) team, mostPointTeams, losers);
+            Title.Times times = Title.Times.times(Ticks.duration(10), Duration.ofMillis(FINISH_WAIT_FOR_TELEPORT - (FINISH_WAIT_FOR_TELEPORT / 4)), Ticks.duration(20));
+            Title title = Title.title(retText, Component.text(subtitle), times);
             team.audience().showTitle(title);
         }
     }
@@ -185,5 +235,24 @@ public class TeamPointMatch extends TeamBaseMatch {
 
             sidebarInfos.add(pointSb.toString());
         }
+    }
+
+    /**
+     * 試合終了時のテキスト取得用
+     *
+     * @author MORIMORI0317
+     */
+    private interface MatchEndTextProvider {
+
+        /**
+         * 試合終了時のテキスト取得
+         *
+         * @param myTeam  自分のチーム
+         * @param winners 勝ったチーム
+         * @param losers  負けチーム、引き分け時は空
+         * @return 文字列
+         */
+        @NotNull
+        String provide(@NotNull PointMatchTeam myTeam, @NotNull @Unmodifiable List<PointMatchTeam> winners, @NotNull @Unmodifiable List<PointMatchTeam> losers);
     }
 }

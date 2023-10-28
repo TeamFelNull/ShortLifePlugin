@@ -8,8 +8,6 @@ import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import net.kunmc.lab.ikisugilogger.IkisugiLogger;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -41,11 +39,6 @@ public final class ShortLifePlugin extends JavaPlugin {
     private MatchManager matchManager;
 
     @Override
-    public void onLoad() {
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true));
-    }
-
-    @Override
     public void onEnable() {
         SLConfig.init(this);
         versionCheck();
@@ -64,8 +57,6 @@ public final class ShortLifePlugin extends JavaPlugin {
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);
-
-        CommandAPI.onEnable();
 
         getLogger().info("ShortLife Pluginが開始しました");
     }
@@ -110,8 +101,6 @@ public final class ShortLifePlugin extends JavaPlugin {
 
         // リロード後に補完が動かくなるため、必ずコマンドを登録解除してください。
         SLCommands.unregister();
-
-        CommandAPI.onDisable();
 
         if (this.matchManager != null) {
             this.matchManager.dispose();

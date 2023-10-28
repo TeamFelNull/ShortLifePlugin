@@ -22,6 +22,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -583,6 +585,16 @@ public abstract class Match {
         }
         player.setGameMode(GameMode.ADVENTURE);
 
+        // 体力全回復
+        AttributeInstance healthAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        if (healthAttribute != null) {
+            double maxHealth = healthAttribute.getValue();
+            player.setHealth(maxHealth);
+        }
+
+        // 食料値全回復
+        player.setFoodLevel(20);
+        player.setSaturation(20);
 
         // プレイヤーを試合用ワールドにテレポート
         if (this.matchMapInstance.isReady()) {

@@ -54,7 +54,6 @@ public class TeamPointMatch extends TeamBaseMatch {
             (myTeam, winners, losers) -> "あほくさ"
     };
 
-
     /**
      * コンストラクタ
      *

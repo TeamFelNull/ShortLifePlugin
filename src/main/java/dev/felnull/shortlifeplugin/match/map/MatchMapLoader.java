@@ -24,6 +24,13 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
@@ -69,6 +76,11 @@ public class MatchMapLoader {
      * ワールド名の接頭辞
      */
     private static final String WORLD_NAME_PREFIX = "world_match/";
+
+    /**
+     * ワールドガードのグローバルリージョンID
+     */
+    private static final String GLOBAL_REGION_ID = "__global__";
 
     /**
      * Tickに同期して処理を行うExecutor
@@ -257,6 +269,35 @@ public class MatchMapLoader {
 
                     return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
                 }, tickExecutor).thenApplyAsync(matchMapWorld -> {
+                    /* Tick同期でマップ保護 */
+
+                    // https://worldguard.enginehub.org/en/latest/developer/regions/managers/
+                    // https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/
+                    // https://worldguard.enginehub.org/en/latest/regions/global-region/
+
+                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(matchMapWorld.getWorld()));
+
+                    if (regionManager == null) {
+                        throw new RuntimeException("ワールドガードのリージョンマネージャーを取得できません。");
+                    }
+
+                    // 保護対象のリージョンを取得
+                    ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
+                    if (region == null) {
+                        // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
+                        region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
+                        regionManager.addRegion(region);
+                    }
+
+                    // 保護フラグ指定
+                    region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
+                    region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
+                    region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
+                    region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+
+                    return matchMapWorld;
+                }, tickExecutor).thenApplyAsync(matchMapWorld -> {
                     /* Tick同期でマップ検証 */
 
                     matchMode.mapValidator().validate(matchMapWorld);
@@ -383,7 +424,7 @@ public class MatchMapLoader {
 
             // フォルダーのコピー
             try {
-                FileUtils.copyDirectory(worldCacheFile, worldFolder);
+                FileUtils.copyDirectoryStructure(worldCacheFile, worldFolder);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -442,6 +483,12 @@ public class MatchMapLoader {
             File worldFolder = world.getWorldFolder();
             Bukkit.unloadWorld(world, true);
 
+            // uid.datを削除
+            File uidFile = new File(worldFolder, "uid.dat");
+            if (!uidFile.delete()) {
+                throw new RuntimeException("uid.datの削除に失敗");
+            }
+
             SLUtils.getLogger().info("ワールドデータのキャッシュ生成完了");
 
             return worldFolder;
@@ -455,12 +502,6 @@ public class MatchMapLoader {
                 FileUtils.rename(worldFolder, tmpWorldFolder);
             } catch (IOException e) {
                 throw new RuntimeException(e);
-            }
-
-            // uid.datを削除
-            File uidFile = new File(tmpWorldFolder, "uid.dat");
-            if (!uidFile.delete()) {
-                throw new RuntimeException("uid.datの削除に失敗");
             }
 
             return tmpWorldFolder;

@@ -75,7 +75,6 @@ public final class MatchUtils {
             needForceTeleport = true;
         }
 
-
         if (!player.performCommand(SLConfig.getMatchLeavePerformCommand())) {
             // コマンドの実行に失敗した場合
             needForceTeleport = true;
@@ -98,5 +97,8 @@ public final class MatchUtils {
 
             player.teleport(location);
         }
+
+        // 落下距離リセット
+        player.setFallDistance(0);
     }
 }

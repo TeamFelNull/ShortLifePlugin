@@ -291,10 +291,7 @@ public class MatchMapLoader {
                     }
 
                     // 保護フラグ指定
-                    region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
-                    region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
-                    region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
-                    region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+                    setWorldGuardRegionFlag(region);
 
                     return matchMapWorld;
                 }, tickExecutor).thenApplyAsync(matchMapWorld -> {
@@ -304,6 +301,20 @@ public class MatchMapLoader {
 
                     return matchMapWorld;
                 }, tickExecutor);
+    }
+
+
+    /**
+     * ワールドガードのリージョンフラグ指定
+     *
+     * @param region リージョン
+     */
+    private void setWorldGuardRegionFlag(ProtectedRegion region) {
+        region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
+        region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
+        region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
+        region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+        region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
     }
 
     private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {

@@ -22,6 +22,7 @@ import java.util.Map;
  * @author MORIMORI0317
  */
 public final class SLGuis {
+
     /**
      * TEST用GUIのID
      */
@@ -33,7 +34,8 @@ public final class SLGuis {
     public static final String MATCH_SELECTOR = "match_selector";
 
     /**
-     * 登録されたGUIのIDとプロバイダーのマップ
+     * 登録されたGUIのIDとプロバイダーのマップ<br/>
+     * 今後FNJLのレジストリシステムに置き換え予定
      */
     private static final Map<String, WindowProvider> GUI_REGISTRY = new HashMap<>();
 

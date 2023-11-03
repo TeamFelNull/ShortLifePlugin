@@ -251,6 +251,7 @@ public class MatchMapLoader {
                 .thenCombineAsync(schemCompletableFuture, (world, clipboardMapMarkerSetPair) -> {
                     /* Tick同期でワールドにスケマティック構造物を生成 */
 
+
                     com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
 
                     try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {
@@ -302,7 +303,6 @@ public class MatchMapLoader {
                     return matchMapWorld;
                 }, tickExecutor);
     }
-
 
     /**
      * ワールドガードのリージョンフラグ指定

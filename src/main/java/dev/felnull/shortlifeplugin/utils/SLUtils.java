@@ -149,6 +149,16 @@ public final class SLUtils {
     }
 
     /**
+     * このプラグインのNamespacedKey形式文字列(shortlifeplugin:xxxx)を取得
+     *
+     * @param path パス
+     * @return NamespacedKey形式文字列
+     */
+    public static String plLocStr(@NotNull String path) {
+        return ShortLifePlugin.PLUGIN_ID + ":" + path;
+    }
+
+    /**
      * 指定したチームが登録されているか確認
      *
      * @param team チーム

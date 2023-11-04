@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
-import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
@@ -25,6 +24,7 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -596,6 +596,10 @@ public abstract class Match {
         player.setFoodLevel(20);
         player.setSaturation(20);
 
+        // エフェクト除去
+        Collection<PotionEffect> potionEffects = player.getActivePotionEffects();
+        potionEffects.forEach(potionEffect -> player.removePotionEffect(potionEffect.getType()));
+
         // プレイヤーを試合用ワールドにテレポート
         if (this.matchMapInstance.isReady()) {
             if (!teleportToJoin(player)) {
@@ -1056,7 +1060,13 @@ public abstract class Match {
 
             sidebarInfos.add(String.format("マップ: %s", mapText));
             sidebarInfos.add(String.format("参加人数: %d/%d", players.size(), matchMode.maxPlayerCount()));
-            sidebarInfos.add(String.format("残り時間: %s", FNStringUtil.getTimeFormat(Match.this.countDownTime)));
+            sidebarInfos.add(String.format("残り時間: %s", getTimeDisplayText((int) (Match.this.countDownTime / 1000L))));
+        }
+
+        private String getTimeDisplayText(int second) {
+            /* xx:xxのような時間表記を実装予定 */
+            // TODO 春巻きが実装
+            return second + "s";
         }
 
         /**

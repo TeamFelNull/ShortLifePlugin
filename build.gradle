@@ -53,6 +53,7 @@ dependencies {
     shadowIn "xyz.xenondevs.invui:invui:1.15"
     shadowIn "net.kunmc.lab:ikisugi-logger:1.3"
     shadowIn "dev.felnull:felnull-java-library:1.75"
+    shadowIn "de.tr7zw:item-nbt-api:2.12.0"
 }
 
 def targetJavaVersion = 17
@@ -90,10 +91,11 @@ shadowJar {
     relocate 'org.jetbrains.annotations', relocatedPath + '.org.jetbrains.annotations'
     relocate 'org.intellij.lang.annotations', relocatedPath + '.org.intellij.lang.annotations'
     relocate 'dev.felnull.fnjl', relocatedPath + '.dev.felnull.fnjl'
+    relocate("de.tr7zw.changeme.nbtapi", relocatedPath + '.de.tr7zw.changeme.nbtapi')
 }
 
-tasks.named("build") {
-    dependsOn(tasks.named("shadowJar"))
+build {
+    dependsOn(shadowJar)
 }
 
 // ビルドしたJarファイルをサーバーのプラグインフォルダへコピー

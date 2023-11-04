@@ -11,3 +11,6 @@ permissions:
   shortlifeplugin.commands.match:
     description: "Match command permission"
     default: op
+  shortlifeplugin.commands.gui:
+    description: "GUI command permission"
+    default: op

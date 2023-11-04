@@ -32,16 +32,16 @@ public final class MatchModes {
             new MatchMode("team_point", "チーム-ポイント制", Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
                     2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1, MapMarkerPoints.SPAWN_TEAM2), false);
 
-    /*
-     FFA試合モード
-
-     public static final MatchMode FFA =
-     new MatchMode("ffa", "FFA", Material.IRON_SWORD, MatchType.PVP, 1000 * 60 * 10,
-     2, 30, FFAMatch::new, mapPointCheck(MapMarkerPoints.SPAWN));
+    /**
+     * FFA試合モード
      */
+    public static final MatchMode FFA =
+            new MatchMode("ffa", "FFA", Material.IRON_SWORD, MatchType.PVP, 1000 * 60 * 10,
+                    2, 30, FFAMatch::new, mapPointCheck(MapMarkerPoints.SPAWN), false);
 
     /**
-     * 試合モードのレジストリマップ
+     * 試合モードのレジストリマップ<br/>
+     * 今後FNJLのレジストリシステムに置き換え予定
      */
     private static final Map<String, MatchMode> MODE_REGISTRY = new HashMap<>();
 
@@ -54,7 +54,7 @@ public final class MatchModes {
     public static void init() {
         register(TEST);
         register(TEAM_POINT);
-        //register(FFA);
+        register(FFA);
     }
 
     public static Map<String, MatchMode> getAllModes() {

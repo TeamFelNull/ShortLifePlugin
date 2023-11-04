@@ -251,6 +251,7 @@ public class MatchMapLoader {
                 .thenCombineAsync(schemCompletableFuture, (world, clipboardMapMarkerSetPair) -> {
                     /* Tick同期でワールドにスケマティック構造物を生成 */
 
+
                     com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
 
                     try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {
@@ -291,10 +292,7 @@ public class MatchMapLoader {
                     }
 
                     // 保護フラグ指定
-                    region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
-                    region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
-                    region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
-                    region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+                    setWorldGuardRegionFlag(region);
 
                     return matchMapWorld;
                 }, tickExecutor).thenApplyAsync(matchMapWorld -> {
@@ -304,6 +302,19 @@ public class MatchMapLoader {
 
                     return matchMapWorld;
                 }, tickExecutor);
+    }
+
+    /**
+     * ワールドガードのリージョンフラグ指定
+     *
+     * @param region リージョン
+     */
+    private void setWorldGuardRegionFlag(ProtectedRegion region) {
+        region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
+        region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
+        region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
+        region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+        region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
     }
 
     private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {

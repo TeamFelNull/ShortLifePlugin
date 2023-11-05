@@ -10,6 +10,7 @@ import de.tr7zw.changeme.nbtapi.iface.ReadWriteNBT;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +20,8 @@ import java.io.*;
 import java.util.*;
 
 /**
- * 装備グループ管理
+ * 装備グループ管理<br/>
+ * このクラスはスレッドセーフではないです。
  *
  * @author MORIMORI0317
  */
@@ -36,9 +38,19 @@ public class EquipmentGroupManager {
     private static final int SAVE_JSON_VERSION = 0;
 
     /**
+     * 自動保存を行う周期Tick
+     */
+    private static final long AUTO_SAVE_TICK = 20 * 10;
+
+    /**
      * 読み込み済み装備グループのリスト
      */
     private final Map<String, EquipmentGroup> equipmentGroups = new HashMap<>();
+
+    /**
+     * 装備グループが更新された場合のフラグ
+     */
+    private boolean dirty;
 
     /**
      * インスタンス取得
@@ -69,6 +81,9 @@ public class EquipmentGroupManager {
         }
 
         plugin.getLogger().info("装備グループの読み込み完了");
+
+        // 自動保存登録
+        Bukkit.getScheduler().runTaskTimer(plugin, task -> this.autoSave(), AUTO_SAVE_TICK, AUTO_SAVE_TICK);
     }
 
     /**
@@ -177,6 +192,21 @@ public class EquipmentGroupManager {
         jsonObject.add("restriction", restrictionJson);
     }
 
+    private void autoSave() {
+        if (this.dirty) {
+            this.dirty = false;
+
+            try {
+                save();
+            } catch (IOException | RuntimeException ex) {
+                SLUtils.reportError(ex, "装備グループの自動保存に失敗");
+                throw new RuntimeException(ex);
+            }
+
+            SLUtils.getLogger().info("装備グループの自動保存完了");
+        }
+    }
+
     /**
      * 装備グループを追加
      *
@@ -190,6 +220,7 @@ public class EquipmentGroupManager {
         }
 
         this.equipmentGroups.put(equipmentGroup.id(), equipmentGroup);
+        this.dirty = true;
     }
 
     /**
@@ -211,7 +242,9 @@ public class EquipmentGroupManager {
      */
     public void removeEquipmentGroup(@NotNull String id) {
         Objects.requireNonNull(id);
+
         this.equipmentGroups.remove(id);
+        this.dirty = true;
     }
 
     @Unmodifiable

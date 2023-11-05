@@ -26,6 +26,7 @@ public final class SLCommands {
     public static void register() {
         COMMAND_PROVIDERS.add(new MatchCommand());
         COMMAND_PROVIDERS.add(new GuiCommand());
+        COMMAND_PROVIDERS.add(new EquipmentGroupCommand());
 
         COMMAND_PROVIDERS.forEach(commandProvider -> commandProvider.create().register());
     }

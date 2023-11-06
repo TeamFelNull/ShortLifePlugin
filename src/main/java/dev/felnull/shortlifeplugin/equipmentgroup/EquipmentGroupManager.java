@@ -21,7 +21,7 @@ import java.util.*;
 
 /**
  * 装備グループ管理<br/>
- * このクラスはスレッドセーフではないです。
+ * このクラスはスレッドセーフではないので、サーバーTickからアクセスしてください。
  *
  * @author MORIMORI0317
  */
@@ -200,7 +200,6 @@ public class EquipmentGroupManager {
                 save();
             } catch (IOException | RuntimeException ex) {
                 SLUtils.reportError(ex, "装備グループの自動保存に失敗");
-                throw new RuntimeException(ex);
             }
 
             SLUtils.getLogger().info("装備グループの自動保存完了");
@@ -212,7 +211,7 @@ public class EquipmentGroupManager {
      *
      * @param equipmentGroup 装備グループ
      */
-    public void addEquipmentGroup(@NotNull EquipmentGroup equipmentGroup) {
+    public void addGroup(@NotNull EquipmentGroup equipmentGroup) {
         Objects.requireNonNull(equipmentGroup);
 
         if (this.equipmentGroups.containsKey(equipmentGroup.id())) {
@@ -230,7 +229,7 @@ public class EquipmentGroupManager {
      * @return 装備グループ(存在しない場合はnullを返す)
      */
     @Nullable
-    public EquipmentGroup getEquipmentGroup(@NotNull String id) {
+    public EquipmentGroup getGroup(@NotNull String id) {
         Objects.requireNonNull(id);
         return this.equipmentGroups.get(id);
     }
@@ -240,7 +239,7 @@ public class EquipmentGroupManager {
      *
      * @param id 装備グループID
      */
-    public void removeEquipmentGroup(@NotNull String id) {
+    public void removeGroup(@NotNull String id) {
         Objects.requireNonNull(id);
 
         this.equipmentGroups.remove(id);
@@ -248,7 +247,26 @@ public class EquipmentGroupManager {
     }
 
     @Unmodifiable
-    public Map<String, EquipmentGroup> getAllEquipmentGroup() {
+    public Map<String, EquipmentGroup> getAllGroup() {
         return ImmutableMap.copyOf(equipmentGroups);
+    }
+
+
+    /**
+     * 指定したアイテムスタックが所属しているグループを取得
+     *
+     * @param stack 対象アイテムスタック
+     * @return 所属グループのリスト
+     */
+    public List<EquipmentGroup> getBelongsGroups(@Nullable ItemStack stack) {
+
+        // nullまたは空の場合は所属なし
+        if (stack == null || stack.isEmpty()) {
+            return ImmutableList.of();
+        }
+
+        return ImmutableList.copyOf(this.equipmentGroups.values().stream()
+                .filter(it -> it.isBelongs(stack))
+                .toList());
     }
 }

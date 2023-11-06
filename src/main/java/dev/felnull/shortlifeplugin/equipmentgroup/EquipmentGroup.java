@@ -53,6 +53,48 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
         componentList.add(Component.text("ホットバーに存在できる最大数: ").append(maxHotbarExistsCountText));
     }
 
+
+    /**
+     * 指定したアイテムスタックが所属しているかどうか
+     *
+     * @param stack アイテムスタック
+     * @return 所属していればtrue、してなければfalse
+     */
+    public boolean isBelongs(@NotNull ItemStack stack) {
+
+        // スタック全比較
+        for (ItemStack itemStack : itemStacks) {
+            if (itemStack.isSimilar(stack)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    /**
+     * 使用制限がかかるかどうか確認
+     *
+     * @param hotbarStacks ホットバーのアイテムスタックリスト
+     * @return 制限がかかるかどうか
+     */
+    public boolean isRestricted(@NotNull @Unmodifiable List<ItemStack> hotbarStacks) {
+
+        // ホットバーのアイテム数確認
+        int hotbarCount = 0;
+        for (ItemStack hotbarStack : hotbarStacks) {
+            if (isBelongs(hotbarStack)) {
+                hotbarCount++;
+                if (hotbarCount > restriction().maxHotbarExistsCount()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /**
      * 装備制限
      *

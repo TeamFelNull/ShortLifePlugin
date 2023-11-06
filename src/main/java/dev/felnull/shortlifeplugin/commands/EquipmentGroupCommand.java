@@ -84,7 +84,7 @@ public class EquipmentGroupCommand implements SLCommand {
     private Argument<EquipmentGroup> equipmentGroupArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
             EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-            EquipmentGroup equipmentGroup = manager.getEquipmentGroup(info.input());
+            EquipmentGroup equipmentGroup = manager.getGroup(info.input());
 
             if (equipmentGroup == null) {
                 throw CustomArgument.CustomArgumentException
@@ -92,7 +92,7 @@ public class EquipmentGroupCommand implements SLCommand {
             } else {
                 return equipmentGroup;
             }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> EquipmentGroupManager.getInstance().getAllEquipmentGroup().keySet().toArray(String[]::new)));
+        }).replaceSuggestions(ArgumentSuggestions.strings(info -> EquipmentGroupManager.getInstance().getAllGroup().keySet().toArray(String[]::new)));
     }
 
     private void equipmentGroupAdd(CommandSender sender, CommandArguments args) {
@@ -100,11 +100,11 @@ public class EquipmentGroupCommand implements SLCommand {
         String id = (String) Objects.requireNonNull(args.get("id"));
         String name = (String) Objects.requireNonNull(args.get("name"));
 
-        if (manager.getEquipmentGroup(id) != null) {
+        if (manager.getGroup(id) != null) {
             sender.sendRichMessage("指定されたIDの装備グループは既に存在します");
         } else {
             EquipmentGroup equipmentGroup = new EquipmentGroup(id, name, ImmutableList.of(), new EquipmentGroup.Restriction(-1));
-            manager.addEquipmentGroup(equipmentGroup);
+            manager.addGroup(equipmentGroup);
             sender.sendRichMessage(String.format("新しい装備グループ(%s)を作成しました", id));
         }
     }
@@ -116,12 +116,12 @@ public class EquipmentGroupCommand implements SLCommand {
 
         if (newId.equals(equipmentGroup.id())) {
             sender.sendRichMessage("指定された装備グループのIDと新しいIDが同じです");
-        } else if (manager.getEquipmentGroup(newId) != null) {
+        } else if (manager.getGroup(newId) != null) {
             sender.sendRichMessage("新しいIDの装備グループが既に存在しています");
         } else {
-            manager.removeEquipmentGroup(equipmentGroup.id());
+            manager.removeGroup(equipmentGroup.id());
             EquipmentGroup newEquipmentGroup = new EquipmentGroup(newId, equipmentGroup.name(), equipmentGroup.itemStacks(), equipmentGroup.restriction());
-            manager.addEquipmentGroup(newEquipmentGroup);
+            manager.addGroup(newEquipmentGroup);
             sender.sendRichMessage(String.format("装備グループ(%s)のIDを%sに変更しました", equipmentGroup.id(), newId));
         }
     }
@@ -134,9 +134,9 @@ public class EquipmentGroupCommand implements SLCommand {
         if (newName.equals(equipmentGroup.name())) {
             sender.sendRichMessage("指定された装備グループの名前と新しい名前が同じです");
         } else {
-            manager.removeEquipmentGroup(equipmentGroup.id());
+            manager.removeGroup(equipmentGroup.id());
             EquipmentGroup newEquipmentGroup = new EquipmentGroup(equipmentGroup.id(), newName, equipmentGroup.itemStacks(), equipmentGroup.restriction());
-            manager.addEquipmentGroup(newEquipmentGroup);
+            manager.addGroup(newEquipmentGroup);
             sender.sendRichMessage(String.format("装備グループ(%s)の名前を%sに変更しました", equipmentGroup.id(), newName));
         }
     }
@@ -157,10 +157,10 @@ public class EquipmentGroupCommand implements SLCommand {
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
         int newMaxHotbarExistsCount = (Integer) Objects.requireNonNull(args.get("new max hotbar exists count"));
 
-        manager.removeEquipmentGroup(equipmentGroup.id());
+        manager.removeGroup(equipmentGroup.id());
         EquipmentGroup.Restriction restriction = new EquipmentGroup.Restriction(newMaxHotbarExistsCount);
         EquipmentGroup newEquipmentGroup = new EquipmentGroup(equipmentGroup.id(), equipmentGroup.name(), equipmentGroup.itemStacks(), restriction);
-        manager.addEquipmentGroup(newEquipmentGroup);
+        manager.addGroup(newEquipmentGroup);
         sender.sendRichMessage(String.format("装備グループ(%s)の装備制限を変更しました", equipmentGroup.id()));
     }
 
@@ -168,13 +168,13 @@ public class EquipmentGroupCommand implements SLCommand {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
 
-        manager.removeEquipmentGroup(equipmentGroup.id());
+        manager.removeGroup(equipmentGroup.id());
         sender.sendRichMessage(String.format("指定された装備グループ(%s)を削除しました", equipmentGroup.id()));
     }
 
     private void equipmentGroupList(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-        Map<String, EquipmentGroup> groups = manager.getAllEquipmentGroup();
+        Map<String, EquipmentGroup> groups = manager.getAllGroup();
 
         if (groups.isEmpty()) {
             sender.sendRichMessage("装備グループは存在しません");

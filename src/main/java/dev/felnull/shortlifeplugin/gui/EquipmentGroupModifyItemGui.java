@@ -29,7 +29,29 @@ public class EquipmentGroupModifyItemGui {
      */
     private static final int MODIFY_ITEM_COLUMN = 5;
 
+    /**
+     * 誰かがアイテム編集GUIを開いてるかどうか
+     */
+    private static boolean OPEN_ITEM_MODIFY_GUI = false;
+
     private EquipmentGroupModifyItemGui() {
+    }
+
+
+    /**
+     * GUIを開くことを試み
+     *
+     * @param player         プレイヤー
+     * @param equipmentGroup 装備グループ
+     */
+    public static void tryOpenGui(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup) {
+        if (OPEN_ITEM_MODIFY_GUI) {
+            player.sendMessage("別のプレイヤーが編集中です");
+            return;
+        }
+
+        Window window = EquipmentGroupModifyItemGui.provide(player, equipmentGroup);
+        window.open();
     }
 
     /**
@@ -40,7 +62,9 @@ public class EquipmentGroupModifyItemGui {
      * @return Window
      */
     @NotNull
-    public static Window provide(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup) {
+    private static Window provide(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup) {
+
+        OPEN_ITEM_MODIFY_GUI = true;
         VirtualInventory virtualInventory = VirtualInventoryManager.getInstance().createNew(UUID.randomUUID(), MODIFY_ITEM_COLUMN * 9);
 
         for (int i = 0; i < virtualInventory.getSize(); i++) {
@@ -77,6 +101,7 @@ public class EquipmentGroupModifyItemGui {
                 .addCloseHandler(() -> {
                     saveItems(player, equipmentGroup, virtualInventory);
                     VirtualInventoryManager.getInstance().remove(virtualInventory);
+                    OPEN_ITEM_MODIFY_GUI = false;
                 })
                 .build();
     }

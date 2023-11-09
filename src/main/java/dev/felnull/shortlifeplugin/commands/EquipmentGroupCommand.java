@@ -12,7 +12,6 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import xyz.xenondevs.invui.window.Window;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -145,8 +144,7 @@ public class EquipmentGroupCommand implements SLCommand {
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
 
         if (sender instanceof Player player) {
-            Window window = EquipmentGroupModifyItemGui.provide(player, equipmentGroup);
-            window.open();
+            EquipmentGroupModifyItemGui.tryOpenGui(player, equipmentGroup);
         } else {
             sender.sendRichMessage("プレイヤーのみ実行可能です");
         }

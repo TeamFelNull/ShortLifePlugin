@@ -6,6 +6,7 @@ import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.felnull.shortlifeplugin.listener.EquipmentGroupListener;
 import dev.felnull.shortlifeplugin.listener.MatchListener;
+import dev.felnull.shortlifeplugin.listener.WeaponMechanicsListener;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
@@ -60,8 +61,11 @@ public final class ShortLifePlugin extends JavaPlugin {
         clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
+
+        // イベントリスナー
         MatchListener.init(this);
         EquipmentGroupListener.init(this);
+        WeaponMechanicsListener.init(this);
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);

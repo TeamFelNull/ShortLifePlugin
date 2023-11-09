@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.equipmentgroup;
 
+import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -64,7 +65,7 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
 
         // スタック全比較
         for (ItemStack itemStack : itemStacks) {
-            if (itemStack.isSimilar(stack)) {
+            if (isMatch(itemStack, stack)) {
                 return true;
             }
         }
@@ -72,6 +73,26 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
         return false;
     }
 
+
+    private boolean isMatch(@NotNull ItemStack stack1, @NotNull ItemStack stack2) {
+
+        // 完全に同じかどうか比較
+        if (stack1.isSimilar(stack2)) {
+            return true;
+        }
+
+        // 武器タイトルで比較
+        String stackWeaponTitle1 = WeaponMechanicsUtils.getWeaponTitle(stack1);
+
+        if (stackWeaponTitle1 != null) {
+            String stackWeaponTitle2 = WeaponMechanicsUtils.getWeaponTitle(stack2);
+            if (stackWeaponTitle2 != null) {
+                return stackWeaponTitle1.equals(stackWeaponTitle2);
+            }
+        }
+
+        return false;
+    }
 
     /**
      * 使用制限がかかるかどうか確認

@@ -45,7 +45,6 @@ public final class SLGuis {
     /**
      * 初期化
      */
-    @SuppressWarnings("checkstyle:WhitespaceAfter")
     public static void init() {
 
         // Invuiのグローバルアイテム登録

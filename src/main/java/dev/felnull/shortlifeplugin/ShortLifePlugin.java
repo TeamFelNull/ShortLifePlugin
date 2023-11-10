@@ -2,8 +2,11 @@ package dev.felnull.shortlifeplugin;
 
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.commands.SLCommands;
+import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
+import dev.felnull.shortlifeplugin.listener.EquipmentGroupListener;
 import dev.felnull.shortlifeplugin.listener.MatchListener;
+import dev.felnull.shortlifeplugin.listener.WeaponMechanicsListener;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
@@ -38,6 +41,11 @@ public final class ShortLifePlugin extends JavaPlugin {
      */
     private MatchManager matchManager;
 
+    /**
+     * 装備グループマネージャー
+     */
+    private EquipmentGroupManager equipmentGroupManager;
+
     @Override
     public void onEnable() {
         SLConfig.init(this);
@@ -53,10 +61,17 @@ public final class ShortLifePlugin extends JavaPlugin {
         clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
+
+        // イベントリスナー
         MatchListener.init(this);
+        EquipmentGroupListener.init(this);
+        WeaponMechanicsListener.init(this);
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);
+
+        this.equipmentGroupManager = new EquipmentGroupManager();
+        this.equipmentGroupManager.init(this);
 
         getLogger().info("ShortLife Pluginが開始しました");
     }
@@ -107,12 +122,21 @@ public final class ShortLifePlugin extends JavaPlugin {
             this.matchManager = null;
         }
 
+        if (this.equipmentGroupManager != null) {
+            this.equipmentGroupManager.dispose();
+            this.equipmentGroupManager = null;
+        }
+
         clearTmpFolder(false);
         getLogger().info("ShortLife Pluginが停止しました");
     }
 
     public MatchManager getMatchManager() {
         return matchManager;
+    }
+
+    public EquipmentGroupManager getEquipmentGroupManager() {
+        return equipmentGroupManager;
     }
 
     /**

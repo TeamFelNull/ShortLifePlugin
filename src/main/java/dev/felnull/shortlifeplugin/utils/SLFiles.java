@@ -38,4 +38,13 @@ public final class SLFiles {
     public static File tmpFolder() {
         return new File(SLUtils.getSLPlugin().getDataFolder(), "tmp");
     }
+
+    /**
+     * 装備グループ保存Json
+     *
+     * @return 装備グループ保存JsonのFile
+     */
+    public static File equipmentGroupJson() {
+        return new File(SLUtils.getSLPlugin().getDataFolder(), "equipmentgroup.json");
+    }
 }

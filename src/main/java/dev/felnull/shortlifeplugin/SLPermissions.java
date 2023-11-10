@@ -19,6 +19,11 @@ public final class SLPermissions {
      */
     public static final String COMMANDS_GUI = "shortlifeplugin.commands.gui";
 
+    /**
+     * GUIコマンド用パーミッション
+     */
+    public static final String COMMANDS_EQUIPMENT_GROUP = "shortlifeplugin.commands.equipmentgroup";
+
     private SLPermissions() {
     }
 }

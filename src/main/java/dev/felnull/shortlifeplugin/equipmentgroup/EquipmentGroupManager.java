@@ -58,13 +58,13 @@ public class EquipmentGroupManager {
      * @return 装備グループマネージャーインスタンス
      */
     public static EquipmentGroupManager getInstance() {
-        EquipmentGroupManager manager = SLUtils.getSLPlugin().getEquipmentGroupManager();
+        EquipmentGroupManager instance = SLUtils.getSLPlugin().getEquipmentGroupManager();
 
-        if (manager == null) {
+        if (instance == null) {
             throw new IllegalStateException("インスタンスが未作成");
         }
 
-        return manager;
+        return instance;
     }
 
     /**

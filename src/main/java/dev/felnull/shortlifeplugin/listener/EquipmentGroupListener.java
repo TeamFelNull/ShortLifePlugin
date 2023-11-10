@@ -102,7 +102,7 @@ public class EquipmentGroupListener implements Listener {
 
         List<ItemStack> hotbarStacks = new LinkedList<>();
         // 0~8のスロットがホットバー
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 9; i++) {
             ItemStack hotbarStack = inventory.getItem(i);
             if (hotbarStack != null && !hotbarStack.isEmpty()) {
                 hotbarStacks.add(hotbarStack);

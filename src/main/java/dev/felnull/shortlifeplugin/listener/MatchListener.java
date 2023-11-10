@@ -38,7 +38,7 @@ public final class MatchListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerRespawn(PlayerRespawnEvent e) {
-        MatchManager matchManager = MatchUtils.getMatchManager();
+        MatchManager matchManager = MatchManager.getInstance();
         Match match = matchManager.getJointedMach(e.getPlayer());
 
         // 試合に参加済みで試合中であればリスポーン地点を変更
@@ -58,7 +58,7 @@ public final class MatchListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player player) {
-            MatchManager matchManager = MatchUtils.getMatchManager();
+            MatchManager matchManager = MatchManager.getInstance();
             Match match = matchManager.getJointedMach(player);
 
             // 試合で無敵とされているプレイヤーであればダメージイベントをキャンセル
@@ -75,7 +75,7 @@ public final class MatchListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onJoin(PlayerJoinEvent e) {
-        MatchManager matchManager = MatchUtils.getMatchManager();
+        MatchManager matchManager = MatchManager.getInstance();
         Match worldMatch = matchManager.getMachByWorld(e.getPlayer().getWorld());
 
         // 試合に参加してないプレイヤーが、試合ワールドに参加した場合に強制退出
@@ -92,7 +92,7 @@ public final class MatchListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player target = e.getPlayer();
-        MatchManager matchManager = MatchUtils.getMatchManager();
+        MatchManager matchManager = MatchManager.getInstance();
         Match match = matchManager.getJointedMach(target);
 
         // 参加者が死亡した場合、試合の死亡処理を呼ぶ

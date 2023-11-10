@@ -102,13 +102,15 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      */
     public boolean isRestricted(@NotNull @Unmodifiable List<ItemStack> hotbarStacks) {
 
-        // ホットバーのアイテム数確認
-        int hotbarCount = 0;
-        for (ItemStack hotbarStack : hotbarStacks) {
-            if (isBelongs(hotbarStack)) {
-                hotbarCount++;
-                if (hotbarCount > restriction().maxHotbarExistsCount()) {
-                    return true;
+        if (restriction().maxHotbarExistsCount() >= 0) {
+            // ホットバーのアイテム数確認
+            int hotbarCount = 0;
+            for (ItemStack hotbarStack : hotbarStacks) {
+                if (isBelongs(hotbarStack)) {
+                    hotbarCount++;
+                    if (hotbarCount > restriction().maxHotbarExistsCount()) {
+                        return true;
+                    }
                 }
             }
         }

@@ -18,12 +18,6 @@ import java.util.Objects;
  */
 public class GuiCommand implements SLCommand {
 
-    /**
-     * コンストラクタ
-     */
-    public GuiCommand() {
-    }
-
     @Override
     public CommandAPICommand create() {
         return new CommandAPICommand("gui")
@@ -46,7 +40,7 @@ public class GuiCommand implements SLCommand {
 
             if (windowProvider == null) {
                 throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown gui: ").appendArgInput());
+                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput());
             } else {
                 return windowProvider;
             }

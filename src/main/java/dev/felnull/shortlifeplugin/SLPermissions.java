@@ -13,16 +13,20 @@ public final class SLPermissions {
      */
     public static final String COMMANDS_MATCH = "shortlifeplugin.commands.match";
 
-
     /**
      * GUIコマンド用パーミッション
      */
     public static final String COMMANDS_GUI = "shortlifeplugin.commands.gui";
 
     /**
-     * GUIコマンド用パーミッション
+     * 装備グループコマンド用パーミッション
      */
     public static final String COMMANDS_EQUIPMENT_GROUP = "shortlifeplugin.commands.equipmentgroup";
+
+    /**
+     * 試合部屋コマンド用パーミッション<br/>
+     */
+    public static final String COMMANDS_ROOM = "shortlifeplugin.commands.room";
 
     private SLPermissions() {
     }

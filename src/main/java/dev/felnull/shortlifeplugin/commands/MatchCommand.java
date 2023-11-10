@@ -6,7 +6,6 @@ import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
-import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
@@ -26,12 +25,6 @@ import java.util.Objects;
  * @author MORIMORI0317
  */
 public class MatchCommand implements SLCommand {
-
-    /**
-     * コンストラクタ
-     */
-    public MatchCommand() {
-    }
 
     @Override
     public CommandAPICommand create() {
@@ -113,33 +106,33 @@ public class MatchCommand implements SLCommand {
 
     private Argument<Match> matchArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            Match match = MatchUtils.getMatchManager().getMatch(info.input());
+            Match match = MatchManager.getInstance().getMatch(info.input());
 
             if (match == null) {
                 throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown match: ").appendArgInput());
+                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合です: ").appendArgInput());
             } else {
                 return match;
             }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchUtils.getMatchManager().getAllMatch().keySet().toArray(String[]::new)));
+        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getAllMatch().keySet().toArray(String[]::new)));
     }
 
     private Argument<MatchMap> mapArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap(info.input());
+            MatchMap matchMap = MatchManager.getInstance().getMapLoader().getMap(info.input());
 
             if (matchMap == null) {
                 throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown match map: ").appendArgInput());
+                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput());
             } else {
                 return matchMap;
             }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchUtils.getMatchManager().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
+        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
     }
 
 
     private void matchList(CommandSender sender, CommandArguments args) {
-        MatchManager matchManager = MatchUtils.getMatchManager();
+        MatchManager matchManager = MatchManager.getInstance();
         Map<String, Match> matches = matchManager.getAllMatch();
 
         if (matches.isEmpty()) {
@@ -178,7 +171,7 @@ public class MatchCommand implements SLCommand {
                     return;
                 }
 
-                Match jointedMatch = MatchUtils.getMatchManager().getJointedMach(player);
+                Match jointedMatch = MatchManager.getInstance().getJointedMach(player);
 
                 if (jointedMatch != null) {
                     if (player == sender) {
@@ -294,7 +287,7 @@ public class MatchCommand implements SLCommand {
     }
 
     private void mapList(CommandSender sender, CommandArguments args) {
-        MatchManager matchManager = MatchUtils.getMatchManager();
+        MatchManager matchManager = MatchManager.getInstance();
         MatchMapLoader mapLoader = matchManager.getMapLoader();
         Map<String, MatchMap> maps = mapLoader.getAllMap();
 

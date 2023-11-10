@@ -220,7 +220,7 @@ public abstract class Match {
      */
     protected void init() {
         updateCountDownStatus();
-        this.matchMapInstance = MatchUtils.getMatchManager().getMapLoader().createMapInstance(this, this.id, this.matchMap);
+        this.matchMapInstance = MatchManager.getInstance().getMapLoader().createMapInstance(this, this.id, this.matchMap);
         SLUtils.getLogger().info(String.format("試合(%s)が作成されました", getId()));
     }
 
@@ -408,7 +408,7 @@ public abstract class Match {
         }
 
         // すでにどれかしらの試合に参加しているプレイヤーは参加不可
-        if (MatchUtils.getMatchManager().getJointedMach(player) != null) {
+        if (MatchManager.getInstance().getJointedMach(player) != null) {
             return false;
         }
 
@@ -911,13 +911,13 @@ public abstract class Match {
         }
 
         Player attacker = target.getKiller();
-        if (attacker != null && players.containsKey(attacker)) {
+        if (attacker != null && target != attacker && players.containsKey(attacker)) {
             onPlayerKill(target, attacker);
         }
     }
 
     /**
-     * プレイヤーキル時に呼び出し
+     * 自分以外のプレイヤーキル時に呼び出し
      *
      * @param target   対象
      * @param attacker 攻撃者
@@ -941,6 +941,9 @@ public abstract class Match {
     private void sendMapInfoMessage(Audience audience) {
         Component mapInfoText = Component.text("---- 試合マップ ----").appendNewline();
         mapInfoText = mapInfoText.append(Component.text(matchMap.name())).appendNewline();
+
+        // TODO 作者等を表示
+
     /*    mapInfoText = mapInfoText.append(Component.text("作者: ").append(Component.text("N/A"))).appendNewline();
         mapInfoText = mapInfoText.append(Component.text("説明: ").append(Component.text("TEST"))).appendNewline();*/
         mapInfoText = mapInfoText.append(Component.text("-----------------"));

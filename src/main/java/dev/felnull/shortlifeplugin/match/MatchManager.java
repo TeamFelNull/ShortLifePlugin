@@ -34,6 +34,21 @@ public final class MatchManager {
 
 
     /**
+     * 試合マネージャーのインスタンスを取得
+     *
+     * @return 試合マネージャーのインスタンス
+     */
+    public static MatchManager getInstance() {
+        MatchManager instance = SLUtils.getSLPlugin().getMatchManager();
+
+        if (instance == null) {
+            throw new IllegalStateException("インスタンスが未作成");
+        }
+
+        return instance;
+    }
+
+    /**
      * 初期化処理
      *
      * @param plugin プラグイン

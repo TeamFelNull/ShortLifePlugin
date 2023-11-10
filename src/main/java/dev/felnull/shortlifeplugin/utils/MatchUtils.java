@@ -52,15 +52,6 @@ public final class MatchUtils {
     }
 
     /**
-     * 試合マネージャーを取得
-     *
-     * @return 試合マネージャー
-     */
-    public static MatchManager getMatchManager() {
-        return SLUtils.getSLPlugin().getMatchManager();
-    }
-
-    /**
      * プレイヤーを試合から退出するためにテレポートさせる
      *
      * @param player     プレイヤー

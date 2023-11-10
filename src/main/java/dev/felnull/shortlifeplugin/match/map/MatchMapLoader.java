@@ -315,6 +315,7 @@ public class MatchMapLoader {
         region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
         region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
         region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
+        region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
     }
 
     private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {
@@ -463,6 +464,18 @@ public class MatchMapLoader {
             }
 
             matchMapInstance.setStrictWorld(world);
+
+            // ゲームルール変更
+            // https://minecraft.fandom.com/ja/wiki/%E3%82%B2%E3%83%BC%E3%83%A0%E3%83%AB%E3%83%BC%E3%83%AB
+            world.setGameRule(GameRule.DISABLE_RAIDS, true);
+            world.setGameRule(GameRule.DO_FIRE_TICK, false);
+            world.setGameRule(GameRule.DO_INSOMNIA, false);
+            world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+            world.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
+            world.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
+            world.setGameRule(GameRule.DO_WARDEN_SPAWNING, false);
+            world.setGameRule(GameRule.MOB_GRIEFING, false);
+            world.setGameRule(GameRule.KEEP_INVENTORY, true);
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のワールド生成完了", worldId));
 

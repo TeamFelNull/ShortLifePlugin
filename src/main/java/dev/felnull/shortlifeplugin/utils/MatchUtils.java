@@ -1,7 +1,6 @@
 package dev.felnull.shortlifeplugin.utils;
 
 import dev.felnull.shortlifeplugin.SLConfig;
-import dev.felnull.shortlifeplugin.match.MatchManager;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bukkit.Bukkit;

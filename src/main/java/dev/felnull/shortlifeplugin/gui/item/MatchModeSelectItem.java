@@ -4,7 +4,6 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
-import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -82,8 +81,8 @@ public class MatchModeSelectItem extends AbstractItem {
 
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-        MatchManager matchManager = MatchUtils.getMatchManager();
-        MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getRandomMap(matchMode);
+        MatchManager matchManager = MatchManager.getInstance();
+        MatchMap matchMap = MatchManager.getInstance().getMapLoader().getRandomMap(matchMode);
 
         if (matchMap == null) {
             player.sendMessage(NO_MAP_AVAILABLE_MESSAGE);
@@ -112,8 +111,11 @@ public class MatchModeSelectItem extends AbstractItem {
     }
 
     private void broadcastCreateMatch(@NotNull Player player, @NotNull Match match) {
+        MatchManager matchManager = MatchManager.getInstance();
+
         Audience sendAaudience = Audience.audience(Bukkit.getOnlinePlayers().stream()
                 .filter(pl -> pl != player)
+                .filter(pl -> matchManager.getJointedMach(pl) == null)
                 .toList());
 
         Component notifierMessage = Component.text(player.getName())
@@ -131,9 +133,8 @@ public class MatchModeSelectItem extends AbstractItem {
             clickHereText = "[ここをクリック]";
         }
 
-        // 今後専用のコマンドを追加したほうがいいかもしれない
         Component clickHere = Component.text(clickHereText)
-                .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + match.getId())).build());
+                .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/room join " + match.getId())).build());
 
         Component joinHereMessage = Component.text("参加するには")
                 .append(clickHere)

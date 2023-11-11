@@ -41,17 +41,14 @@ public class TeamPointMatch extends TeamBaseMatch {
             (myTeam, winners, losers) -> "残念！",
             (myTeam, winners, losers) -> "次は頑張ろう",
             (myTeam, winners, losers) -> "何で負けたか、次の試合まで考えといてください",
-            (myTeam, winners, losers) -> "ああ逃れられない!",
-            (myTeam, winners, losers) -> "なかなか難しいねんな...",
-            (myTeam, winners, losers) -> "いやーキツイっす"
+            (myTeam, winners, losers) -> "なかなか難しいねんな..."
     };
 
     /**
      * 引き分け時のテキスト
      */
     private static final MatchEndTextProvider[] DRAW_TEXTS = {
-            (myTeam, winners, losers) -> "こんなんじゃ勝負になんないよ",
-            (myTeam, winners, losers) -> "あほくさ"
+            (myTeam, winners, losers) -> "こんなんじゃ勝負になんないよ"
     };
 
     /**

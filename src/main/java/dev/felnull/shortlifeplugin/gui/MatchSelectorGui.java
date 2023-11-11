@@ -6,7 +6,6 @@ import dev.felnull.shortlifeplugin.gui.item.MatchModeIconItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeSelectItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchRoomSelectItem;
 import dev.felnull.shortlifeplugin.match.*;
-import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xyz.xenondevs.invui.gui.Gui;
@@ -27,12 +26,12 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
     /**
      * PVP試合ルームの数
      */
-    private static final int PVP_ROOM_SIZE = 2;
+    public static final int PVP_ROOM_SIZE = 2;
 
     /**
      * PVE試合ルームの数
      */
-    private static final int PVE_ROOM_SIZE = 0;
+    public static final int PVE_ROOM_SIZE = 0;
 
     /**
      * 1ページあたりのルーム数
@@ -82,7 +81,7 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
         int pvpRoomCount = FNMath.clamp(PVP_ROOM_SIZE - firstRoomNum, 0, ROOM_PER_PAGE_COUNT);
         int pveRoomCount = FNMath.clamp(PVE_ROOM_SIZE - firstRoomNum, 0, ROOM_PER_PAGE_COUNT);
 
-        MatchManager matchManager = MatchUtils.getMatchManager();
+        MatchManager matchManager = MatchManager.getInstance();
 
         for (int i = 0; i < pvpRoomCount; i++) {
             gui.setItem(i, 0, new MatchRoomSelectItem(MatchType.PVP, firstRoomNum + i));

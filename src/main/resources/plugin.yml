@@ -14,3 +14,9 @@ permissions:
   shortlifeplugin.commands.gui:
     description: "GUI command permission"
     default: op
+  shortlifeplugin.commands.equipmentgroup:
+    description: "Equipment Group command permission"
+    default: op
+  shortlifeplugin.commands.room:
+    description: "Room command permission"
+    default: true

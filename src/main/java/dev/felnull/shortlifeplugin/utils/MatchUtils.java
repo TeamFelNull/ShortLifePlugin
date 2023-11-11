@@ -1,7 +1,6 @@
 package dev.felnull.shortlifeplugin.utils;
 
 import dev.felnull.shortlifeplugin.SLConfig;
-import dev.felnull.shortlifeplugin.match.MatchManager;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bukkit.Bukkit;
@@ -49,15 +48,6 @@ public final class MatchUtils {
     private static final NamespacedKey DEFAULT_FORCE_TELEPORT_WORLD = NamespacedKey.minecraft("overworld");
 
     private MatchUtils() {
-    }
-
-    /**
-     * 試合マネージャーを取得
-     *
-     * @return 試合マネージャー
-     */
-    public static MatchManager getMatchManager() {
-        return SLUtils.getSLPlugin().getMatchManager();
     }
 
     /**

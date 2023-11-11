@@ -220,7 +220,7 @@ public abstract class Match {
      */
     protected void init() {
         updateCountDownStatus();
-        this.matchMapInstance = MatchUtils.getMatchManager().getMapLoader().createMapInstance(this, this.id, this.matchMap);
+        this.matchMapInstance = MatchManager.getInstance().getMapLoader().createMapInstance(this, this.id, this.matchMap);
         SLUtils.getLogger().info(String.format("試合(%s)が作成されました", getId()));
     }
 
@@ -408,7 +408,7 @@ public abstract class Match {
         }
 
         // すでにどれかしらの試合に参加しているプレイヤーは参加不可
-        if (MatchUtils.getMatchManager().getJointedMach(player) != null) {
+        if (MatchManager.getInstance().getJointedMach(player) != null) {
             return false;
         }
 
@@ -430,13 +430,14 @@ public abstract class Match {
         }
 
         // カウントダウン用ボスバーを表示
-        Audience.audience(player).showBossBar(countDownBossbar);
+        player.showBossBar(countDownBossbar);
 
         if (sendMessage) {
             player.sendMessage(MATCH_JOIN_MESSAGE);
         }
+        sendMapInfoMessage(player);
 
-        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 1.1f));
+        player.playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 1.1f));
 
         broadcast(MATCH_JOIN_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
 
@@ -493,7 +494,7 @@ public abstract class Match {
         this.players.remove(player);
 
         // カウントダウン用ボスバーを非表示化
-        Audience.audience(player).hideBossBar(countDownBossbar);
+        player.hideBossBar(countDownBossbar);
 
         // ゲームモードを元に戻す
         GameMode preGameMode = playerData.getPreGameMode();
@@ -514,7 +515,7 @@ public abstract class Match {
             broadcast(MATCH_LEAVE_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
         }
 
-        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 0.9f));
+        player.playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 0.9f));
 
         SLUtils.getLogger().info(String.format("%sが試合(%s)から退出しました", player.getName(), getId()));
         return true;
@@ -610,7 +611,7 @@ public abstract class Match {
         }
 
         // 開始音
-        Audience.audience(player).playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP.key(), Sound.Source.MASTER, 1, 0.1f));
+        player.playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP.key(), Sound.Source.MASTER, 1, 0.1f));
     }
 
     /**
@@ -910,13 +911,13 @@ public abstract class Match {
         }
 
         Player attacker = target.getKiller();
-        if (attacker != null && players.containsKey(attacker)) {
+        if (attacker != null && target != attacker && players.containsKey(attacker)) {
             onPlayerKill(target, attacker);
         }
     }
 
     /**
-     * プレイヤーキル時に呼び出し
+     * 自分以外のプレイヤーキル時に呼び出し
      *
      * @param target   対象
      * @param attacker 攻撃者
@@ -935,6 +936,18 @@ public abstract class Match {
      */
     protected void dirtyAllInfo() {
         this.dirtyAllInfo = true;
+    }
+
+    private void sendMapInfoMessage(Audience audience) {
+        Component mapInfoText = Component.text("---- 試合マップ ----").appendNewline();
+        mapInfoText = mapInfoText.append(Component.text(matchMap.name())).appendNewline();
+
+        // TODO 作者等を表示
+
+    /*    mapInfoText = mapInfoText.append(Component.text("作者: ").append(Component.text("N/A"))).appendNewline();
+        mapInfoText = mapInfoText.append(Component.text("説明: ").append(Component.text("TEST"))).appendNewline();*/
+        mapInfoText = mapInfoText.append(Component.text("-----------------"));
+        audience.sendMessage(mapInfoText);
     }
 
     /**

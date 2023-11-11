@@ -476,6 +476,8 @@ public class MatchMapLoader {
             world.setGameRule(GameRule.DO_WARDEN_SPAWNING, false);
             world.setGameRule(GameRule.MOB_GRIEFING, false);
             world.setGameRule(GameRule.KEEP_INVENTORY, true);
+            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のワールド生成完了", worldId));
 

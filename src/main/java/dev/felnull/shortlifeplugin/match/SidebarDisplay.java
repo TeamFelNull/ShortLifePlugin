@@ -1,5 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.scoreboard.Objective;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,9 +38,13 @@ public class SidebarDisplay {
     /**
      * 表示内容を更新
      *
-     * @param showTexts 表示するテキストのリスト
+     * @param showComponents 表示するコンポーネントのリスト
      */
-    public void update(List<String> showTexts) {
+    public void update(List<Component> showComponents) {
+
+        List<String> showTexts = showComponents.stream()
+                .map(text -> LegacyComponentSerializer.legacySection().serialize(text))
+                .toList();
 
         // スコアボードをリセット
         for (String lastText : this.lastTexts) {

@@ -135,7 +135,7 @@ public class EquipmentGroupListener implements Listener {
                 audience.playSound((Sound.sound(org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_RESONATE.key(), Sound.Source.MASTER, 1, 1.5f)));
 
                 player.getWorld()
-                        .spawnParticle(Particle.REDSTONE, player.getLocation().clone().add(0, 1, 0), 25, 0.3f, 0.3f, 0.3f, new Particle.DustOptions(Color.BLACK, 1));
+                        .spawnParticle(Particle.REDSTONE, player.getLocation().clone().add(0, 1, 0), 25, 0.3f, 0.3f, 0.3f, new Particle.DustOptions(Color.fromRGB(50, 50, 50), 1));
             }
 
             return true;

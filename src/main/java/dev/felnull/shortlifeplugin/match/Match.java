@@ -1040,30 +1040,33 @@ public abstract class Match {
          */
         protected void updateInfo() {
             // サイドバーを更新
-            List<String> sidebarInfos = new LinkedList<>();
+            List<Component> sidebarInfos = new LinkedList<>();
             appendSidebarInfo(sidebarInfos);
             this.infoSidebarDisplay.update(sidebarInfos);
         }
 
         /**
-         * サイドバー情報として、表示する文字列をリストに追加する
+         * サイドバー情報として、表示するコンポーネントをリストに追加する
          *
-         * @param sidebarInfos 情報表示の文字列リスト
+         * @param sidebarInfos 情報表示のコンポーネントリスト
          */
-        protected void appendSidebarInfo(@NotNull List<String> sidebarInfos) {
+        protected void appendSidebarInfo(@NotNull List<Component> sidebarInfos) {
             appendSidebarMatchInfo(sidebarInfos);
-            sidebarInfos.add("");
+            sidebarInfos.add(Component.text(""));
             appendSidebarPlayerInfo(sidebarInfos);
         }
 
         /**
          * 試合関係の情報をサイドバーに追加
          *
-         * @param sidebarInfos サイドバー情報の文字列リスト
+         * @param sidebarInfos サイドバー情報のコンポーネントリスト
          */
-        protected void appendSidebarMatchInfo(@NotNull List<String> sidebarInfos) {
-            sidebarInfos.add(String.format("モード: %s", Match.this.matchMode.name()));
-            sidebarInfos.add(String.format("状態: %s", Match.this.getStatus().getShowName()));
+        protected void appendSidebarMatchInfo(@NotNull List<Component> sidebarInfos) {
+            sidebarInfos.add(Component.text("モード: ")
+                    .append(Component.text(Match.this.matchMode.name())));
+
+            sidebarInfos.add(Component.text("状態: ")
+                    .append(Component.text(Match.this.getStatus().getShowName())));
 
             String mapText = matchMap.name();
 
@@ -1071,9 +1074,16 @@ public abstract class Match {
                 mapText += "(読み込み中)";
             }
 
-            sidebarInfos.add(String.format("マップ: %s", mapText));
-            sidebarInfos.add(String.format("参加人数: %d/%d", players.size(), matchMode.maxPlayerCount()));
-            sidebarInfos.add(String.format("残り時間: %s", getTimeDisplayText((int) (Match.this.countDownTime / 1000L))));
+            sidebarInfos.add(Component.text("マップ: ")
+                    .append(Component.text(mapText)));
+
+            sidebarInfos.add(Component.text("参加人数: ")
+                    .append(Component.text(players.size()))
+                    .append(Component.text("/"))
+                    .append(Component.text(matchMode.maxPlayerCount())));
+
+            sidebarInfos.add(Component.text("残り時間: ")
+                    .append(Component.text(getTimeDisplayText((int) (Match.this.countDownTime / 1000L)))));
         }
 
         private String getTimeDisplayText(int second) {
@@ -1085,12 +1095,17 @@ public abstract class Match {
         /**
          * プレイヤー関係の情報をサイドバーに追加
          *
-         * @param sidebarInfos サイドバー情報の文字列リスト
+         * @param sidebarInfos サイドバー情報のコンポーネントリスト
          */
-        protected void appendSidebarPlayerInfo(@NotNull List<String> sidebarInfos) {
-            sidebarInfos.add(String.format("キル数: %s", this.killCount));
-            sidebarInfos.add(String.format("連続キル数: %s", this.killStreakCount));
-            sidebarInfos.add(String.format("死亡数: %s", this.deathCount));
+        protected void appendSidebarPlayerInfo(@NotNull List<Component> sidebarInfos) {
+            sidebarInfos.add(Component.text("キル数: ")
+                    .append(Component.text(this.killCount)));
+
+            sidebarInfos.add(Component.text("連続キル数: ")
+                    .append(Component.text(this.killStreakCount)));
+
+            sidebarInfos.add(Component.text("死亡数: ")
+                    .append(Component.text(this.deathCount)));
         }
 
         public Scoreboard getPreScoreboard() {

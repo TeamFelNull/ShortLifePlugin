@@ -365,7 +365,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         }
 
         @Override
-        protected void appendSidebarPlayerInfo(@NotNull List<String> sidebarInfos) {
+        protected void appendSidebarPlayerInfo(@NotNull List<Component> sidebarInfos) {
             appendSidebarTeamInfo(sidebarInfos);
             super.appendSidebarPlayerInfo(sidebarInfos);
         }
@@ -375,11 +375,14 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
          *
          * @param sidebarInfos サイドバー情報の文字列リスト
          */
-        protected void appendSidebarTeamInfo(@NotNull List<String> sidebarInfos) {
+        protected void appendSidebarTeamInfo(@NotNull List<Component> sidebarInfos) {
             MatchTeam team = getTeamByPlayer(getPlayer());
 
             if (team != null) {
-                sidebarInfos.add(String.format("チーム: %s", team.getName()));
+                Component teamComponent = Component.text(team.getName()).color(team.getColor());
+
+                sidebarInfos.add(Component.text("チーム: ")
+                        .append(teamComponent));
             }
         }
     }

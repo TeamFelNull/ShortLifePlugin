@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.match;
 
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;
@@ -215,22 +216,26 @@ public class TeamPointMatch extends TeamBaseMatch {
 
 
         @Override
-        protected void appendSidebarMatchInfo(@NotNull List<String> sidebarInfos) {
+        protected void appendSidebarMatchInfo(@NotNull List<Component> sidebarInfos) {
             super.appendSidebarMatchInfo(sidebarInfos);
 
             // 得点表示
-            StringBuilder pointSb = new StringBuilder();
-            pointSb.append("ポイント ");
+            List<Component> teamPontTexts = new LinkedList<>();
 
-            List<String> teamPointTexts = new LinkedList<>();
             for (MatchTeam team : TeamPointMatch.this.teams) {
-                String text = team.getName() + ": " + ((PointMatchTeam) team).getPoint();
-                teamPointTexts.add(text);
+                Component teamText = Component.text(team.getName())
+                        .append(Component.text(": "))
+                        .append(Component.text(((PointMatchTeam) team).getPoint()))
+                        .color(team.getColor());
+
+                teamPontTexts.add(teamText);
             }
 
-            pointSb.append(String.join(", ", teamPointTexts));
+            Component pointText = Component.text("ポイント ")
+                    .append(Component.join(JoinConfiguration.builder().separator(Component.text(", ")).build(),
+                            teamPontTexts.toArray(Component[]::new)));
 
-            sidebarInfos.add(pointSb.toString());
+            sidebarInfos.add(pointText);
         }
     }
 

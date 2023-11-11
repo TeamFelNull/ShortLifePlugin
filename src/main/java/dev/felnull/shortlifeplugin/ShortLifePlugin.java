@@ -4,6 +4,7 @@ import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.commands.SLCommands;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
+import dev.felnull.shortlifeplugin.listener.CommonListener;
 import dev.felnull.shortlifeplugin.listener.EquipmentGroupListener;
 import dev.felnull.shortlifeplugin.listener.MatchListener;
 import dev.felnull.shortlifeplugin.listener.WeaponMechanicsListener;
@@ -63,6 +64,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         MatchModes.init();
 
         // イベントリスナー
+        CommonListener.init(this);
         MatchListener.init(this);
         EquipmentGroupListener.init(this);
         WeaponMechanicsListener.init(this);

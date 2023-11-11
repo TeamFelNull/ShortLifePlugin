@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+
+jobs:
+  # ビルドとリリースまでの処理
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK #JDKセットアップ
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: Setup Gradle #Gradleセットアップ
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Gradle Check #Gradle動作確認
+        shell: bash
+        run: |
+          chmod +x gradlew
+          chmod -R +X gradle
+          ./gradlew check
+
+      - name: Build #ビルド
+        shell: bash
+        run: |
+          ./gradlew build --stacktrace --no-daemon
+
+      - name: Collect Releases #リリースしたものを収集
+        shell: bash
+        run: |
+          mkdir release
+          cd release
+          cp -r ../build/libs/. ./
+          
+      - name: Generate Hash #リリースするファイルのハッシュファイルを生成
+        uses: TeamFelnull/actions-reusable-workflows/.github/actions/hashing-directory@master
+        with:
+          directory_path: "${{ github.workspace }}/release"
+
+      - name: Upload Artifact #アーティファクトをアップロード
+        uses: actions/upload-artifact@v3
+        with:
+          name: releases
+          path: release/*
+
+      - name: GitHub Releases #GiHubにリリース
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: LATEST_CHANGELOG.md
+          files: release/*

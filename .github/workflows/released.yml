@@ -58,8 +58,7 @@ jobs:
           name: releases
           path: release/*
 
-      - name: GitHub Releases #GiHubにリリース
+      - name: ${{ github.ref_name }}リリース #GiHubにリリース
         uses: softprops/action-gh-release@v1
         with:
-          body_path: LATEST_CHANGELOG.md
           files: release/*

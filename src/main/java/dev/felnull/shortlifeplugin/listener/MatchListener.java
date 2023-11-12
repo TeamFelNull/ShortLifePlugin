@@ -41,8 +41,13 @@ public final class MatchListener implements Listener {
         MatchManager matchManager = MatchManager.getInstance();
         Match match = matchManager.getJointedMach(e.getPlayer());
 
-        // 試合に参加済みで試合中であればリスポーン地点を変更
         if (match != null && match.getStatus() == Match.Status.STARTED) {
+            /* 試合に参加済みで試合中の場合 */
+
+            // リスポーン処理
+            match.onRespawn(e.getPlayer());
+
+            // リスポーン地点を変更
             Location location = match.lotterySpawnLocation(e.getPlayer());
             if (location != null) {
                 e.setRespawnLocation(location);

@@ -46,19 +46,19 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     }
 
     @Override
-    protected PlayerData createPlayerData(@NotNull Player player) {
-        return new TeamPlayerData(player);
+    protected PlayerInfo createPlayerInfo(@NotNull Player player) {
+        return new TeamPlayerInfo(player);
     }
 
     /**
-     * チームのプレイヤーデータを取得
+     * チームのプレイヤー情報を取得
      *
      * @param player プレイヤー
-     * @return プレイヤーデータ
+     * @return プレイヤー情報
      */
     @Nullable
-    public TeamPlayerData getTeamPlayerData(@NotNull Player player) {
-        return (TeamPlayerData) getPlayerData(player);
+    public TeamBaseMatch.TeamPlayerInfo getTeamPlayerInfo(@NotNull Player player) {
+        return (TeamPlayerInfo) getPlayerInfo(player);
     }
 
 
@@ -284,9 +284,9 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
             }
 
             // 情報表示を更新
-            TeamPlayerData teamPlayerData = getTeamPlayerData(player);
-            if (teamPlayerData != null) {
-                teamPlayerData.dirtyInfo();
+            TeamPlayerInfo teamPlayerInfo = getTeamPlayerInfo(player);
+            if (teamPlayerInfo != null) {
+                teamPlayerInfo.dirtyInfo();
             }
         }
 
@@ -316,17 +316,17 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     }
 
     /**
-     * チーム試合のプレイヤーデータ
+     * チーム試合のプレイヤー情報
      *
      * @author MORIMORI0317
      */
-    public class TeamPlayerData extends PlayerData {
+    public class TeamPlayerInfo extends PlayerInfo {
         /**
          * コンストラクタ
          *
          * @param player プレイヤー
          */
-        public TeamPlayerData(@NotNull Player player) {
+        public TeamPlayerInfo(@NotNull Player player) {
             super(player);
 
             // スコアボード表示用チームを登録

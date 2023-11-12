@@ -69,19 +69,19 @@ public class TeamPointMatch extends TeamBaseMatch {
     }
 
     @Override
-    protected PlayerData createPlayerData(@NotNull Player player) {
-        return new PointTeamPlayerData(player);
+    protected PlayerInfo createPlayerInfo(@NotNull Player player) {
+        return new PointTeamPlayerInfo(player);
     }
 
     /**
-     * ポイント制チーム試合のプレイヤーデータを取得
+     * ポイント制チーム試合のプレイヤー情報を取得
      *
      * @param player プレイヤー
-     * @return プレイヤーデータ
+     * @return プレイヤー情報
      */
     @Nullable
-    public PointTeamPlayerData getPointTeamPlayerData(@NotNull Player player) {
-        return (PointTeamPlayerData) getTeamPlayerData(player);
+    public TeamPointMatch.PointTeamPlayerInfo getPointTeamPlayerInfo(@NotNull Player player) {
+        return (PointTeamPlayerInfo) getTeamPlayerInfo(player);
     }
 
     @Override
@@ -199,18 +199,18 @@ public class TeamPointMatch extends TeamBaseMatch {
     }
 
     /**
-     * ポイント制チーム試合のプレイヤーデータ
+     * ポイント制チーム試合のプレイヤー情報
      *
      * @author MORIMORI0317
      */
-    public class PointTeamPlayerData extends TeamPlayerData {
+    public class PointTeamPlayerInfo extends TeamPlayerInfo {
 
         /**
          * コンストラクタ
          *
          * @param player プレイヤー
          */
-        public PointTeamPlayerData(@NotNull Player player) {
+        public PointTeamPlayerInfo(@NotNull Player player) {
             super(player);
         }
 

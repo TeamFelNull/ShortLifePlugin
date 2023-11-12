@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.gui;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.gui.item.SLPageItem;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -53,9 +54,11 @@ public final class SLGuis {
         Structure.addGlobalIngredient('>', () -> new SLPageItem(true));
         Structure.addGlobalIngredient('#', getBorderItem());
 
-
-        GUI_REGISTRY.put(TEST, new TestGui());
         GUI_REGISTRY.put(MATCH_SELECTOR, new MatchSelectorGui());
+
+        if (SLConfig.isTestMode()) {
+            GUI_REGISTRY.put(TEST, new TestGui());
+        }
     }
 
     /**

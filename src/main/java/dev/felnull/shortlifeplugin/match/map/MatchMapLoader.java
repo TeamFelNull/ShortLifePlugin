@@ -99,7 +99,7 @@ public class MatchMapLoader {
     private final Map<String, MatchMap> maps = new HashMap<>();
 
     /**
-     * 試合用ワールドデータのキャッシュ
+     * 試合用ワールド情報のキャッシュ
      */
     private final Supplier<CompletableFuture<File>> worldCache = Suppliers.memoize(this::createWorldCache);
 
@@ -316,6 +316,8 @@ public class MatchMapLoader {
         region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
         region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
         region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
+        region.setFlag(Flags.BUILD, StateFlag.State.DENY);
+        region.setFlag(Flags.ITEM_DROP, StateFlag.State.DENY);
     }
 
     private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {

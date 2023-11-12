@@ -17,10 +17,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
@@ -66,7 +63,7 @@ public abstract class Match {
     private static final long DISPOSE_WAIT_TIME = FINISH_WAIT_FOR_TELEPORT + (1000 * 5);
 
     /**
-     * スポーン後の無敵時間
+     * スポーン後の無敵時間(ms)
      */
     private static final long SPAWN_INVINCIBILITY_TIME = 1000 * 5;
 
@@ -129,9 +126,9 @@ public abstract class Match {
     private static final Component MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE = Component.text("参加人数が不足したため試合を終了します").color(NamedTextColor.RED);
 
     /**
-     * 参加しているプレイヤーとプレイヤーデータ
+     * 参加しているプレイヤーとプレイヤー情報
      */
-    protected final Map<Player, PlayerData> players = new HashMap<>();
+    protected final Map<Player, PlayerInfo> players = new HashMap<>();
 
     /**
      * 同じ状態の経過Tick
@@ -228,6 +225,7 @@ public abstract class Match {
      * 1Tickごとの処理
      */
     protected void tick() {
+
         // 参加を維持できないプレイヤーを退出させる
         List<Player> leavePlayers = players.keySet().stream()
                 .filter(pl -> !canMaintainJoinPlayer(pl))
@@ -253,11 +251,12 @@ public abstract class Match {
             }
         }
 
-        // プレイヤーごとの処理
-        this.players.forEach((player, playerData) -> {
-            playerData.setLifeTime(playerData.getLifeTime() + 1);
-            playerData.updateCheckAndInfo();
+
+        // プレイヤーごとのTick処理
+        this.players.forEach((player, playerInfo) -> {
+            playerInfo.tick();
         });
+
         Match.this.dirtyAllInfo = false;
     }
 
@@ -417,12 +416,12 @@ public abstract class Match {
             return false;
         }
 
-        PlayerData playerData = createPlayerData(player);
-        this.players.put(player, playerData);
+        PlayerInfo playerInfo = createPlayerInfo(player);
+        this.players.put(player, playerInfo);
 
         // プレイヤーのスコアボードを試合用スコアボードに変更
-        playerData.setPreScoreboard(player.getScoreboard());
-        player.setScoreboard(playerData.getScoreboard());
+        playerInfo.setPreScoreboard(player.getScoreboard());
+        player.setScoreboard(playerInfo.getScoreboard());
 
         // 試合が既に開始しているならば開始処理
         if (status == Status.STARTED) {
@@ -447,23 +446,23 @@ public abstract class Match {
     }
 
     /**
-     * プレイヤーデータを作成
+     * プレイヤー情報を作成
      *
      * @param player プレイヤー
-     * @return プレイヤーデータ
+     * @return プレイヤー情報
      */
-    protected PlayerData createPlayerData(@NotNull Player player) {
-        return new PlayerData(player);
+    protected PlayerInfo createPlayerInfo(@NotNull Player player) {
+        return new PlayerInfo(player);
     }
 
     /**
-     * 指定されたプレイヤーのデータを取得
+     * 指定されたプレイヤーの情報を取得
      *
      * @param player プレイヤー
-     * @return プレイヤーデータ
+     * @return プレイヤー情報
      */
     @Nullable
-    public PlayerData getPlayerData(@NotNull Player player) {
+    public Match.PlayerInfo getPlayerInfo(@NotNull Player player) {
         return this.players.get(player);
     }
 
@@ -482,10 +481,10 @@ public abstract class Match {
             return false;
         }
 
-        PlayerData playerData = players.get(player);
+        PlayerInfo playerInfo = players.get(player);
 
         // 試合用スコアボードを参加前のスコアボードに戻す
-        Scoreboard preScoreboard = playerData.getPreScoreboard();
+        Scoreboard preScoreboard = playerInfo.getPreScoreboard();
         if (preScoreboard == null) {
             preScoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         }
@@ -497,7 +496,7 @@ public abstract class Match {
         player.hideBossBar(countDownBossbar);
 
         // ゲームモードを元に戻す
-        GameMode preGameMode = playerData.getPreGameMode();
+        GameMode preGameMode = playerInfo.getPreGameMode();
         if (preGameMode != null) {
             player.setGameMode(preGameMode);
         }
@@ -578,11 +577,11 @@ public abstract class Match {
      * @param player プレイヤー
      */
     protected void playerStart(@NotNull Player player) {
-        PlayerData playerData = getPlayerData(player);
+        PlayerInfo playerInfo = getPlayerInfo(player);
 
         // ゲームモードを変更
-        if (playerData != null) {
-            playerData.setPreGameMode(player.getGameMode());
+        if (playerInfo != null) {
+            playerInfo.setPreGameMode(player.getGameMode());
         }
         player.setGameMode(GameMode.ADVENTURE);
 
@@ -875,16 +874,17 @@ public abstract class Match {
      */
     public boolean isInvinciblePlayer(@NotNull Player player) {
         if (status == Status.FINISHED) {
-            // 試合終了後、試合ワールドにいる場合は無敵
+            /* 試合終了後 */
+            // 試合ワールドにいる場合は無敵
             Optional<MatchMapWorld> matchMapWorld = matchMapInstance.getMapWorld();
             return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
         } else if (status == Status.STARTED) {
-            // 試合中、スポーン直後は無敵
-            PlayerData playerData = getPlayerData(player);
+            /* 試合中 */
+            PlayerInfo playerInfo = getPlayerInfo(player);
 
-            if (playerData != null) {
-                int invTick = SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME);
-                return playerData.getLifeTime() <= invTick;
+            // スポーン保護状態は無敵
+            if (playerInfo != null) {
+                return playerInfo.isSpawnProtect();
             }
 
             return false;
@@ -897,17 +897,31 @@ public abstract class Match {
     }
 
     /**
+     * リスポーン時に呼び出し
+     *
+     * @param player プレイヤー
+     */
+    public void onRespawn(@NotNull Player player) {
+        PlayerInfo playerInfo = getPlayerInfo(player);
+
+        // スポーン保護指定
+        if (playerInfo != null) {
+            playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME));
+        }
+    }
+
+    /**
      * プレイヤー死亡時に呼び出し
      *
      * @param target 死亡したプレイヤー
      */
     public void onDeath(@NotNull Player target) {
-        PlayerData targetData = players.get(target);
+        PlayerInfo targetInfo = getPlayerInfo(target);
 
-        if (targetData != null) {
-            targetData.setDeathCount(targetData.getDeathCount() + 1);
-            targetData.setKillStreakCount(0);
-            targetData.setLifeTime(0);
+        if (targetInfo != null) {
+            targetInfo.setDeathCount(targetInfo.getDeathCount() + 1);
+            targetInfo.setKillStreakCount(0);
+            targetInfo.setLifeTime(0);
         }
 
         Player attacker = target.getKiller();
@@ -923,11 +937,11 @@ public abstract class Match {
      * @param attacker 攻撃者
      */
     protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) {
-        PlayerData attackerData = players.get(attacker);
+        PlayerInfo attackerInfo = players.get(attacker);
 
-        if (attackerData != null) {
-            attackerData.setKillCount(attackerData.getKillCount() + 1);
-            attackerData.setKillStreakCount(attackerData.getKillStreakCount() + 1);
+        if (attackerInfo != null) {
+            attackerInfo.setKillCount(attackerInfo.getKillCount() + 1);
+            attackerInfo.setKillStreakCount(attackerInfo.getKillStreakCount() + 1);
         }
     }
 
@@ -951,14 +965,14 @@ public abstract class Match {
     }
 
     /**
-     * プレイヤーごとのデータ
+     * プレイヤーごとの情報
      *
      * @author MORIMORI0317
      */
-    public class PlayerData {
+    public class PlayerInfo {
 
         /**
-         * このデータのプレイヤー
+         * この情報のプレイヤー
          */
         @NotNull
         private final Player player;
@@ -1010,16 +1024,42 @@ public abstract class Match {
         private int lifeTime;
 
         /**
+         * スポーン保護中の残り時間 (Tick)<br/>
+         * -1以下で保護なし
+         */
+        private int spawnProtectTime = -1;
+
+        /**
          * コンストラクタ
          *
          * @param player プレイヤー
          */
-        protected PlayerData(@NotNull Player player) {
+        protected PlayerInfo(@NotNull Player player) {
             this.player = player;
             Objective sidebarObjective = scoreboard.registerNewObjective("sidebar-info", Criteria.DUMMY,
                     Component.text("試合情報").style(Style.style().color(NamedTextColor.BLUE).decorate(TextDecoration.BOLD).build()));
             sidebarObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
             this.infoSidebarDisplay = new SidebarDisplay(sidebarObjective);
+        }
+
+        /**
+         * tick処理
+         */
+        protected void tick() {
+            lifeTime++;
+
+            // スポーン保護状態を更新
+            if (spawnProtectTime >= 0) {
+                spawnProtectTime--;
+
+                float timePar = (float) spawnProtectTime / (float) SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME);
+
+                player.getWorld()
+                        .spawnParticle(Particle.COMPOSTER, player.getLocation().clone().add(0, 1, 0), (int) (15f * timePar), 0.3f, 0.3f, 0.3f);
+
+            }
+
+            updateCheckAndInfo();
         }
 
         /**
@@ -1187,6 +1227,14 @@ public abstract class Match {
 
         public void setPreGameMode(GameMode preGameMode) {
             this.preGameMode = preGameMode;
+        }
+
+        public void setSpawnProtectTime(int spawnProtectTime) {
+            this.spawnProtectTime = spawnProtectTime;
+        }
+
+        public boolean isSpawnProtect() {
+            return spawnProtectTime >= 0;
         }
     }
 

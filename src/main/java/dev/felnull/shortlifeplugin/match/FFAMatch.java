@@ -37,7 +37,7 @@ public class FFAMatch extends PVPBaseMatch {
 
     @Override
     protected void matchEnd() {
-        Map<Integer, List<Map.Entry<Player, PlayerData>>> playerKillCountGroups = this.players.entrySet().stream()
+        Map<Integer, List<Map.Entry<Player, PlayerInfo>>> playerKillCountGroups = this.players.entrySet().stream()
                 .collect(Collectors.groupingBy(entry -> entry.getValue().getKillCount()));
 
         List<List<Player>> playerRankGroups = playerKillCountGroups.entrySet().stream()

@@ -467,6 +467,8 @@ public class MatchMapLoader {
 
             matchMapInstance.setStrictWorld(world);
 
+            world.setAutoSave(false);
+
             // ゲームルール変更
             // https://minecraft.fandom.com/ja/wiki/%E3%82%B2%E3%83%BC%E3%83%A0%E3%83%AB%E3%83%BC%E3%83%AB
             world.setGameRule(GameRule.DISABLE_RAIDS, true);

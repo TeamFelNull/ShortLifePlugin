@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 /**
@@ -41,5 +42,16 @@ public class CommonListener implements Listener {
             message = message.color(NamedTextColor.GREEN);
             e.getPlayer().sendMessage(message);
         }
+    }
+
+    /**
+     * プレイヤーが死亡した際のイベント
+     *
+     * @param e プレイヤー死亡イベント
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerDeath(PlayerDeathEvent e) {
+        // TODO カスタム死亡メッセージを実装
+        e.deathMessage(Component.text("TEST Death message"));
     }
 }

@@ -90,14 +90,17 @@ public class EquipmentGroupManager {
      * 破棄
      */
     public void dispose() {
-        try {
-            save();
-        } catch (IOException | RuntimeException ex) {
-            SLUtils.reportError(ex, "装備グループの保存に失敗");
-            throw new RuntimeException(ex);
-        }
+        if (this.dirty) {
+            try {
 
-        SLUtils.getLogger().info("装備グループの保存完了");
+                save();
+
+            } catch (IOException | RuntimeException ex) {
+                SLUtils.reportError(ex, "装備グループの保存に失敗");
+                throw new RuntimeException(ex);
+            }
+            SLUtils.getLogger().info("装備グループの保存完了");
+        }
     }
 
     private void load() throws IOException {

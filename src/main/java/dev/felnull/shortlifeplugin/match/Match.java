@@ -21,6 +21,7 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -915,13 +916,22 @@ public abstract class Match {
      *
      * @param target 死亡したプレイヤー
      */
-    public void onDeath(@NotNull Player target) {
-        PlayerInfo targetInfo = getPlayerInfo(target);
+    public void onPlayerDeath(@NotNull Player target) {
+        // 試合中のみ
+        if (getStatus() == Match.Status.STARTED) {
 
-        if (targetInfo != null) {
-            targetInfo.setDeathCount(targetInfo.getDeathCount() + 1);
-            targetInfo.setKillStreakCount(0);
-            targetInfo.setLifeTime(0);
+            PlayerInfo targetInfo = getPlayerInfo(target);
+
+            if (targetInfo != null) {
+                targetInfo.setDeathCount(targetInfo.getDeathCount() + 1);
+
+                if (targetInfo.getKillStreakCount() > targetInfo.getMaxKillStreakCount()) {
+                    targetInfo.setMaxKillStreakCount(targetInfo.getKillStreakCount());
+                }
+
+                targetInfo.setKillStreakCount(0);
+                targetInfo.setLifeTime(0);
+            }
         }
 
         Player attacker = target.getKiller();
@@ -943,6 +953,35 @@ public abstract class Match {
             attackerInfo.setKillCount(attackerInfo.getKillCount() + 1);
             attackerInfo.setKillStreakCount(attackerInfo.getKillStreakCount() + 1);
         }
+    }
+
+    /**
+     * ダメージを受けた時に呼び出し
+     *
+     * @param target       ダメージを受けたプレイヤー
+     * @param attacker     ダメージを与えたプレイヤー
+     * @param damageAmount ダメージ量
+     * @param damageCause  ダメージケース
+     * @return falseであればダメージをキャンセル
+     */
+    public boolean onPlayerDamage(@NotNull Player target, @Nullable Player attacker, double damageAmount, @NotNull EntityDamageEvent.DamageCause damageCause) {
+        // 無敵とされているプレイヤーであれば、Kill以外のダメージをキャンセル
+        if (damageCause != EntityDamageEvent.DamageCause.KILL && isInvinciblePlayer(target)) {
+            PlayerInfo playerInfo = getPlayerInfo(target);
+
+            if (playerInfo != null && playerInfo.isSpawnProtect()) {
+                /* スポーン保護状態の場合 */
+
+                // 攻撃者に警告音
+                if (attacker != null) {
+                    attacker.playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL.key(), Sound.Source.MASTER, 30, 1.5f + RANDOM.nextFloat() * 0.07f), target);
+                }
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -1009,6 +1048,11 @@ public abstract class Match {
         private int killStreakCount;
 
         /**
+         * 最大連続キル数
+         */
+        private int maxKillStreakCount;
+
+        /**
          * 死亡数
          */
         private int deathCount;
@@ -1049,14 +1093,18 @@ public abstract class Match {
             lifeTime++;
 
             // スポーン保護状態を更新
-            if (spawnProtectTime >= 0) {
-                spawnProtectTime--;
+            if (getStatus() == Status.STARTED) {
+                if (spawnProtectTime >= 0) {
+                    spawnProtectTime--;
 
-                float timePar = (float) spawnProtectTime / (float) SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME);
+                    float timePar = (float) spawnProtectTime / (float) SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME);
 
-                player.getWorld()
-                        .spawnParticle(Particle.COMPOSTER, player.getLocation().clone().add(0, 1, 0), (int) (15f * timePar), 0.3f, 0.3f, 0.3f);
+                    player.getWorld()
+                            .spawnParticle(Particle.COMPOSTER, player.getLocation().clone().add(0, 1, 0), (int) (15f * timePar), 0.3f, 0.3f, 0.3f);
 
+                }
+            } else {
+                spawnProtectTime = -1;
             }
 
             updateCheckAndInfo();
@@ -1138,14 +1186,91 @@ public abstract class Match {
          * @param sidebarInfos サイドバー情報のコンポーネントリスト
          */
         protected void appendSidebarPlayerInfo(@NotNull List<Component> sidebarInfos) {
-            sidebarInfos.add(Component.text("キル数: ")
-                    .append(Component.text(this.killCount)));
 
-            sidebarInfos.add(Component.text("連続キル数: ")
-                    .append(Component.text(this.killStreakCount)));
+            Style.Builder killCountStyle = Style.style();
+            // キル数文字スタイル選定
+            if (this.killCount >= 100) {
+                killCountStyle.color(NamedTextColor.BLACK).decorate(TextDecoration.BOLD, TextDecoration.ITALIC);
+            } else if (this.killCount >= 50) {
+                killCountStyle.color(NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD);
+            } else if (this.killCount >= 35) {
+                killCountStyle.color(NamedTextColor.RED);
+            } else if (this.killCount >= 15) {
+                killCountStyle.color(NamedTextColor.GOLD);
+            } else if (this.killCount >= 5) {
+                killCountStyle.color(NamedTextColor.YELLOW);
+            } else {
+                killCountStyle.color(NamedTextColor.WHITE);
+            }
+
+            sidebarInfos.add(Component.text("キル数: ")
+                    .append(Component.text(this.killCount).style(killCountStyle.build())));
+
+
+            Style.Builder killStreakCountStyle = Style.style();
+            // 連続キル数文字スタイル選定
+            if (this.killStreakCount >= 50) {
+                killStreakCountStyle.color(NamedTextColor.BLACK).decorate(TextDecoration.BOLD, TextDecoration.ITALIC);
+            } else if (this.killStreakCount >= 30) {
+                killStreakCountStyle.color(NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD);
+            } else if (this.killStreakCount >= 15) {
+                killStreakCountStyle.color(NamedTextColor.RED);
+            } else if (this.killStreakCount >= 8) {
+                killStreakCountStyle.color(NamedTextColor.GOLD);
+            } else if (this.killStreakCount >= 3) {
+                killStreakCountStyle.color(NamedTextColor.YELLOW);
+            } else {
+                killStreakCountStyle.color(NamedTextColor.WHITE);
+            }
+
+            Component killStreakCountComponent = Component.text("連続キル数: ")
+                    .append(Component.text(this.killStreakCount).style(killStreakCountStyle.build()));
+
+            // 最大連続キル数が連続キル数を超えている場合のみ
+            if (this.maxKillStreakCount > this.killStreakCount) {
+
+                Style.Builder maxKillStreakCountStyle = Style.style();
+                // 最大連続キル数文字スタイル選定
+                if (this.maxKillStreakCount >= 50) {
+                    maxKillStreakCountStyle.color(NamedTextColor.BLACK).decorate(TextDecoration.BOLD, TextDecoration.ITALIC);
+                } else if (this.maxKillStreakCount >= 30) {
+                    maxKillStreakCountStyle.color(NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD);
+                } else if (this.maxKillStreakCount >= 15) {
+                    maxKillStreakCountStyle.color(NamedTextColor.RED);
+                } else if (this.maxKillStreakCount >= 8) {
+                    maxKillStreakCountStyle.color(NamedTextColor.GOLD);
+                } else if (this.maxKillStreakCount >= 3) {
+                    maxKillStreakCountStyle.color(NamedTextColor.YELLOW);
+                } else {
+                    maxKillStreakCountStyle.color(NamedTextColor.WHITE);
+                }
+
+                killStreakCountComponent = killStreakCountComponent.append(Component.text(" (最大")
+                        .append(Component.text(this.maxKillStreakCount).style(maxKillStreakCountStyle.build()))
+                        .append(Component.text(")")));
+            }
+
+            sidebarInfos.add(killStreakCountComponent);
+
+
+            Style.Builder deathCountStyle = Style.style();
+            // 死亡数文字スタイル選定
+            if (this.deathCount >= 100) {
+                deathCountStyle.color(NamedTextColor.BLACK).decorate(TextDecoration.BOLD, TextDecoration.ITALIC);
+            } else if (this.deathCount >= 66) {
+                deathCountStyle.color(NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD);
+            } else if (this.deathCount >= 42) {
+                deathCountStyle.color(NamedTextColor.RED);
+            } else if (this.deathCount >= 13) {
+                deathCountStyle.color(NamedTextColor.GOLD);
+            } else if (this.deathCount >= 4) {
+                deathCountStyle.color(NamedTextColor.YELLOW);
+            } else {
+                deathCountStyle.color(NamedTextColor.WHITE);
+            }
 
             sidebarInfos.add(Component.text("死亡数: ")
-                    .append(Component.text(this.deathCount)));
+                    .append(Component.text(this.deathCount).style(deathCountStyle.build())));
         }
 
         public Scoreboard getPreScoreboard() {
@@ -1199,6 +1324,20 @@ public abstract class Match {
          */
         public void setKillStreakCount(int killStreakCount) {
             this.killStreakCount = killStreakCount;
+            dirtyInfo();
+        }
+
+        public int getMaxKillStreakCount() {
+            return maxKillStreakCount;
+        }
+
+        /**
+         * 最大連続キル数セットと表示更新フラグを立てる
+         *
+         * @param maxKillStreakCount 最大連続キル数
+         */
+        public void setMaxKillStreakCount(int maxKillStreakCount) {
+            this.maxKillStreakCount = maxKillStreakCount;
             dirtyInfo();
         }
 

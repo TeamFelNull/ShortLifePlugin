@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -62,13 +63,26 @@ public final class MatchListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDamage(EntityDamageEvent e) {
-        if (e.getEntity() instanceof Player player) {
-            MatchManager matchManager = MatchManager.getInstance();
-            Match match = matchManager.getJointedMach(player);
 
-            // 試合で無敵とされているプレイヤーであればダメージイベントをキャンセル
-            if (match != null && match.isInvinciblePlayer(player)) {
-                e.setCancelled(true);
+        if (e.getEntity() instanceof Player target) {
+            MatchManager matchManager = MatchManager.getInstance();
+            Match match = matchManager.getJointedMach(target);
+
+            if (match != null) {
+                Player attacker;
+
+                // プレイヤーからのダメージかどうか
+                if (e instanceof EntityDamageByEntityEvent entityDamageByEntityEvent
+                        && entityDamageByEntityEvent.getDamager() instanceof Player attackerPlayer) {
+                    attacker = attackerPlayer;
+                } else {
+                    attacker = null;
+                }
+
+                // 試合ごとのダメージ処理を呼び出し
+                if (!match.onPlayerDamage(target, attacker, e.getDamage(), e.getCause())) {
+                    e.setCancelled(true);
+                }
             }
         }
     }
@@ -102,7 +116,7 @@ public final class MatchListener implements Listener {
 
         // 参加者が死亡した場合、試合の死亡処理を呼ぶ
         if (match != null) {
-            match.onDeath(target);
+            match.onPlayerDeath(target);
         }
     }
 }

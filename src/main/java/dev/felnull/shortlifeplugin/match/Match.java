@@ -16,6 +16,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -1150,11 +1151,11 @@ public abstract class Match {
          * @param sidebarInfos サイドバー情報のコンポーネントリスト
          */
         protected void appendSidebarMatchInfo(@NotNull List<Component> sidebarInfos) {
-            sidebarInfos.add(Component.text("モード: ")
-                    .append(Component.text(Match.this.matchMode.name())));
+            sidebarInfos.add(Component.text("モード: ").color(NamedTextColor.AQUA)
+                    .append(Component.text(Match.this.matchMode.name()).color(NamedTextColor.YELLOW)));
 
-            sidebarInfos.add(Component.text("状態: ")
-                    .append(Component.text(Match.this.getStatus().getShowName())));
+            sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.AQUA)
+                    .append(Component.text(Match.this.getStatus().getShowName()).color(Match.this.getStatus().getColor())));
 
             String mapText = matchMap.name();
 
@@ -1162,16 +1163,43 @@ public abstract class Match {
                 mapText += "(読み込み中)";
             }
 
-            sidebarInfos.add(Component.text("マップ: ")
-                    .append(Component.text(mapText)));
+            sidebarInfos.add(Component.text("マップ: ").color(NamedTextColor.AQUA)
+                    .append(Component.text(mapText).color(NamedTextColor.YELLOW)));
 
-            sidebarInfos.add(Component.text("参加人数: ")
-                    .append(Component.text(players.size()))
-                    .append(Component.text("/"))
-                    .append(Component.text(matchMode.maxPlayerCount())));
+            int participantPlayerCount = players.size();
+            int participantPlayerMax = matchMode.maxPlayerCount();
+            TextColor participantPlayerColor;
+            // 参加人数テキストの色選定
+            if (participantPlayerCount >= participantPlayerMax) {
+                participantPlayerColor = NamedTextColor.RED;
+            } else if (participantPlayerCount >= matchMode.minPlayerCount()) {
+                participantPlayerColor = NamedTextColor.GOLD;
+            } else {
+                participantPlayerColor = NamedTextColor.WHITE;
+            }
 
-            sidebarInfos.add(Component.text("残り時間: ")
-                    .append(Component.text(getTimeDisplayText((int) (Match.this.countDownTime / 1000L)))));
+            sidebarInfos.add(Component.text("参加人数: ").color(NamedTextColor.AQUA)
+                    .append(Component.text(participantPlayerCount)
+                            .append(Component.text("/"))
+                            .append(Component.text(participantPlayerMax))
+                            .color(participantPlayerColor)));
+
+            // 試合中もしくは、開始前のみ表示
+            if (getStatus() == Status.NONE || getStatus() == Status.STARTED) {
+                int remainingTimeSecond = (int) (Match.this.countDownTime / 1000L);
+                TextColor remainingTimeColor;
+                // 残り時間テキストの色選定
+                if (remainingTimeSecond > 30) {
+                    remainingTimeColor = NamedTextColor.WHITE;
+                } else if (remainingTimeSecond > 10) {
+                    remainingTimeColor = NamedTextColor.GOLD;
+                } else {
+                    remainingTimeColor = (remainingTimeSecond % 2 == 0) ? NamedTextColor.RED : NamedTextColor.DARK_RED;
+                }
+
+                sidebarInfos.add(Component.text("残り時間: ").color(NamedTextColor.AQUA)
+                        .append(Component.text(getTimeDisplayText(remainingTimeSecond)).color(remainingTimeColor)));
+            }
         }
 
         private String getTimeDisplayText(int second) {
@@ -1203,7 +1231,7 @@ public abstract class Match {
                 killCountStyle.color(NamedTextColor.WHITE);
             }
 
-            sidebarInfos.add(Component.text("キル数: ")
+            sidebarInfos.add(Component.text("キル数: ").color(NamedTextColor.GREEN)
                     .append(Component.text(this.killCount).style(killCountStyle.build())));
 
 
@@ -1223,7 +1251,7 @@ public abstract class Match {
                 killStreakCountStyle.color(NamedTextColor.WHITE);
             }
 
-            Component killStreakCountComponent = Component.text("連続キル数: ")
+            Component killStreakCountComponent = Component.text("連続キル数: ").color(NamedTextColor.GREEN)
                     .append(Component.text(this.killStreakCount).style(killStreakCountStyle.build()));
 
             // 最大連続キル数が連続キル数を超えている場合のみ
@@ -1245,9 +1273,9 @@ public abstract class Match {
                     maxKillStreakCountStyle.color(NamedTextColor.WHITE);
                 }
 
-                killStreakCountComponent = killStreakCountComponent.append(Component.text(" (最大")
+                killStreakCountComponent = killStreakCountComponent.append(Component.text(" (最大").color(NamedTextColor.GREEN)
                         .append(Component.text(this.maxKillStreakCount).style(maxKillStreakCountStyle.build()))
-                        .append(Component.text(")")));
+                        .append(Component.text(")").color(NamedTextColor.GREEN)));
             }
 
             sidebarInfos.add(killStreakCountComponent);
@@ -1269,7 +1297,7 @@ public abstract class Match {
                 deathCountStyle.color(NamedTextColor.WHITE);
             }
 
-            sidebarInfos.add(Component.text("死亡数: ")
+            sidebarInfos.add(Component.text("死亡数: ").color(NamedTextColor.GREEN)
                     .append(Component.text(this.deathCount).style(deathCountStyle.build())));
         }
 
@@ -1387,22 +1415,22 @@ public abstract class Match {
         /**
          * 開始前
          */
-        NONE(Component.text("無し"), "試合開始待ち", BossBar.Color.YELLOW),
+        NONE(Component.text("無し"), "試合開始待ち", NamedTextColor.YELLOW, BossBar.Color.YELLOW),
 
         /**
          * 開始
          */
-        STARTED(Component.text("開始"), "試合中", BossBar.Color.GREEN),
+        STARTED(Component.text("開始"), "試合中", NamedTextColor.GREEN, BossBar.Color.GREEN),
 
         /**
          * 終了
          */
-        FINISHED(Component.text("終了"), "試合終了", BossBar.Color.BLUE),
+        FINISHED(Component.text("終了"), "試合終了", NamedTextColor.BLUE, BossBar.Color.BLUE),
 
         /**
          * 破棄済み
          */
-        DISCARDED(Component.text("破棄"), "破棄済み", BossBar.Color.RED);
+        DISCARDED(Component.text("破棄"), "破棄済み", NamedTextColor.RED, BossBar.Color.RED);
 
         /**
          * 状態名
@@ -1415,6 +1443,11 @@ public abstract class Match {
         private final String showName;
 
         /**
+         * 色
+         */
+        private final TextColor color;
+
+        /**
          * カウントダウン用ボスバーの色
          */
         private final BossBar.Color countDownBossbarColor;
@@ -1424,16 +1457,22 @@ public abstract class Match {
          *
          * @param name                  状態名
          * @param showName              カウントダウン用ボスバーの表示名
+         * @param color                 色
          * @param countDownBossbarColor カウントダウン用ボスバーの色
          */
-        Status(Component name, String showName, BossBar.Color countDownBossbarColor) {
+        Status(Component name, String showName, TextColor color, BossBar.Color countDownBossbarColor) {
             this.name = name;
             this.showName = showName;
+            this.color = color;
             this.countDownBossbarColor = countDownBossbarColor;
         }
 
         public Component getName() {
             return name;
+        }
+
+        public TextColor getColor() {
+            return color;
         }
 
         public BossBar.Color getCountDownBossbarColor() {

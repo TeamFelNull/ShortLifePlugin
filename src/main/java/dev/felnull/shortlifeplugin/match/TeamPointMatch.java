@@ -224,15 +224,15 @@ public class TeamPointMatch extends TeamBaseMatch {
 
             for (MatchTeam team : TeamPointMatch.this.teams) {
                 Component teamText = Component.text(team.getName())
-                        .append(Component.text(": "))
+                        .append(Component.text(":"))
                         .append(Component.text(((PointMatchTeam) team).getPoint()))
                         .color(team.getColor());
 
                 teamPontTexts.add(teamText);
             }
 
-            Component pointText = Component.text("ポイント ")
-                    .append(Component.join(JoinConfiguration.builder().separator(Component.text(", ")).build(),
+            Component pointText = Component.text("ポイント ").color(NamedTextColor.AQUA)
+                    .append(Component.join(JoinConfiguration.builder().separator(Component.text(" ")).build(),
                             teamPontTexts.toArray(Component[]::new)));
 
             sidebarInfos.add(pointText);

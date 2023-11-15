@@ -381,7 +381,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
             if (team != null) {
                 Component teamComponent = Component.text(team.getName()).color(team.getColor());
 
-                sidebarInfos.add(Component.text("チーム: ")
+                sidebarInfos.add(Component.text("チーム: ").color(NamedTextColor.GREEN)
                         .append(teamComponent));
             }
         }

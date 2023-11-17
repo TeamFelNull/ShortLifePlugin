@@ -4,17 +4,19 @@ import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * 一般的なイベントリスナー
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, miyabi0333
  */
 public class CommonListener implements Listener {
 
@@ -51,7 +53,21 @@ public class CommonListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent e) {
-        // TODO カスタム死亡メッセージを実装
-        e.deathMessage(Component.text("TEST Death message"));
+        if (e.getEntity().getKiller() != null) {
+            String killed = e.getEntity().getName();
+            String killer = e.getEntity().getKiller().getName();
+            ItemStack stack = e.getEntity().getKiller().getEquipment().getItemInMainHand();
+            Component weapon;
+            if (!stack.isEmpty()) {
+                weapon = (e.getEntity().getKiller().getEquipment().getItemInMainHand().displayName());
+            } else {
+                weapon = (Component.text("[素手]").color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
+            }
+            e.deathMessage(null);
+            e.getPlayer().getWorld()
+                    .sendMessage(Component.text(" " + killed + " ").color(NamedTextColor.BLUE)
+                            .append(Component.text("<-Killed--").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
+                            .append(Component.text(" " + killer + " ").color(NamedTextColor.GREEN)).append(weapon));
+        }
     }
 }

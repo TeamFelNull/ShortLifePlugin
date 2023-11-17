@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.listener;
 
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
+import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
 import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
@@ -27,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 一般的なイベントリスナー
  *
- * @author MORIMORI0317, miyabi0333
+ * @author MORIMORI0317, miyabi0333, nin8995
  */
 public class CommonListener implements Listener {
 
@@ -118,21 +119,20 @@ public class CommonListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent e) {
-        if (e.getEntity().getKiller() != null) {
-            String killed = e.getEntity().getName();
-            String killer = e.getEntity().getKiller().getName();
-            ItemStack stack = e.getEntity().getKiller().getEquipment().getItemInMainHand();
-            Component weapon;
-            if (!stack.isEmpty()) {
-                weapon = (e.getEntity().getKiller().getEquipment().getItemInMainHand().displayName());
-            } else {
-                weapon = (Component.text("[素手]").color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
-            }
+        Player killed = e.getEntity();
+        Player killer = e.getEntity().getKiller();
+        if (killer != null) {
+            ItemStack stack = killer.getEquipment().getItemInMainHand();
+            Component weapon = !stack.isEmpty() ? stack.displayName() : Component.text("[素手]").color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
+            NamedTextColor killedColor = TeamBaseMatch.getTeamColor(killed);
+            NamedTextColor killerColor = TeamBaseMatch.getTeamColor(killer);
+
             e.deathMessage(null);
-            e.getPlayer().getWorld()
-                    .sendMessage(Component.text(" " + killed + " ").color(NamedTextColor.BLUE)
-                            .append(Component.text("<-Killed--").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
-                            .append(Component.text(" " + killer + " ").color(NamedTextColor.GREEN)).append(weapon));
+            e.getPlayer().getWorld().sendMessage(Component
+                    .text(String.format("%-15s", killed.getName())).color(killedColor)
+                    .append(Component.text(" <-Killed-- ").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
+                    .append(Component.text(String.format("%15s", killer.getName()) + " ").color(killerColor))
+                    .append(weapon));
         }
     }
 }

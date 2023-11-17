@@ -1,14 +1,15 @@
 package dev.felnull.shortlifeplugin.utils;
 
-import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
+import me.deecaad.core.compatibility.CompatibilityAPI;
+import me.deecaad.core.file.Configuration;
+import me.deecaad.weaponmechanics.WeaponMechanics;
+import me.deecaad.weaponmechanics.weapon.damage.DamagePoint;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 /**
  * WeaponMechanics関係のユーティリティクライアント
@@ -17,34 +18,69 @@ import java.util.Objects;
  */
 public class WeaponMechanicsUtils {
 
-    /**
-     * 武器名のデータID
-     */
-    private static final NamespacedKey WEAPON_TITLE_KEY = new NamespacedKey("weaponmechanics", "weapon-title");
-
     private WeaponMechanicsUtils() {
     }
 
     /**
-     * WMの武器名を取得
+     * エンティティの指定されたダメージポイント範囲を取得する
      *
-     * @param stack アイテムスタック
-     * @return 武器名
+     * @param livingEntity エンティティ
+     * @param damagePoint  ダメージポイント
+     * @return 範囲
+     * @see <a href="https://github.com/WeaponMechanics/MechanicsMain/blob/HEAD/WeaponMechanics/src/main/java/me/deecaad/weaponmechanics/weapon/HitHandler.java">参考</a>
      */
     @Nullable
-    public static String getWeaponTitle(@NotNull ItemStack stack) {
-        Objects.requireNonNull(stack);
+    public static BoundingBox getDamagePointBox(@NotNull LivingEntity livingEntity, @NotNull DamagePoint damagePoint) {
 
-        if (!stack.isEmpty() && stack.hasItemMeta()) {
-            ItemMeta meta = stack.getItemMeta();
-            PersistentDataContainer dataContainer = meta.getPersistentDataContainer();
+        BoundingBox ret = null;
 
-            // NBT内のweaponmechanics:weapon-titleを取得
-            if (dataContainer.has(WEAPON_TITLE_KEY, PersistentDataType.STRING)) {
-                return dataContainer.get(WEAPON_TITLE_KEY, PersistentDataType.STRING);
+        Configuration basicConfiguration = WeaponMechanics.getBasicConfigurations();
+        EntityType type = livingEntity.getType();
+        double entityHeight = CompatibilityAPI.getEntityCompatibility().getHeight(livingEntity);
+        BoundingBox boundingBox = livingEntity.getBoundingBox();
+        Vector boxMin = boundingBox.getMin();
+        Vector boxMax = boundingBox.getMax();
+
+        double head = basicConfiguration.getDouble("Entity_Hitboxes." + type.name() + "." + DamagePoint.HEAD.name());
+        double body = basicConfiguration.getDouble("Entity_Hitboxes." + type.name() + "." + DamagePoint.BODY.name());
+        double legs = basicConfiguration.getDouble("Entity_Hitboxes." + type.name() + "." + DamagePoint.LEGS.name());
+        double feet = basicConfiguration.getDouble("Entity_Hitboxes." + type.name() + "." + DamagePoint.FEET.name());
+
+        switch (damagePoint) {
+            case HEAD -> {
+                if (head > 0) {
+                    ret = BoundingBox.of(
+                            boxMin.clone().setY(boxMax.getY() - (entityHeight * head)),
+                            boxMax);
+                }
+            }
+            case BODY -> {
+                if (body > 0) {
+                    ret = BoundingBox.of(
+                            boxMin.clone().setY(boxMax.getY() - (entityHeight * (head + body))),
+                            boxMax.clone().setY(boxMax.getY() - (entityHeight * head)));
+                } else if (feet <= 0 && legs <= 0) {
+                    ret = livingEntity.getBoundingBox();
+                }
+            }
+            case LEGS -> {
+                if (legs > 0) {
+                    ret = BoundingBox.of(
+                            boxMin.clone().setY(boxMax.getY() - (entityHeight * (head + body + legs))),
+                            boxMax.clone().setY(boxMax.getY() - (entityHeight * (head + body))));
+                }
+            }
+            case FEET -> {
+                if (feet > 0) {
+                    ret = BoundingBox.of(
+                            boxMin,
+                            boxMax.clone().setY(boxMax.getY() - (entityHeight * (head + body + legs))));
+                }
+            }
+            default -> {
             }
         }
 
-        return null;
+        return ret;
     }
 }

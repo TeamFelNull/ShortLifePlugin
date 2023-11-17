@@ -3,7 +3,7 @@ package dev.felnull.shortlifeplugin.listener;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroup;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
-import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
+import me.deecaad.weaponmechanics.WeaponMechanicsAPI;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponPreReloadEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponPreShootEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponScopeEvent;
@@ -117,7 +117,7 @@ public class EquipmentGroupListener implements Listener {
         // 制限されるグループが存在する場合
         if (!restrictedEquipmentGroups.isEmpty()) {
 
-            if (!(itemStack != null && WeaponMechanicsUtils.getWeaponTitle(itemStack) != null && !skipWeaponMessage)) {
+            if (!(itemStack != null && WeaponMechanicsAPI.getWeaponTitle(itemStack) != null && !skipWeaponMessage)) {
                 JoinConfiguration.Builder restrictedGroupComponentBuilder = JoinConfiguration.builder();
                 restrictedGroupComponentBuilder.separator(Component.text(","));
 

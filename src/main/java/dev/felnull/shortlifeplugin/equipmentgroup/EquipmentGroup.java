@@ -1,6 +1,6 @@
 package dev.felnull.shortlifeplugin.equipmentgroup;
 
-import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
+import me.deecaad.weaponmechanics.WeaponMechanicsAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -82,10 +82,10 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
         }
 
         // 武器タイトルで比較
-        String stackWeaponTitle1 = WeaponMechanicsUtils.getWeaponTitle(stack1);
+        String stackWeaponTitle1 = WeaponMechanicsAPI.getWeaponTitle(stack1);
 
         if (stackWeaponTitle1 != null) {
-            String stackWeaponTitle2 = WeaponMechanicsUtils.getWeaponTitle(stack2);
+            String stackWeaponTitle2 = WeaponMechanicsAPI.getWeaponTitle(stack2);
             if (stackWeaponTitle2 != null) {
                 return stackWeaponTitle1.equals(stackWeaponTitle2);
             }

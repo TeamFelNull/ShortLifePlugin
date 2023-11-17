@@ -1152,7 +1152,7 @@ public abstract class Match {
          */
         protected void appendSidebarMatchInfo(@NotNull List<Component> sidebarInfos) {
             sidebarInfos.add(Component.text("モード: ").color(NamedTextColor.AQUA)
-                    .append(Component.text(Match.this.matchMode.name()).color(NamedTextColor.YELLOW)));
+                    .append(Component.text(Match.this.matchMode.name()).color(NamedTextColor.WHITE)));
 
             sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.AQUA)
                     .append(Component.text(Match.this.getStatus().getShowName()).color(Match.this.getStatus().getColor())));
@@ -1164,7 +1164,7 @@ public abstract class Match {
             }
 
             sidebarInfos.add(Component.text("マップ: ").color(NamedTextColor.AQUA)
-                    .append(Component.text(mapText).color(NamedTextColor.YELLOW)));
+                    .append(Component.text(mapText).color(NamedTextColor.WHITE)));
 
             int participantPlayerCount = players.size();
             int participantPlayerMax = matchMode.maxPlayerCount();

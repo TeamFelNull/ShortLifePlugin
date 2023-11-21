@@ -129,9 +129,9 @@ public class CommonListener implements Listener {
 
             e.deathMessage(null);
             e.getPlayer().getWorld().sendMessage(Component
-                    .text(String.format("%-15s", killed.getName())).color(killedColor)
+                    .text(String.format("%15s", killed.getName())).color(killedColor)
                     .append(Component.text(" <-Killed-- ").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
-                    .append(Component.text(String.format("%15s", killer.getName()) + " ").color(killerColor))
+                    .append(Component.text(String.format("%-15s", killer.getName()) + " ").color(killerColor))
                     .append(weapon));
         }
     }

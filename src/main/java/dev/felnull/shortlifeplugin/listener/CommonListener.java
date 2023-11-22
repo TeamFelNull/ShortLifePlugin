@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin.listener;
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.decoration.BloodExpression;
+import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
 import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
@@ -19,16 +20,21 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
 
 /**
  * 一般的なイベントリスナー
  *
- * @author MORIMORI0317, miyabi0333
+ * @author MORIMORI0317, miyabi0333, nin8995
  */
 public class CommonListener implements Listener {
 
     /**
+     * 揃えるドット数。MCIDのドット数の最大は95。
+     */
+    private static final int DOT_LENGTH = 47;
+
      * 初期化
      *
      * @param plugin プラグイン
@@ -106,21 +112,32 @@ public class CommonListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent e) {
-        if (e.getEntity().getKiller() != null) {
-            String killed = e.getEntity().getName();
-            String killer = e.getEntity().getKiller().getName();
-            ItemStack stack = e.getEntity().getKiller().getEquipment().getItemInMainHand();
-            Component weapon;
-            if (!stack.isEmpty()) {
-                weapon = (e.getEntity().getKiller().getEquipment().getItemInMainHand().displayName());
-            } else {
-                weapon = (Component.text("[素手]").color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
-            }
+        Player killed = e.getEntity();
+        Player killer = e.getEntity().getKiller();
+        if (killer != null) {
+            ItemStack stack = killer.getEquipment().getItemInMainHand();
+            Component weapon = !stack.isEmpty() ? stack.displayName() : Component.text("[素手]").color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
+            NamedTextColor killedColor = TeamBaseMatch.getTeamColor(killed);
+            NamedTextColor killerColor = TeamBaseMatch.getTeamColor(killer);
+
             e.deathMessage(null);
-            e.getPlayer().getWorld()
-                    .sendMessage(Component.text(" " + killed + " ").color(NamedTextColor.BLUE)
-                            .append(Component.text("<-Killed--").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
-                            .append(Component.text(" " + killer + " ").color(NamedTextColor.GREEN)).append(weapon));
+            e.getPlayer().getWorld().sendMessage(Component
+                    .text(alignName(killed.getName())).color(killedColor)
+                    .append(Component.text(" <-Killed-- ").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
+                    .append(Component.text(killer.getName() + " ").color(killerColor))
+                    .append(weapon));
         }
+    }
+
+    /**
+     * 名前に左からスペースを追加して {@link CommonListener#DOT_LENGTH 指定ドット数}に揃える
+     *
+     * @param name 揃える名前
+     * @return 揃えられた名前
+     */
+    private String alignName(String name) {
+        int widthToAdd = Math.max(0, DOT_LENGTH - MinecraftFont.Font.getWidth(name));
+        String spaceToAdd = " ".repeat(widthToAdd / 4 + (widthToAdd % 4 != 0 ? 1 : 0));
+        return spaceToAdd + name;
     }
 }

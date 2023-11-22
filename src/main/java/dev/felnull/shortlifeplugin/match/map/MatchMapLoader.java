@@ -318,6 +318,7 @@ public class MatchMapLoader {
         region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
         region.setFlag(Flags.BUILD, StateFlag.State.DENY);
         region.setFlag(Flags.ITEM_DROP, StateFlag.State.DENY);
+        region.setFlag(Flags.ITEM_PICKUP, StateFlag.State.DENY);
     }
 
     private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {

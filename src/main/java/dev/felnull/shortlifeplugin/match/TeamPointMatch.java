@@ -6,16 +6,19 @@ import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * ポイント制チーム試合
@@ -85,7 +88,7 @@ public class TeamPointMatch extends TeamBaseMatch {
     }
 
     @Override
-    protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) {
+    protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) throws IOException {
         super.onPlayerKill(target, attacker);
 
         PointMatchTeam targetMatchTeam = (PointMatchTeam) getTeamByPlayer(target);
@@ -139,24 +142,37 @@ public class TeamPointMatch extends TeamBaseMatch {
 
         // 勝敗処理
         for (MatchTeam team : teams) {
-            Component retText;
+            Component resultText;
             MatchEndTextProvider subtitleProvider;
+            boolean win = false;
 
             if (draw) {
-                retText = Component.text("引き分け").color(NamedTextColor.GRAY);
+                resultText = Component.text("引き分け").color(NamedTextColor.GRAY);
                 subtitleProvider = DRAW_TEXTS[RANDOM.nextInt(DRAW_TEXTS.length)];
             } else if (mostPointTeams.contains((PointMatchTeam) team)) {
-                retText = Component.text("勝利").color(NamedTextColor.RED);
+                resultText = Component.text("勝利").color(NamedTextColor.RED);
                 subtitleProvider = WIN_TEXTS[RANDOM.nextInt(WIN_TEXTS.length)];
+                win = true;
             } else {
-                retText = Component.text("敗北").color(NamedTextColor.BLUE);
+                resultText = Component.text("敗北").color(NamedTextColor.BLUE);
                 subtitleProvider = LOSE_TEXTS[RANDOM.nextInt(LOSE_TEXTS.length)];
             }
 
             String subtitle = subtitleProvider.provide((PointMatchTeam) team, mostPointTeams, losers);
             Title.Times times = Title.Times.times(Ticks.duration(10), Duration.ofMillis(FINISH_WAIT_FOR_TELEPORT - (FINISH_WAIT_FOR_TELEPORT / 4)), Ticks.duration(20));
-            Title title = Title.title(retText, Component.text(subtitle), times);
+            Title title = Title.title(resultText, Component.text(subtitle), times);
             team.audience().showTitle(title);
+
+            if (win) {
+                team.getParticipationPlayers().forEach(player -> {
+                    try {
+                        String command = Objects.requireNonNull(getPlayerInfo(player)).getRewardCommand("winner").replace("%player_name%", player.getName());
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
         }
     }
 

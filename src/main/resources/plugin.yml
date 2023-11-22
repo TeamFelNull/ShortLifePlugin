@@ -2,7 +2,7 @@ name: ShortLifePlugin
 version: '${version}'
 main: dev.felnull.shortlifeplugin.ShortLifePlugin
 api-version: '1.20'
-authors: [ MORIMORI0317, nin8995, miyabi0333 ]
+authors: [ MORIMORI0317, nin8995, miyabi0333, raindazo]
 contributors: [ FelNull Developers ]
 description: The ikisugi gun server plugin...
 depend: [ WorldEdit, WorldGuard, CommandAPI, WeaponMechanics, MechanicsCore ]

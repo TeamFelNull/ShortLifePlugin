@@ -16,6 +16,8 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
+import java.io.IOException;
+
 /**
  * 試合用イベントリスナー
  *
@@ -109,10 +111,12 @@ public final class MatchListener implements Listener {
      * @param e プレイヤー死亡イベント
      */
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerDeath(PlayerDeathEvent e) {
+    public void onPlayerDeath(PlayerDeathEvent e) throws IOException {
         Player target = e.getPlayer();
         MatchManager matchManager = MatchManager.getInstance();
         Match match = matchManager.getJointedMach(target);
+
+
 
         // 参加者が死亡した場合、試合の死亡処理を呼ぶ
         if (match != null) {

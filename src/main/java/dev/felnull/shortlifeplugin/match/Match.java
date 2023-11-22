@@ -2,13 +2,17 @@ package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.shortlifeplugin.commands.RewardCommand;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
+import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
@@ -24,6 +28,7 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -32,6 +37,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -53,6 +61,16 @@ public abstract class Match {
      * 試合終了後にテレポートするまでの時間
      */
     protected static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
+
+    /**
+     * 報酬コマンド実行用インスタントリプレイ
+     */
+    protected static final RewardCommand REWARD_COMMAND = new RewardCommand();
+
+    /**
+     * Gsonインスタント
+     */
+    private static final Gson GSON = new Gson();
 
     /**
      * 試合が開始するまでの時間(ms)
@@ -200,6 +218,12 @@ public abstract class Match {
      * 情報表示の更新が必要であるフラグ
      */
     private boolean dirtyAllInfo;
+
+    /**
+     * チャンス確率
+     */
+    private int lucky = 5;
+
 
     /**
      * コンストラクタ
@@ -917,7 +941,7 @@ public abstract class Match {
      *
      * @param target 死亡したプレイヤー
      */
-    public void onPlayerDeath(@NotNull Player target) {
+    public void onPlayerDeath(@NotNull Player target) throws IOException {
         // 試合中のみ
         if (getStatus() == Match.Status.STARTED) {
 
@@ -932,6 +956,7 @@ public abstract class Match {
 
                 targetInfo.setKillStreakCount(0);
                 targetInfo.setLifeTime(0);
+                targetInfo.iniBonus();
             }
         }
 
@@ -947,12 +972,13 @@ public abstract class Match {
      * @param target   対象
      * @param attacker 攻撃者
      */
-    protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) {
+    protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) throws IOException {
         PlayerInfo attackerInfo = players.get(attacker);
 
         if (attackerInfo != null) {
             attackerInfo.setKillCount(attackerInfo.getKillCount() + 1);
             attackerInfo.setKillStreakCount(attackerInfo.getKillStreakCount() + 1);
+            attackerInfo.giveReward();
         }
     }
 
@@ -1073,6 +1099,11 @@ public abstract class Match {
          * -1以下で保護なし
          */
         private int spawnProtectTime = -1;
+
+        /**
+         * 報酬ボーナスフラグ
+         */
+        private boolean bonusFlag = false;
 
         /**
          * コンストラクタ
@@ -1403,6 +1434,94 @@ public abstract class Match {
         public boolean isSpawnProtect() {
             return spawnProtectTime >= 0;
         }
+
+        /**
+         * キルしたら報酬を付与
+         *
+         * @author raindazo
+         */
+        public void giveReward() throws IOException {
+            PotionEffect luckEffect = player.getPotionEffect(PotionEffectType.LUCK);
+            if (luckEffect != null) {
+                lucky += luckEffect.getAmplifier();
+            }
+            boolean bonus = selectBonusNumber(lucky).contains(RANDOM.nextInt(100));
+            boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100));
+
+            String normalCommand = getRewardCommand("normal");
+            String specialCommand = getRewardCommand("special");
+
+            if (bonusFlag && getKillStreakCount() >= 5 && chance) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), specialCommand.replace("%player_name%", player.getName()));
+            } else if (bonusFlag || bonus || getKillStreakCount() % 5 == 0) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), normalCommand.replace("%player_name%", player.getName()));
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), normalCommand.replace("%player_name%", player.getName()));
+                bonusFlag = true;
+                lucky++;
+            } else {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), normalCommand.replace("%player_name%", player.getName()));
+            }
+        }
+
+        /**
+         * n個の値を返す
+         *
+         * @param probability 確率
+         * @return n個の要素が入った配列
+         * @author raindazo
+         */
+        private List<Integer> selectBonusNumber(int probability) {
+            List<Integer> value = new ArrayList<>();
+            List<Integer> returnList = new ArrayList<>();
+
+            for (int i = 1; i <= 100; i++) {
+                value.add(i);
+            }
+
+            Collections.shuffle(value);
+
+            for (int i = 0; i < probability; i++) {
+                returnList.add(value.get(i));
+            }
+            return returnList;
+        }
+
+        /**
+         * 報酬情報を初期化
+         *
+         * @author raindazo
+         */
+        private void iniBonus() {
+            bonusFlag = false;
+            player.clearActivePotionEffects();
+            lucky = 5;
+        }
+
+        /**
+         * 　報酬コマンドを取得する
+         *
+         * @param functionName 報酬名
+         * @return JSON保存されているコマンド
+         * @author raindazo
+         **/
+        protected String getRewardCommand(String functionName) throws IOException {
+            File loadJsonFile = SLFiles.rewardCommandConfigJson();
+
+            if (!loadJsonFile.exists() || loadJsonFile.isDirectory()) {
+                return "";
+            }
+
+            JsonObject json = GSON.fromJson(Files.readString(loadJsonFile.toPath()), JsonObject.class);
+
+            return switch (functionName) {
+                case "normal" -> json.get("normalReward").getAsString();
+                case "special" -> json.get("specialReward").getAsString();
+                case "bonus" -> json.get("bonusReward").getAsString();
+                case "winner" -> json.get("winnerReward").getAsString();
+                default -> throw new IllegalStateException("Unexpected value: " + functionName);
+            };
+        }
+
     }
 
     /**
@@ -1482,5 +1601,6 @@ public abstract class Match {
         public String getShowName() {
             return showName;
         }
+
     }
 }

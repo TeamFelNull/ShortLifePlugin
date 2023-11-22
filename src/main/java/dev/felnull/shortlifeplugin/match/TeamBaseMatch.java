@@ -20,7 +20,7 @@ import java.util.*;
 /**
  * チーム試合
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, nin8995
  */
 public abstract class TeamBaseMatch extends PVPBaseMatch {
 
@@ -179,6 +179,26 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
                 .limit(1)
                 .findFirst()
                 .orElse(null);
+    }
+
+
+    /**
+     * 指定したプレイヤーのチーム色を取得する。
+     * チームが存在しない場合は白を返す。
+     *
+     * @param player プレイヤー
+     * @return 色
+     */
+    public static NamedTextColor getTeamColor(@NotNull Player player) {
+        NamedTextColor color = NamedTextColor.WHITE;
+        Match match = MatchManager.getInstance().getJointedMach(player);
+        if (match instanceof TeamBaseMatch teamMatch) {
+            TeamBaseMatch.MatchTeam team = teamMatch.getTeamByPlayer(player);
+            if (team != null) {
+                color = team.getColor();
+            }
+        }
+        return color;
     }
 
     @Override

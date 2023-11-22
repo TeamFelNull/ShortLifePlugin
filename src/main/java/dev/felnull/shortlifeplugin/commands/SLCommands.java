@@ -28,6 +28,7 @@ public final class SLCommands {
         COMMAND_PROVIDERS.add(new GuiCommand());
         COMMAND_PROVIDERS.add(new EquipmentGroupCommand());
         COMMAND_PROVIDERS.add(new RoomCommand());
+        COMMAND_PROVIDERS.add(new RewardCommand());
 
         COMMAND_PROVIDERS.forEach(commandProvider -> commandProvider.create().register());
     }

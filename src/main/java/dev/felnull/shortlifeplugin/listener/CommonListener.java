@@ -13,6 +13,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -35,6 +36,7 @@ public class CommonListener implements Listener {
      */
     private static final int DOT_LENGTH = 47;
 
+    /**
      * 初期化
      *
      * @param plugin プラグイン

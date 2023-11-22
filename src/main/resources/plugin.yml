@@ -20,3 +20,6 @@ permissions:
   shortlifeplugin.commands.room:
     description: "Room command permission"
     default: true
+  shortlifeplugin.commands.reward:
+    description: "Reward command permission"
+    default: op

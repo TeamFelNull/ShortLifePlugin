@@ -34,7 +34,7 @@ public class CommonListener implements Listener {
     /**
      * 揃えるドット数。MCIDのドット数の最大は95。
      */
-    private static final int DOT_LENGTH = 47;
+    private static final int DOT_LENGTH = 0;
 
     /**
      * 初期化

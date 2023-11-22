@@ -30,7 +30,11 @@ public class WeaponMechanicsUtils {
      * @see <a href="https://github.com/WeaponMechanics/MechanicsMain/blob/HEAD/WeaponMechanics/src/main/java/me/deecaad/weaponmechanics/weapon/HitHandler.java">参考</a>
      */
     @Nullable
-    public static BoundingBox getDamagePointBox(@NotNull LivingEntity livingEntity, @NotNull DamagePoint damagePoint) {
+    public static BoundingBox getDamagePointBox(@NotNull LivingEntity livingEntity, @Nullable DamagePoint damagePoint) {
+
+        if (damagePoint == null) {
+            return null;
+        }
 
         BoundingBox ret = null;
 

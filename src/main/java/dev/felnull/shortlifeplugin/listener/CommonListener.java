@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.listener;
 
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
+import dev.felnull.shortlifeplugin.decoration.BloodExpression;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
 import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEvent;
@@ -9,10 +10,9 @@ import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.World;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,8 +23,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * 一般的なイベントリスナー
@@ -34,15 +32,9 @@ import org.jetbrains.annotations.Nullable;
 public class CommonListener implements Listener {
 
     /**
-     * ダメージパーティクルのベースとなる体積
-     */
-    private static final double BASE_DAMAGE_PARTICLE_VOLUME = 0.648000034332275d;
-
-    /**
      * 揃えるドット数。MCIDのドット数の最大は95。
      */
     private static final int DOT_LENGTH = 47;
-
 
     /**
      * 初期化
@@ -75,13 +67,27 @@ public class CommonListener implements Listener {
      *
      * @param e エンティティダメージイベント
      */
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamage(EntityDamageEvent e) {
-        // プレイヤーのみ
-        if (e.getEntity() instanceof Player player) {
-            // WeaponMechanicsのダメージ以外
-            if (!(e instanceof WeaponMechanicsEntityDamageByEntityEvent)) {
-                spawnDamageParticle(player.getWorld(), player.getBoundingBox(), null, e.getDamage());
+        // WeaponMechanicsのダメージ以外
+        if (!(e instanceof WeaponMechanicsEntityDamageByEntityEvent) && e.getEntity() instanceof LivingEntity livingEntity
+                && BloodExpression.isSpawnDamageParticle(livingEntity, e.getDamage())) {
+
+            Pair<BoundingBox, Boolean> pointAndIsCritical = BloodExpression.getDamageBox(livingEntity, e.getCause());
+
+            if (pointAndIsCritical != null) {
+                BoundingBox damageBox;
+                BoundingBox criticalDamageBox;
+
+                if (pointAndIsCritical.getRight()) {
+                    damageBox = livingEntity.getBoundingBox();
+                    criticalDamageBox = pointAndIsCritical.getLeft();
+                } else {
+                    damageBox = pointAndIsCritical.getLeft();
+                    criticalDamageBox = null;
+                }
+
+                BloodExpression.spawnDamageParticle(livingEntity, damageBox, criticalDamageBox, e.getDamage());
             }
         }
     }
@@ -91,30 +97,13 @@ public class CommonListener implements Listener {
      *
      * @param e 武器ダメージイベント
      */
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onWeaponDamage(WeaponDamageEntityEvent e) {
-        if (e.getVictim() instanceof Player player) {
-            spawnDamageParticle(player.getWorld(), player.getBoundingBox(), WeaponMechanicsUtils.getDamagePointBox(player, e.getPoint()), e.getFinalDamage());
-        }
-    }
-
-    private void spawnDamageParticle(@NotNull World world, @NotNull BoundingBox damageBox, @Nullable BoundingBox subDamageBox, double damage) {
-        if (damage > 0) {
-            double countPar = Math.min(damage / 10d, 20d);
-
-            int count = (int) (((subDamageBox != null) ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME));
-
-            world.spawnParticle(Particle.BLOCK_CRACK, damageBox.getCenterX(), damageBox.getCenterY(), damageBox.getCenterZ(),
-                    count, damageBox.getWidthX() / 4d, damageBox.getHeight() / 4d, damageBox.getWidthZ() / 4d,
-                    Material.REDSTONE_BLOCK.createBlockData());
-
-            if (subDamageBox != null) {
-                int subCount = (int) (15d * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME));
-
-                world.spawnParticle(Particle.BLOCK_DUST, subDamageBox.getCenterX(), subDamageBox.getCenterY(), subDamageBox.getCenterZ(),
-                        subCount, subDamageBox.getWidthX() / 4d, subDamageBox.getHeight() / 4d, subDamageBox.getWidthZ() / 4d,
-                        Material.REDSTONE_BLOCK.createBlockData());
-            }
+        LivingEntity livingEntity = e.getVictim();
+        double damage = e.getFinalDamage();
+        if (BloodExpression.isSpawnDamageParticle(livingEntity, damage)) {
+            BoundingBox damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
+            BloodExpression.spawnDamageParticle(livingEntity, livingEntity.getBoundingBox(), damagePointBox, damage);
         }
     }
 

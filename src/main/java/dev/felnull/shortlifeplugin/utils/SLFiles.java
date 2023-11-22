@@ -47,4 +47,14 @@ public final class SLFiles {
     public static File equipmentGroupJson() {
         return new File(SLUtils.getSLPlugin().getDataFolder(), "equipmentgroup.json");
     }
+
+    /**
+     * 報酬コマンドコンフィグ保存Json
+     *
+     * @return 報酬コマンドコンフィグ保存Jsonのファイル
+     * @author raindazo
+     */
+    public static File rewardCommandConfigJson() {
+        return new File(SLUtils.getSLPlugin().getDataFolder(), "rewardCommandConfig.json");
+    }
 }

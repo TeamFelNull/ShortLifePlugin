@@ -21,6 +21,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,6 +37,11 @@ public class CommonListener implements Listener {
      * ダメージパーティクルのベースとなる体積
      */
     private static final double BASE_DAMAGE_PARTICLE_VOLUME = 0.648000034332275d;
+
+    /**
+     * 揃えるドット数。MCIDのドット数の最大は95。
+     */
+    private static final int DOT_LENGTH = 47;
 
 
     /**
@@ -129,10 +135,22 @@ public class CommonListener implements Listener {
 
             e.deathMessage(null);
             e.getPlayer().getWorld().sendMessage(Component
-                    .text(String.format("%-15s", killed.getName())).color(killedColor)
+                    .text(alignName(killed.getName())).color(killedColor)
                     .append(Component.text(" <-Killed-- ").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
-                    .append(Component.text(String.format("%15s", killer.getName()) + " ").color(killerColor))
+                    .append(Component.text(killer.getName() + " ").color(killerColor))
                     .append(weapon));
         }
+    }
+
+    /**
+     * 名前に左からスペースを追加して {@link CommonListener#DOT_LENGTH 指定ドット数}に揃える
+     *
+     * @param name 揃える名前
+     * @return 揃えられた名前
+     */
+    private String alignName(String name) {
+        int widthToAdd = Math.max(0, DOT_LENGTH - MinecraftFont.Font.getWidth(name));
+        String spaceToAdd = " ".repeat(widthToAdd / 4 + (widthToAdd % 4 != 0 ? 1 : 0));
+        return spaceToAdd + name;
     }
 }

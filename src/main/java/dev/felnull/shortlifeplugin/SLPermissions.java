@@ -28,6 +28,11 @@ public final class SLPermissions {
      */
     public static final String COMMANDS_ROOM = "shortlifeplugin.commands.room";
 
+    /**
+     * 報酬コマンド用パーミッション<br/>
+     */
+    public static final String COMMANDS_REWARD = "hortlifeplugin.commands.reward";
+
     private SLPermissions() {
     }
 }

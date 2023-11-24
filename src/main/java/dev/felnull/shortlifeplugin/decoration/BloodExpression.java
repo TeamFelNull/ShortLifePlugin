@@ -18,6 +18,7 @@ import java.util.List;
  * 血液の表現
  *
  * @author MORIMORI0317
+ * @see <a href="https://www.spigotmc.org/threads/comprehensive-particle-spawning-guide-1-13-1-19.343001/">参考</a>
  */
 public class BloodExpression {
 
@@ -25,6 +26,11 @@ public class BloodExpression {
      * ダメージパーティクルのベースとなる体積
      */
     private static final double BASE_DAMAGE_PARTICLE_VOLUME = 0.648000034332275d;
+
+    /**
+     * 最大パーティクル表示数
+     */
+    private static final int MAX_PARTICLE_COUNT = 300;
 
     private BloodExpression() {
     }
@@ -54,7 +60,8 @@ public class BloodExpression {
             }
 
             double countPar = Math.min(damage / 10d, 20d);
-            int count = (int) (((criticalDamageBox != null) ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME));
+            int count = Math.min((int) (((criticalDamageBox != null) ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
+                    MAX_PARTICLE_COUNT);
 
             // 全体的なパーティクルを表示
             ParticleBuilder particleBuilder = createBloodParticleBuilder(livingEntity, damageBox, false);
@@ -66,7 +73,8 @@ public class BloodExpression {
             particleBuilder.spawn();
 
             if (criticalDamageBox != null) {
-                int criticalCount = (int) (15d * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME));
+                int criticalCount = Math.min((int) (15d * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
+                        MAX_PARTICLE_COUNT);
 
                 // 致命的な箇所のパーティクルを表示
                 ParticleBuilder criticalParticleBuilder = createBloodParticleBuilder(livingEntity, criticalDamageBox, true);
@@ -117,6 +125,8 @@ public class BloodExpression {
 
             if (livingEntity instanceof Allay) {
                 particleBuilder.data(Material.AMETHYST_BLOCK.createBlockData());
+            } else if (livingEntity instanceof Vex) {
+                particleBuilder.data(Material.SOUL_FIRE.createBlockData());
             } else if (livingEntity instanceof Warden) {
                 particleBuilder.data(Material.SCULK.createBlockData());
             } else if (livingEntity instanceof WitherSkeleton || livingEntity instanceof Wither) {

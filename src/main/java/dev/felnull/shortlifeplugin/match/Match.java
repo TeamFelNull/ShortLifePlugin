@@ -1443,23 +1443,26 @@ public abstract class Match {
         public void giveReward() throws IOException {
             PotionEffect luckEffect = player.getPotionEffect(PotionEffectType.LUCK);
             if (luckEffect != null) {
+                if (luckEffect.getAmplifier() >= 95) {
+                    lucky = 100;
+                }
                 lucky += luckEffect.getAmplifier();
             }
             boolean bonus = selectBonusNumber(lucky).contains(RANDOM.nextInt(100));
             boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100));
+            double streak = getKillStreakCount() % 5d;
 
-            String normalCommand = getRewardCommand("normal");
-            String specialCommand = getRewardCommand("special");
+            List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
+            List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
 
             if (bonusFlag && getKillStreakCount() >= 5 && chance) {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), specialCommand.replace("%player_name%", player.getName()));
-            } else if (bonusFlag || bonus || getKillStreakCount() % 5 == 0) {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), normalCommand.replace("%player_name%", player.getName()));
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), normalCommand.replace("%player_name%", player.getName()));
+                specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+            } else if (bonusFlag || bonus || streak == 0) {
+                normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 bonusFlag = true;
-                lucky++;
             } else {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), normalCommand.replace("%player_name%", player.getName()));
+                normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
             }
         }
 

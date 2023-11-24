@@ -1106,6 +1106,11 @@ public abstract class Match {
         private boolean bonusFlag = false;
 
         /**
+         * チャンスフラグ
+         */
+        private boolean chanceFlag = false;
+
+        /**
          * コンストラクタ
          *
          * @param player プレイヤー
@@ -1330,6 +1335,18 @@ public abstract class Match {
 
             sidebarInfos.add(Component.text("死亡数: ").color(NamedTextColor.GREEN)
                     .append(Component.text(this.deathCount).style(deathCountStyle.build())));
+
+            if (bonusFlag) {
+                sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.GOLD)
+                        .append(Component.text("ボーナス！")));
+            } else if (chanceFlag) {
+                sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.GOLD)
+                        .append(Component.text("チャンス！")));
+            } else {
+                sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.GOLD)
+                        .append(Component.text("通常")));
+            }
+
         }
 
         public Scoreboard getPreScoreboard() {
@@ -1457,6 +1474,7 @@ public abstract class Match {
 
             if (bonusFlag && getKillStreakCount() >= 5 && chance) {
                 specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                chanceFlag = true;
             } else if (bonusFlag || bonus || streak == 0) {
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));

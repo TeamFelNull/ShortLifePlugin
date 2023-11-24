@@ -36,11 +36,6 @@ public class RewardCommand implements SLCommand {
     private static final String NORMAL = "normal";
 
     /**
-     * ボーナス
-     */
-    private static final String BONUS = "bonus";
-
-    /**
      * 勝利
      */
     private static final String WINNER = "winner";
@@ -54,14 +49,9 @@ public class RewardCommand implements SLCommand {
     @Override
     public CommandAPICommand create() {
 
-
         CommandAPICommand normalReward = new CommandAPICommand("normal")
                 .withArguments(new CommandArgument("command"))
                 .executes(this::normalReward);
-
-        CommandAPICommand bonusReward = new CommandAPICommand("bonus")
-                .withArguments(new CommandArgument("command"))
-                .executes(this::bonusReward);
 
         CommandAPICommand chanceReward = new CommandAPICommand("special")
                 .withArguments(new CommandArgument("command"))
@@ -71,15 +61,9 @@ public class RewardCommand implements SLCommand {
                 .withArguments(new CommandArgument("command"))
                 .executes(this::winnerReward);
 
-        //2023.11.22　廃止　リリース時削除
-//        CommandAPICommand setValue = new CommandAPICommand("set")
-//                .withArguments(new StringArgument("functionName"))
-//                .withArguments(new IntegerArgument("value"))
-//                .executes(this::setValue);
-
         return new CommandAPICommand("reward")
                 .withPermission(SLPermissions.COMMANDS_REWARD)
-                .withSubcommands(normalReward, bonusReward, chanceReward, winnerReward);
+                .withSubcommands(normalReward, chanceReward, winnerReward);
     }
 
     @Override
@@ -99,23 +83,6 @@ public class RewardCommand implements SLCommand {
 
         try {
             this.setConfig(NORMAL, command);
-        } catch (IOException e) {
-            SLUtils.getLogger().info(String.valueOf(e));
-        }
-    }
-
-    /**
-     * ボーナス報酬を付与する
-     *
-     * @param sender 発信者
-     * @param args   チャットの引数
-     * @author raindazo
-     */
-    private void bonusReward(CommandSender sender, CommandArguments args) {
-        String command = useCommand(args);
-
-        try {
-            this.setConfig(BONUS, command);
         } catch (IOException e) {
             SLUtils.getLogger().info(String.valueOf(e));
         }
@@ -178,10 +145,6 @@ public class RewardCommand implements SLCommand {
             case "special" -> {
                 json.remove("specialReward");
                 json.addProperty("specialReward", changeValue);
-            }
-            case "bonus" -> {
-                json.remove("bonusReward");
-                json.addProperty("bonusReward", changeValue);
             }
             case "winner" -> {
                 json.remove("winnerReward");

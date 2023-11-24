@@ -1514,8 +1514,7 @@ public abstract class Match {
          */
         private void iniBonus() {
             bonusFlag = false;
-            player.clearActivePotionEffects();
-            lucky = 5;
+            chanceFlag = false;
         }
 
         /**

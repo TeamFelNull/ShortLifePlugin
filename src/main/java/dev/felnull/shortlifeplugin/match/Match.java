@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static org.bukkit.Sound.BLOCK_ANVIL_PLACE;
+
 /**
  * 試合インスタンスクラス
  *
@@ -676,7 +678,7 @@ public abstract class Match {
 
         // 終了音
         allPlayerAudience()
-                .playSound(Sound.sound(org.bukkit.Sound.BLOCK_ANVIL_PLACE.key(), Sound.Source.MASTER, 1, 0.5f));
+                .playSound(Sound.sound(BLOCK_ANVIL_PLACE.key(), Sound.Source.MASTER, 1, 0.5f));
 
         matchEnd();
 
@@ -979,6 +981,7 @@ public abstract class Match {
             attackerInfo.setKillCount(attackerInfo.getKillCount() + 1);
             attackerInfo.setKillStreakCount(attackerInfo.getKillStreakCount() + 1);
             attackerInfo.giveReward();
+            attacker.playSound(attacker, BLOCK_ANVIL_PLACE, 0.6f, 0.5f);
         }
     }
 
@@ -1472,7 +1475,7 @@ public abstract class Match {
             List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
             List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
 
-            if (bonusFlag && getKillStreakCount() >= 5 && chance) {
+            if (bonusFlag && getKillStreakCount() >= 5 || chance) {
                 specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 chanceFlag = true;
             } else if (bonusFlag || bonus || streak == 0) {

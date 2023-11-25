@@ -18,11 +18,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
+
+import static org.bukkit.Sound.*;
 
 /**
  * 一般的なイベントリスナー
@@ -142,4 +145,21 @@ public class CommonListener implements Listener {
         String spaceToAdd = " ".repeat(widthToAdd / 4 + (widthToAdd % 4 != 0 ? 1 : 0));
         return spaceToAdd + name;
     }
+
+
+    /**
+     * 何らかのエンティティーを殺害した際に発生するイベント
+     *
+     * @param e エンティティー死亡イベント
+     */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerKill(EntityDeathEvent e) {
+        Player killer = e.getEntity().getKiller();
+        if (killer != null) {
+            killer.playSound(killer, ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 0.6f, 0.5f);
+            killer.playSound(killer, ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 0.5f);
+        }
+    }
+
+
 }

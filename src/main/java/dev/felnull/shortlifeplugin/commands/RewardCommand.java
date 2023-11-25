@@ -131,7 +131,7 @@ public class RewardCommand implements SLCommand {
     }
 
     /**
-     * 通常報酬のコマンドを設定する
+     * ストリート報酬のコマンドを設定する
      *
      * @param sender 発信者
      * @param args   チャットの引数

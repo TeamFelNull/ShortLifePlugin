@@ -1114,6 +1114,11 @@ public abstract class Match {
         private boolean chanceFlag = false;
 
         /**
+         * チャンス時のキル数
+         */
+        private int killChanceCount = 0;
+
+        /**
          * コンストラクタ
          *
          * @param player プレイヤー
@@ -1475,9 +1480,13 @@ public abstract class Match {
             List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
             List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
 
-            if (chance) {
-                specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+            if (bonusFlag && chance) {
                 chanceFlag = true;
+                killChanceCount = getKillCount();
+            }
+
+            if (chanceFlag && getKillCount() == killChanceCount + 5) {
+                specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
             } else if (bonusFlag || bonus || streak == 0) {
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));

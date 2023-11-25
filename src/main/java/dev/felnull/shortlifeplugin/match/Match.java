@@ -1475,7 +1475,7 @@ public abstract class Match {
             List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
             List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
 
-            if (bonusFlag && getKillStreakCount() >= 5 || chance) {
+            if (chance) {
                 specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 chanceFlag = true;
             } else if (bonusFlag || bonus || streak == 0) {

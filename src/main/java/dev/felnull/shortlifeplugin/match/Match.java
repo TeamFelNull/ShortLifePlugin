@@ -1345,15 +1345,15 @@ public abstract class Match {
                     .append(Component.text(this.deathCount).style(deathCountStyle.build())));
 
             if (bonusFlag) {
-                sidebarInfos.add(Component.text("■■■■■■■■").color(NamedTextColor.AQUA));
+                sidebarInfos.add(Component.text("■■■■■■■■■■■■ ").color(NamedTextColor.AQUA));
                 sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.WHITE)
                         .append(Component.text("ボーナス！").color(NamedTextColor.AQUA)));
-                sidebarInfos.add(Component.text("■■■■■■■■").color(NamedTextColor.AQUA));
+                sidebarInfos.add(Component.text("■■■■■■■■■■■■").color(NamedTextColor.AQUA));
             } else if (chanceFlag) {
-                sidebarInfos.add(Component.text("■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                sidebarInfos.add(Component.text("■■■■■■■■■■■■ ").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
                 sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.WHITE)
                         .append(Component.text("チャンス！").color(NamedTextColor.GOLD)));
-                sidebarInfos.add(Component.text("■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                sidebarInfos.add(Component.text("■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
             } else {
                 sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.WHITE)
                         .append(Component.text("通常")).color(NamedTextColor.GRAY));

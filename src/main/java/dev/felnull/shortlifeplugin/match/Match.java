@@ -1487,7 +1487,9 @@ public abstract class Match {
 
             if (chanceFlag && getKillCount() == killChanceCount + 5) {
                 specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
-            } else if (bonusFlag || bonus || streak == 0) {
+            }
+
+            if (bonusFlag || bonus || streak == 0) {
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 bonusFlag = true;

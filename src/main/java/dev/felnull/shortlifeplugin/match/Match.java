@@ -1479,6 +1479,7 @@ public abstract class Match {
 
             List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
             List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
+            List<String> streakCommandList = Arrays.asList(getRewardCommand("streak").split(","));
 
             if (bonusFlag && chance) {
                 chanceFlag = true;
@@ -1487,9 +1488,14 @@ public abstract class Match {
 
             if (chanceFlag && getKillCount() == killChanceCount + 5) {
                 specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                chanceFlag = false;
             }
 
-            if (bonusFlag || bonus || streak == 0) {
+            if (streak == 0) {
+                streakCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+            }
+
+            if (bonusFlag || bonus) {
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                 bonusFlag = true;
@@ -1552,6 +1558,7 @@ public abstract class Match {
                 case "special" -> json.get("specialReward").getAsString();
                 case "bonus" -> json.get("bonusReward").getAsString();
                 case "winner" -> json.get("winnerReward").getAsString();
+                case "streak" -> json.get("streakReward").getAsString();
                 default -> throw new IllegalStateException("Unexpected value: " + functionName);
             };
         }

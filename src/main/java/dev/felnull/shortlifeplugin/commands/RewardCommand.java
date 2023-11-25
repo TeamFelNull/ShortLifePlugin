@@ -46,6 +46,11 @@ public class RewardCommand implements SLCommand {
      */
     private static final String SPECIAL = "special";
 
+    /**
+     * ストリーク
+     */
+    private static final String STREAK = "streak";
+
     @Override
     public CommandAPICommand create() {
 
@@ -61,9 +66,13 @@ public class RewardCommand implements SLCommand {
                 .withArguments(new CommandArgument("command"))
                 .executes(this::winnerReward);
 
+        CommandAPICommand streakReward = new CommandAPICommand("streak")
+                .withArguments(new CommandArgument("command"))
+                .executes(this::streakReward);
+
         return new CommandAPICommand("reward")
                 .withPermission(SLPermissions.COMMANDS_REWARD)
-                .withSubcommands(normalReward, chanceReward, winnerReward);
+                .withSubcommands(normalReward, chanceReward, winnerReward, streakReward);
     }
 
     @Override
@@ -122,6 +131,23 @@ public class RewardCommand implements SLCommand {
     }
 
     /**
+     * 通常報酬のコマンドを設定する
+     *
+     * @param sender 発信者
+     * @param args   チャットの引数
+     * @author raindazo
+     */
+    private void streakReward(CommandSender sender, CommandArguments args) {
+        String command = useCommand(args);
+
+        try {
+            this.setConfig(STREAK, command);
+        } catch (IOException e) {
+            SLUtils.getLogger().info(String.valueOf(e));
+        }
+    }
+
+    /**
      * JSONの値を書き換える
      *
      * @param functionName 変更対象の機能名
@@ -149,6 +175,10 @@ public class RewardCommand implements SLCommand {
             case "winner" -> {
                 json.remove("winnerReward");
                 json.addProperty("winnerReward", changeValue);
+            }
+            case "streak" -> {
+                json.remove("streakReward");
+                json.addProperty("streakReward", changeValue);
             }
             default -> throw new IllegalStateException("Unexpected value: " + functionName);
         }

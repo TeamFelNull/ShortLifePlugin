@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.ibm.icu.text.CaseMap;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
 import dev.felnull.shortlifeplugin.commands.RewardCommand;
@@ -22,6 +23,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -40,6 +42,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -982,6 +985,12 @@ public abstract class Match {
             attackerInfo.setKillStreakCount(attackerInfo.getKillStreakCount() + 1);
             attackerInfo.giveReward();
             attacker.playSound(attacker, BLOCK_ANVIL_PLACE, 0.6f, 0.5f);
+            Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(1000), Duration.ofMillis(1000));
+            Title kill = Title.title(Component.empty(), Component.text("1").color(NamedTextColor.RED).append(Component.text("Kill").color(NamedTextColor.GRAY)), times);
+            Title killstreak = Title.title(Component.empty(), Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), times);
+
+            //attacker.showTitle(kill); スケジューラわからん;;
+            attacker.showTitle(killstreak);
         }
     }
 

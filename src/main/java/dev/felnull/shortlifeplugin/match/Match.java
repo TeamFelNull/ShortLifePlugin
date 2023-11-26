@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.ibm.icu.text.CaseMap;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
 import dev.felnull.shortlifeplugin.commands.RewardCommand;

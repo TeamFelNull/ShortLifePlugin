@@ -167,7 +167,8 @@ public class CommonListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onServerJoin(PlayerJoinEvent e) {
-        e.joinMessage(Component.text("Shortlifeへようこそ!").color(NamedTextColor.WHITE).decorate(TextDecoration.BOLD));
+        Player joinp = e.getPlayer();
+        joinp.sendMessage(Component.text("Shortlifeへようこそ!").color(NamedTextColor.WHITE).decorate(TextDecoration.BOLD));
 
     }
 

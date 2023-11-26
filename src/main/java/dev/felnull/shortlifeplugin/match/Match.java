@@ -988,7 +988,7 @@ public abstract class Match {
             Title kill = Title.title(Component.empty(), Component.text("1").color(NamedTextColor.RED).append(Component.text("Kill").color(NamedTextColor.GRAY)), times);
             Title killstreak = Title.title(Component.empty(), Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), times);
 
-            //attacker.showTitle(kill); スケジューラわからん;;
+            attacker.showTitle(kill);
             attacker.showTitle(killstreak);
         }
     }

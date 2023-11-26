@@ -18,6 +18,8 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
@@ -1039,6 +1041,46 @@ public abstract class Match {
         mapInfoText = mapInfoText.append(Component.text("説明: ").append(Component.text("TEST"))).appendNewline();*/
         mapInfoText = mapInfoText.append(Component.text("-----------------"));
         audience.sendMessage(mapInfoText);
+    }
+
+    /**
+     * 表示用コンポーネントを作成
+     *
+     * @return 表示用コンポーネント
+     */
+    @NotNull
+    public Component createDisplayComponent() {
+        return createDisplayComponent(true);
+    }
+
+    /**
+     * 表示用コンポーネントを作成
+     *
+     * @param encircle "["と"]"で囲むかどうか
+     * @return 表示用コンポーネント
+     */
+    @NotNull
+    public Component createDisplayComponent(boolean encircle) {
+        Component displayComponent;
+
+        if (encircle) {
+            displayComponent = Component.text("[")
+                    .append(Component.text(this.getId()))
+                    .append(Component.text("]"));
+        } else {
+            displayComponent = Component.text(this.getId());
+        }
+
+        List<Component> infoComponents = new LinkedList<>();
+        this.appendInfoDesc(infoComponents);
+
+        JoinConfiguration.Builder hoverTextBuilder = JoinConfiguration.builder();
+        hoverTextBuilder.separator(Component.newline());
+        Component hoverText = Component.join(hoverTextBuilder, infoComponents);
+
+        displayComponent = displayComponent.hoverEvent(HoverEvent.showText(hoverText));
+
+        return displayComponent;
     }
 
     /**

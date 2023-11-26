@@ -1,17 +1,23 @@
 package dev.felnull.shortlifeplugin.listener;
 
 import dev.felnull.shortlifeplugin.SLConfig;
+import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.decoration.BloodExpression;
+import dev.felnull.shortlifeplugin.match.Match;
+import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
 import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,6 +26,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
@@ -162,7 +169,6 @@ public class CommonListener implements Listener {
     }
 
     /**
-     *
      * @param e PlayerJoin event
      */
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -172,5 +178,50 @@ public class CommonListener implements Listener {
 
     }
 
+    /**
+     * プレイヤーがワールド間を移動した際の処理
+     *
+     * @param e プレイヤーワールド変更イベント
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onChangedWorld(PlayerChangedWorldEvent e) {
+        Player player = e.getPlayer();
+        World fromWorld = e.getFrom();
+        World toWorld = player.getWorld();
 
+        // 試合中のワールドに、想定外の方法で参加した時の警告表示
+        if (fromWorld != toWorld) {
+            MatchManager matchManager = MatchManager.getInstance();
+            Match worldMatch = matchManager.getMachByWorld(toWorld);
+
+            if (worldMatch != null) {
+                /* 移動先のワールドで試合が行われている場合 */
+                Match playerMatch = matchManager.getJointedMach(player);
+
+                if (playerMatch != worldMatch) {
+                    /* プレイヤーが未参加または、参加している試合が世界の試合と一致しない場合 */
+
+                    Component message = Component.text("試合中").color(NamedTextColor.RED)
+                            .append(worldMatch.createDisplayComponent().color(NamedTextColor.GOLD))
+                            .append(Component.text("のワールドに、想定外の方法で侵入したようです。"));
+
+                    message = message.appendNewline().append(Component.text("試合に参加していないため、干渉することはできません。"));
+
+                    // 権限がある場合は、参加用メッセージを追加
+                    if (player.hasPermission(SLPermissions.COMMANDS_MATCH)) {
+                        Component clickHere = Component.text("[ここをクリック]")
+                                .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + worldMatch.getId())).build());
+
+                        message = message.appendNewline().append(Component.text("参加する場合は")
+                                .append(clickHere)
+                                .append(Component.text("してください。")));
+                    }
+
+                    message = message.appendNewline().append(Component.text("故意で侵入していない場合は、不具合として報告してください！"));
+
+                    player.sendMessage(message);
+                }
+            }
+        }
+    }
 }

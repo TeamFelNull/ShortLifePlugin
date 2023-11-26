@@ -9,6 +9,7 @@ import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEven
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
@@ -159,6 +160,16 @@ public class CommonListener implements Listener {
             killer.playSound(killer, ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 0.6f, 0.5f);
             killer.playSound(killer, ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 0.5f);
         }
+    }
+
+    /**
+     *
+     * @param e PlayerJoin event
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onServerJoin(PlayerJoinEvent e) {
+        e.joinMessage(Component.text("Shortlifeへようこそ!").color(NamedTextColor.WHITE).decorate(TextDecoration.BOLD));
+
     }
 
 

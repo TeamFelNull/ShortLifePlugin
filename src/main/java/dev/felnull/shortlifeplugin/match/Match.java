@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static org.bukkit.Sound.BLOCK_ANVIL_PLACE;
+import static org.bukkit.Sound.*;
 
 /**
  * 試合インスタンスクラス
@@ -1485,13 +1485,21 @@ public abstract class Match {
             List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
             List<String> streakCommandList = Arrays.asList(getRewardCommand("streak").split(","));
 
-            if (bonusFlag && chance) {
+            if (bonusFlag && chance && !chanceFlag) {
                 chanceFlag = true;
                 killChanceCount = getKillCount();
+                player.sendMessage(Component.text("■■■■■■■■■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                player.sendMessage(Component.text("  チャンス状態に突入!!").color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
+                player.sendMessage(Component.text("     今から死なずに").color(NamedTextColor.WHITE));
+                player.sendMessage(Component.text("  5キルストリーク達成で").color(NamedTextColor.WHITE));
+                player.sendMessage(Component.text("       特別報酬!!").color(NamedTextColor.WHITE));
+                player.sendMessage(Component.text("■■■■■■■■■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                player.playSound(player, ENTITY_ENDER_DRAGON_AMBIENT, 0.5f, 0.8f);
             }
 
             if (chanceFlag && getKillCount() == killChanceCount + 5) {
                 specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                player.playSound(player, ENTITY_WITHER_DEATH, 0.5f, 0.8f);
                 chanceFlag = false;
             }
 

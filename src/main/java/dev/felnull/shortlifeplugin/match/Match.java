@@ -1099,6 +1099,31 @@ public abstract class Match {
     public class PlayerInfo {
 
         /**
+         * ノーマル
+         */
+        private static final String NORMAL = "normal";
+
+        /**
+         * ボーナス
+         */
+        private static final String BONUS = "ボーナス";
+
+        /**
+         * 特殊
+         */
+        private static final String SPECIAL = "special";
+
+        /**
+         * 勝利
+         */
+        private static final String WINNER = "winner";
+
+        /**
+         * ストリーク
+         */
+        private static final String STREAK = "streak";
+
+        /**
          * この情報のプレイヤー
          */
         @NotNull
@@ -1175,31 +1200,6 @@ public abstract class Match {
          * チャンス時のキル数
          */
         private int killChanceCount = 0;
-
-        /**
-         * ノーマル
-         */
-        private static final String NORMAL = "normal";
-
-        /**
-         * ボーナス
-         */
-        private static final String BONUS = "ボーナス";
-
-        /**
-         * 特殊
-         */
-        private static final String SPECIAL = "special";
-
-        /**
-         * 勝利
-         */
-        private static final String WINNER = "winner";
-
-        /**
-         * ストリーク
-         */
-        private static final String STREAK = "streak";
 
         /**
          * コンストラクタ

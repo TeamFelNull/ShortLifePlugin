@@ -6,7 +6,6 @@ import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +53,11 @@ public class TeamPointMatch extends TeamBaseMatch {
     private static final MatchEndTextProvider[] DRAW_TEXTS = {
             (myTeam, winners, losers) -> "こんなんじゃ勝負になんないよ"
     };
+
+    /**
+     * 勝利
+     */
+    private static final String WINNER = "winner";
 
     /**
      * コンストラクタ
@@ -165,12 +169,7 @@ public class TeamPointMatch extends TeamBaseMatch {
 
             if (win) {
                 team.getParticipationPlayers().forEach(player -> {
-                    try {
-                        String command = Objects.requireNonNull(getPlayerInfo(player)).getRewardCommand("winner").replace("%player_name%", player.getName());
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Objects.requireNonNull(getPlayerInfo(player)).runCommand(WINNER);
                 });
             }
         }

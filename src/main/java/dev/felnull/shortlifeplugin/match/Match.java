@@ -32,6 +32,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -990,8 +991,15 @@ public abstract class Match {
             Title kill = Title.title(Component.empty(), Component.text("1").color(NamedTextColor.RED).append(Component.text("Kill").color(NamedTextColor.GRAY)), times);
             Title killstreak = Title.title(Component.empty(), Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), times);
 
+
             attacker.showTitle(kill);
-            attacker.showTitle(killstreak);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    attacker.showTitle(killstreak);
+                }
+            }.runTaskLater(SLUtils.getSLPlugin(), 50);
+
         }
     }
 
@@ -1528,7 +1536,7 @@ public abstract class Match {
                 lucky += luckEffect.getAmplifier();
             }
             boolean bonus = selectBonusNumber(lucky).contains(RANDOM.nextInt(100));
-            boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100));
+            boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100)); //確率を変えるにはselectBonusNumber(この部分)を変更します 1なら1% 5なら5%になります RANDOM.nextIntの部分を変更しても意味がないみたい？
             double streak = getKillStreakCount() % 5d;
 
             List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));

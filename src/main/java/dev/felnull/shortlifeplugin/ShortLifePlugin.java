@@ -159,4 +159,5 @@ public final class ShortLifePlugin extends JavaPlugin {
             FNDataUtil.wishMkdir(tmpFolder);
         }
     }
+
 }

@@ -963,7 +963,7 @@ public abstract class Match {
 
                 targetInfo.setKillStreakCount(0);
                 targetInfo.setLifeTime(0);
-                targetInfo.iniBonus();
+                targetInfo.initRewardFlag();
             }
         }
 
@@ -1175,6 +1175,31 @@ public abstract class Match {
          * チャンス時のキル数
          */
         private int killChanceCount = 0;
+
+        /**
+         * ノーマル
+         */
+        private static final String NORMAL = "normal";
+
+        /**
+         * ボーナス
+         */
+        private static final String BONUS = "ボーナス";
+
+        /**
+         * 特殊
+         */
+        private static final String SPECIAL = "special";
+
+        /**
+         * 勝利
+         */
+        private static final String WINNER = "winner";
+
+        /**
+         * ストリーク
+         */
+        private static final String STREAK = "streak";
 
         /**
          * コンストラクタ
@@ -1523,11 +1548,11 @@ public abstract class Match {
         }
 
         /**
-         * キルしたら報酬を付与
+         * 報酬を付与
          *
          * @author raindazo
          */
-        public void giveReward() throws IOException {
+        public void giveReward() {
             PotionEffect luckEffect = player.getPotionEffect(PotionEffectType.LUCK);
             if (luckEffect != null) {
                 if (luckEffect.getAmplifier() >= 95) {
@@ -1536,13 +1561,11 @@ public abstract class Match {
                 lucky += luckEffect.getAmplifier();
             }
             boolean bonus = selectBonusNumber(lucky).contains(RANDOM.nextInt(100));
-            boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100)); //確率を変えるにはselectBonusNumber(この部分)を変更します 1なら1% 5なら5%になります RANDOM.nextIntの部分を変更しても意味がないみたい？
+            boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100)); //確率を変えるにはselectBonusNumber(この部分)を変更します 1なら1% 5なら5%になります RANDOM.nextIntはn/100の値を引いているので変えないでください。
             double streak = getKillStreakCount() % 5d;
 
-            List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
-            List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
-            List<String> streakCommandList = Arrays.asList(getRewardCommand("streak").split(","));
 
+            runCommand("normal");
             if (bonusFlag && chance && !chanceFlag) {
                 chanceFlag = true;
                 killChanceCount = getKillCount();
@@ -1556,28 +1579,27 @@ public abstract class Match {
             }
 
             if (chanceFlag && getKillCount() == killChanceCount + 5) {
-                specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                runCommand(SPECIAL);
                 player.playSound(player, ENTITY_WITHER_DEATH, 0.5f, 0.8f);
                 chanceFlag = false;
             }
 
             if (streak == 0) {
-                streakCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                runCommand(STREAK);
             }
 
             if (bonusFlag || bonus) {
-                normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
-                normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                runCommand(BONUS);
                 bonusFlag = true;
             } else {
-                normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                runCommand(NORMAL);
             }
         }
 
         /**
          * n個の値を返す
          *
-         * @param probability 確率
+         * @param probability 確率 例）1->1% ,5->5%
          * @return n個の要素が入った配列
          * @author raindazo
          */
@@ -1602,7 +1624,7 @@ public abstract class Match {
          *
          * @author raindazo
          */
-        private void iniBonus() {
+        private void initRewardFlag() {
             bonusFlag = false;
             chanceFlag = false;
         }
@@ -1626,13 +1648,60 @@ public abstract class Match {
             return switch (functionName) {
                 case "normal" -> json.get("normalReward").getAsString();
                 case "special" -> json.get("specialReward").getAsString();
-                case "bonus" -> json.get("bonusReward").getAsString();
                 case "winner" -> json.get("winnerReward").getAsString();
                 case "streak" -> json.get("streakReward").getAsString();
                 default -> throw new IllegalStateException("Unexpected value: " + functionName);
             };
         }
 
+        /**
+         * JSONに保存されているコマンドを実行する
+         *
+         * @param functionName 報酬名
+         * @author raindazo
+         */
+        protected void runCommand(String functionName) {
+            try {
+                switch (functionName) {
+                    case NORMAL -> {
+                        List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
+                        normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                    }
+                    case SPECIAL -> {
+                        List<String> specialCommandList = Arrays.asList(getRewardCommand("special").split(","));
+                        specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                    }
+                    case BONUS -> {
+                        List<String> winnerCommandList = Arrays.asList(getRewardCommand("winner").split(","));
+                        winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                        winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                    }
+                    case WINNER -> {
+                        List<String> winnerCommandList = Arrays.asList(getRewardCommand("winner").split(","));
+                        winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                    }
+                    case STREAK -> {
+                        List<String> streakCommandList = Arrays.asList(getRewardCommand("streak").split(","));
+                        streakCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + functionName);
+                }
+
+            } catch (IOException e) {
+                SLUtils.getLogger().info(String.valueOf(e));
+            } catch (NullPointerException e) {
+                String errorFunctionName = "";
+                switch (functionName) {
+                    case NORMAL -> errorFunctionName = "”通常報酬”";
+                    case BONUS -> errorFunctionName = "”ボーナス報酬”";
+                    case SPECIAL -> errorFunctionName = "”特殊報酬”";
+                    case STREAK -> errorFunctionName = "”ストリーク報酬”";
+                    case WINNER -> errorFunctionName = "”勝利報酬";
+                    default -> errorFunctionName = "";
+                }
+                SLUtils.getLogger().info(errorFunctionName + "のコマンドが設定されていません。");
+            }
+        }
     }
 
     /**

@@ -42,7 +42,7 @@ public class RewardCommand implements SLCommand {
 
 
     /**
-     * 勝利
+     * 特殊
      */
     private static final String SPECIAL = "special";
 

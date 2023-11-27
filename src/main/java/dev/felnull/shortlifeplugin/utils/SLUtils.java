@@ -2,6 +2,9 @@ package dev.felnull.shortlifeplugin.utils;
 
 import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.legacy.CharacterAndFormat;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.scoreboard.Scoreboard;
@@ -168,5 +171,28 @@ public final class SLUtils {
         ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
         return scoreboard.getTeams().contains(team);
+    }
+
+    /**
+     * テキストカラーを#CharacterAndFormatへ変換ｎ\
+     *
+     * @param textColor テキストカラー
+     * @return 文字とフォーマット
+     */
+    @Nullable
+    public static CharacterAndFormat getCharacterAndFormatByTextColor(TextColor textColor) {
+
+        NamedTextColor convertColor;
+        if (textColor instanceof NamedTextColor namedTextColor) {
+            convertColor = namedTextColor;
+        } else {
+            // 必要であれば、TextColor#nearestColorToを使用して実装してください。
+            throw new RuntimeException("未サポートのテキストカラー");
+        }
+
+        return CharacterAndFormat.defaults().stream()
+                .filter(it -> it.format() == convertColor)
+                .limit(1)
+                .findFirst().orElse(null);
     }
 }

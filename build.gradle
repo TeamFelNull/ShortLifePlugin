@@ -44,6 +44,7 @@ repositories {
         name = 'enginehub-maven'
         url = 'https://maven.enginehub.org/repo/'
     }
+    maven { url 'https://repo.kryptonmc.org/releases' }
 }
 
 dependencies {
@@ -53,6 +54,7 @@ dependencies {
     compileOnly "dev.jorel:commandapi-bukkit-core:9.2.0"
     compileOnly files("libs/MechanicsCore-3.1.2.jar")
     compileOnly files("libs/WeaponMechanics-3.1.1.jar")
+    compileOnly 'me.neznamy:tab-api:4.0.2'
 
     shadowIn "xyz.xenondevs.invui:invui:1.15"
     shadowIn "net.kunmc.lab:ikisugi-logger:1.3"

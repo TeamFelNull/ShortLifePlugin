@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.integration.TABIntegration;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
@@ -150,6 +151,9 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
 
         team.addPlayer(player);
 
+        // プレイヤーリスト表記色更新
+        TABIntegration.setPlayerTabListColor(player, team.getColor());
+
         dirtyAllInfo();
     }
 
@@ -160,6 +164,9 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         for (MatchTeam team : teams) {
             team.removePlayer(player);
         }
+
+        // プレイヤーリスト表記色リセット
+        TABIntegration.setPlayerTabListColor(player, null);
 
         dirtyAllInfo();
 

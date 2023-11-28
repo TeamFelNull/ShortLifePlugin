@@ -9,7 +9,6 @@ import net.kyori.adventure.util.Ticks;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.IOException;
@@ -17,7 +16,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 /**
  * ポイント制チーム試合
@@ -87,9 +86,8 @@ public class TeamPointMatch extends TeamBaseMatch {
      * @return プレイヤー情報
      */
     @SuppressWarnings("unused")
-    @Nullable
-    public TeamPointMatch.PointTeamPlayerInfo getPointTeamPlayerInfo(@NotNull Player player) {
-        return (PointTeamPlayerInfo) getTeamPlayerInfo(player);
+    public Optional<TeamPointMatch.PointTeamPlayerInfo> getPointTeamPlayerInfo(@NotNull Player player) {
+        return getPlayerInfo(player).map(playerInfo -> (PointTeamPlayerInfo) playerInfo);
     }
 
     @Override
@@ -169,8 +167,8 @@ public class TeamPointMatch extends TeamBaseMatch {
             team.audience().showTitle(title);
 
             if (win) {
-                team.getParticipationPlayers().forEach(player -> 
-                        Objects.requireNonNull(getPlayerInfo(player)).runCommand(WINNER));
+                team.getParticipationPlayers().forEach(player ->
+                        getPlayerInfo(player).orElseThrow().runCommand(WINNER));
             }
         }
     }

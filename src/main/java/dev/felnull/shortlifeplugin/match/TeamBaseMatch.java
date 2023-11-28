@@ -57,9 +57,8 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
      * @param player プレイヤー
      * @return プレイヤー情報
      */
-    @Nullable
-    public TeamBaseMatch.TeamPlayerInfo getTeamPlayerInfo(@NotNull Player player) {
-        return (TeamPlayerInfo) getPlayerInfo(player);
+    public Optional<TeamBaseMatch.TeamPlayerInfo> getTeamPlayerInfo(@NotNull Player player) {
+        return getPlayerInfo(player).map(playerInfo -> (TeamBaseMatch.TeamPlayerInfo) playerInfo);
     }
 
 
@@ -311,10 +310,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
             }
 
             // 情報表示を更新
-            TeamPlayerInfo teamPlayerInfo = getTeamPlayerInfo(player);
-            if (teamPlayerInfo != null) {
-                teamPlayerInfo.dirtyInfo();
-            }
+            getTeamPlayerInfo(player).ifPresent(PlayerInfo::dirtyInfo);
         }
 
         /**

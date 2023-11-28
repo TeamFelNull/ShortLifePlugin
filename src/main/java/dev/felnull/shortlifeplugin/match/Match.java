@@ -494,9 +494,8 @@ public abstract class Match {
      * @param player プレイヤー
      * @return プレイヤー情報
      */
-    @Nullable
-    public Match.PlayerInfo getPlayerInfo(@NotNull Player player) {
-        return this.players.get(player);
+    public Optional<Match.PlayerInfo> getPlayerInfo(@NotNull Player player) {
+        return Optional.of(this.players.get(player));
     }
 
     /**
@@ -610,12 +609,10 @@ public abstract class Match {
      * @param player プレイヤー
      */
     protected void playerStart(@NotNull Player player) {
-        PlayerInfo playerInfo = getPlayerInfo(player);
+        Optional<PlayerInfo> playerInfo = getPlayerInfo(player);
 
         // ゲームモードを変更
-        if (playerInfo != null) {
-            playerInfo.setPreGameMode(player.getGameMode());
-        }
+        playerInfo.ifPresent(playerInfo1 -> playerInfo1.setPreGameMode(player.getGameMode()));
         player.setGameMode(GameMode.ADVENTURE);
 
         // 体力全回復
@@ -643,9 +640,7 @@ public abstract class Match {
         }
 
         // スポーン保護指定
-        if (playerInfo != null) {
-            playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME));
-        }
+        playerInfo.ifPresent(playerInfo1 -> playerInfo1.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME)));
 
         // 開始音
         player.playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP.key(), Sound.Source.MASTER, 1, 0.1f));
@@ -903,14 +898,8 @@ public abstract class Match {
             return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
         } else if (status == Status.STARTED) {
             /* 試合中 */
-            PlayerInfo playerInfo = getPlayerInfo(player);
-
             // スポーン保護状態は無敵
-            if (playerInfo != null) {
-                return playerInfo.isSpawnProtect();
-            }
-
-            return false;
+            return getPlayerInfo(player).map(PlayerInfo::isSpawnProtect).orElse(false);
         }
         return false;
     }
@@ -925,12 +914,9 @@ public abstract class Match {
      * @param player プレイヤー
      */
     public void onRespawn(@NotNull Player player) {
-        PlayerInfo playerInfo = getPlayerInfo(player);
-
         // スポーン保護指定
-        if (playerInfo != null) {
-            playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME));
-        }
+        getPlayerInfo(player).ifPresent(
+                playerInfo ->  playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME)));
     }
 
     /**
@@ -942,9 +928,7 @@ public abstract class Match {
         // 試合中のみ
         if (getStatus() == Match.Status.STARTED) {
 
-            PlayerInfo targetInfo = getPlayerInfo(target);
-
-            if (targetInfo != null) {
+            getPlayerInfo(target).ifPresent(targetInfo -> {
                 targetInfo.setDeathCount(targetInfo.getDeathCount() + 1);
 
                 if (targetInfo.getKillStreakCount() > targetInfo.getMaxKillStreakCount()) {
@@ -954,7 +938,7 @@ public abstract class Match {
                 targetInfo.setKillStreakCount(0);
                 targetInfo.setLifeTime(0);
                 targetInfo.initRewardFlag();
-            }
+            });
         }
 
         Player attacker = target.getKiller();
@@ -1009,16 +993,16 @@ public abstract class Match {
                                   @SuppressWarnings("unused") double damageAmount, @NotNull EntityDamageEvent.DamageCause damageCause) {
         // 無敵とされているプレイヤーであれば、Kill以外のダメージをキャンセル
         if (damageCause != EntityDamageEvent.DamageCause.KILL && isInvinciblePlayer(target)) {
-            PlayerInfo playerInfo = getPlayerInfo(target);
-
-            if (playerInfo != null && playerInfo.isSpawnProtect()) {
+            getPlayerInfo(target).ifPresent(playerInfo -> {
                 /* スポーン保護状態の場合 */
+                if (playerInfo.isSpawnProtect()) {
 
-                // 攻撃者に警告音
-                if (attacker != null) {
-                    attacker.playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL.key(), Sound.Source.MASTER, 30, 1.5f + RANDOM.nextFloat() * 0.07f), target);
+                    // 攻撃者に警告音
+                    if (attacker != null) {
+                        attacker.playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL.key(), Sound.Source.MASTER, 30, 1.5f + RANDOM.nextFloat() * 0.07f), target);
+                    }
                 }
-            }
+            });
 
             return false;
         }

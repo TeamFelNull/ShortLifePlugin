@@ -10,6 +10,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -30,7 +31,7 @@ public class MatchCommand implements SLCommand {
     public CommandAPICommand create() {
         // https://commandapi.jorel.dev/9.0.3/commandregistration.html <-参考
         CommandAPICommand list = new CommandAPICommand("list")
-                .executes(this::matchList);
+                .executes((CommandExecutor) (sender, args) -> matchList(sender));
 
         CommandAPICommand info = new CommandAPICommand("info")
                 .withArguments(matchArgument("match"))
@@ -60,10 +61,10 @@ public class MatchCommand implements SLCommand {
 
         CommandAPICommand map = new CommandAPICommand("map")
                 .withSubcommands(new CommandAPICommand("list")
-                        .executes(this::mapList))
+                        .executes((CommandExecutor) (sender, args) -> mapList(sender))
                 .withSubcommands(new CommandAPICommand("info")
                         .withArguments(mapArgument("map"))
-                        .executes(this::mapInfo));
+                        .executes(this::mapInfo)));
 
         return new CommandAPICommand("match")
                 .withAliases("slm")
@@ -103,7 +104,7 @@ public class MatchCommand implements SLCommand {
     }
 
 
-    private void matchList(CommandSender sender, CommandArguments args) {
+    private void matchList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         Map<String, Match> matches = matchManager.getAllMatch();
 
@@ -258,7 +259,7 @@ public class MatchCommand implements SLCommand {
         sender.sendRichMessage(String.format("%sを削除します", match.getId()));
     }
 
-    private void mapList(CommandSender sender, CommandArguments args) {
+    private void mapList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         MatchMapLoader mapLoader = matchManager.getMapLoader();
         Map<String, MatchMap> maps = mapLoader.getAllMap();

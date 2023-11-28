@@ -8,8 +8,8 @@ import dev.felnull.shortlifeplugin.utils.SLUtils;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.CommandArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
 import dev.jorel.commandapi.wrappers.CommandResult;
-import org.bukkit.command.CommandSender;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -56,19 +56,19 @@ public class RewardCommand implements SLCommand {
 
         CommandAPICommand normalReward = new CommandAPICommand("normal")
                 .withArguments(new CommandArgument("command"))
-                .executes(this::normalReward);
+                .executes((CommandExecutor) (sender, args) -> normalReward(args));
 
         CommandAPICommand chanceReward = new CommandAPICommand("special")
                 .withArguments(new CommandArgument("command"))
-                .executes(this::specialReward);
+                .executes((CommandExecutor) (sender, args) -> specialReward(args));
 
         CommandAPICommand winnerReward = new CommandAPICommand("winner")
                 .withArguments(new CommandArgument("command"))
-                .executes(this::winnerReward);
+                .executes((CommandExecutor) (sender, args) -> winnerReward(args));
 
         CommandAPICommand streakReward = new CommandAPICommand("streak")
                 .withArguments(new CommandArgument("command"))
-                .executes(this::streakReward);
+                .executes((CommandExecutor) (sender, args) -> streakReward(args));
 
         return new CommandAPICommand("reward")
                 .withPermission(SLPermissions.COMMANDS_REWARD)
@@ -83,11 +83,10 @@ public class RewardCommand implements SLCommand {
     /**
      * 通常報酬のコマンドを設定する
      *
-     * @param sender 発信者
      * @param args   チャットの引数
      * @author raindazo
      */
-    private void normalReward(CommandSender sender, CommandArguments args) {
+    private void normalReward(CommandArguments args) {
         String command = useCommand(args);
 
         try {
@@ -100,11 +99,10 @@ public class RewardCommand implements SLCommand {
     /**
      * 特殊報酬を付与する
      *
-     * @param sender 発信者
      * @param args   チャットの引数
      * @author raindazo
      */
-    private void specialReward(CommandSender sender, CommandArguments args) {
+    private void specialReward(CommandArguments args) {
         String command = useCommand(args);
 
         try {
@@ -117,11 +115,10 @@ public class RewardCommand implements SLCommand {
     /**
      * 勝利時の報酬を付与する
      *
-     * @param sender 発信者
      * @param args   チャットの引数
      * @author raindazo
      */
-    private void winnerReward(CommandSender sender, CommandArguments args) {
+    private void winnerReward(CommandArguments args) {
         String command = useCommand(args);
         try {
             this.setConfig(WINNER, command);
@@ -133,11 +130,10 @@ public class RewardCommand implements SLCommand {
     /**
      * ストリート報酬のコマンドを設定する
      *
-     * @param sender 発信者
      * @param args   チャットの引数
      * @author raindazo
      */
-    private void streakReward(CommandSender sender, CommandArguments args) {
+    private void streakReward(CommandArguments args) {
         String command = useCommand(args);
 
         try {

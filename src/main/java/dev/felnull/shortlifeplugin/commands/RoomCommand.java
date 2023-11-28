@@ -16,6 +16,7 @@ import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.CustomArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -58,7 +59,7 @@ public class RoomCommand implements SLCommand {
                 .executes(this::join);
 
         CommandAPICommand leave = new CommandAPICommand("leave")
-                .executes(this::leave);
+                .executes((CommandExecutor) (sender, args) -> leave(sender));
 
         return new CommandAPICommand("room")
                 .withAliases("slr")
@@ -146,7 +147,7 @@ public class RoomCommand implements SLCommand {
         }
     }
 
-    private void leave(CommandSender sender, CommandArguments args) {
+    private void leave(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
             return;

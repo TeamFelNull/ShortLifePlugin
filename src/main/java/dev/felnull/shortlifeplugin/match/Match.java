@@ -75,10 +75,11 @@ public abstract class Match {
     /**
      * 報酬コマンド実行用インスタントリプレイ
      */
+    @SuppressWarnings("unused")
     protected static final RewardCommand REWARD_COMMAND = new RewardCommand();
 
     /**
-     * Gsonインスタント
+     * Gsonインスタンス
      */
     private static final Gson GSON = new Gson();
 
@@ -234,11 +235,6 @@ public abstract class Match {
      */
     private int luckyProbability = 5;
 
-    /**
-     * チャンス確率
-     */
-    private int chanceProbability = 1;
-
 
     /**
      * コンストラクタ
@@ -294,9 +290,7 @@ public abstract class Match {
 
 
         // プレイヤーごとのTick処理
-        this.players.forEach((player, playerInfo) -> {
-            playerInfo.tick();
-        });
+        this.players.forEach((player, playerInfo) -> playerInfo.tick());
 
         Match.this.dirtyAllInfo = false;
     }
@@ -424,9 +418,7 @@ public abstract class Match {
         if (this.status != Status.NONE) {
             Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
 
-            if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() != player.getWorld()) {
-                return false;
-            }
+            return matchMapWorld.isEmpty() || matchMapWorld.get().getWorld() == player.getWorld();
         }
 
         return true;
@@ -987,7 +979,10 @@ public abstract class Match {
             attacker.playSound(attacker, BLOCK_ANVIL_PLACE, 0.6f, 0.5f);
             Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(1000), Duration.ofMillis(1000));
             Title kill = Title.title(Component.empty(), Component.text("1").color(NamedTextColor.RED).append(Component.text("Kill").color(NamedTextColor.GRAY)), times);
-            Title killstreak = Title.title(Component.empty(), Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), times);
+            Title killstreak = Title.title(
+                    Component.empty(), 
+                    Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), 
+                    times);
 
 
             attacker.showTitle(kill);
@@ -1010,7 +1005,8 @@ public abstract class Match {
      * @param damageCause  ダメージケース
      * @return falseであればダメージをキャンセル
      */
-    public boolean onPlayerDamage(@NotNull Player target, @Nullable Player attacker, double damageAmount, @NotNull EntityDamageEvent.DamageCause damageCause) {
+    public boolean onPlayerDamage(@NotNull Player target, @Nullable Player attacker, 
+                                  @SuppressWarnings("unused") double damageAmount, @NotNull EntityDamageEvent.DamageCause damageCause) {
         // 無敵とされているプレイヤーであれば、Kill以外のダメージをキャンセル
         if (damageCause != EntityDamageEvent.DamageCause.KILL && isInvinciblePlayer(target)) {
             PlayerInfo playerInfo = getPlayerInfo(target);
@@ -1521,6 +1517,7 @@ public abstract class Match {
             return player;
         }
 
+        @SuppressWarnings("unused")
         public int getLifeTime() {
             return lifeTime;
         }
@@ -1559,7 +1556,7 @@ public abstract class Match {
 
             double streak = getKillStreakCount() % 5d;
             boolean bonus = RANDOM.nextInt(100) < luckyProbability;
-            boolean chance = RANDOM.nextInt(100) < chanceProbability;
+            boolean chance = RANDOM.nextInt(100) < 1; //チャンス確率
 
             if (bonusFlag && !chanceFlag && chance) {
                 chanceFlag = true;
@@ -1662,7 +1659,7 @@ public abstract class Match {
             } catch (IOException e) {
                 SLUtils.getLogger().info(String.valueOf(e));
             } catch (NullPointerException e) {
-                String errorFunctionName = "";
+                String errorFunctionName;
                 switch (functionName) {
                     case NORMAL -> errorFunctionName = "”通常報酬”";
                     case BONUS -> errorFunctionName = "”ボーナス報酬”";

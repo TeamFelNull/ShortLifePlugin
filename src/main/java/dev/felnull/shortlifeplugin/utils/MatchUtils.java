@@ -23,6 +23,7 @@ public final class MatchUtils {
     /**
      * チーム選定で、優先的に使用される順番に格納されたチームカラー
      */
+    @SuppressWarnings("unused")
     public static final NamedTextColor[] TEAM_COLORS = {
             NamedTextColor.RED,
             NamedTextColor.BLUE,

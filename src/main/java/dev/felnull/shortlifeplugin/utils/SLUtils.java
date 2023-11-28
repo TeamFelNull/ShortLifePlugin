@@ -157,6 +157,7 @@ public final class SLUtils {
      * @param path パス
      * @return NamespacedKey形式文字列
      */
+    @SuppressWarnings("unused")
     public static String plLocStr(@NotNull String path) {
         return ShortLifePlugin.PLUGIN_ID + ":" + path;
     }
@@ -167,6 +168,7 @@ public final class SLUtils {
      * @param team チーム
      * @return 登録されていればtrue、なければfalse
      */
+    @SuppressWarnings("unused")
     public static boolean isTeamRegistered(@NotNull Team team) {
         ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();

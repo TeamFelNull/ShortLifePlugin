@@ -86,6 +86,7 @@ public class TeamPointMatch extends TeamBaseMatch {
      * @param player プレイヤー
      * @return プレイヤー情報
      */
+    @SuppressWarnings("unused")
     @Nullable
     public TeamPointMatch.PointTeamPlayerInfo getPointTeamPlayerInfo(@NotNull Player player) {
         return (PointTeamPlayerInfo) getTeamPlayerInfo(player);
@@ -168,9 +169,8 @@ public class TeamPointMatch extends TeamBaseMatch {
             team.audience().showTitle(title);
 
             if (win) {
-                team.getParticipationPlayers().forEach(player -> {
-                    Objects.requireNonNull(getPlayerInfo(player)).runCommand(WINNER);
-                });
+                team.getParticipationPlayers().forEach(player -> 
+                        Objects.requireNonNull(getPlayerInfo(player)).runCommand(WINNER));
             }
         }
     }

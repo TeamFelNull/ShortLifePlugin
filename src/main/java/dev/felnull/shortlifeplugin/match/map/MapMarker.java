@@ -26,6 +26,7 @@ public interface MapMarker {
      * @return 地点名
      */
     @NotNull
+    @SuppressWarnings("unused")
     NamespacedKey getPointName();
 
     /**

@@ -9,6 +9,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -61,7 +62,7 @@ public class EquipmentGroupCommand implements SLCommand {
 
 
         CommandAPICommand list = new CommandAPICommand("list")
-                .executes(this::equipmentGroupList);
+                .executes((CommandExecutor) (sender, args) -> equipmentGroupList(sender));
 
 
         CommandAPICommand info = new CommandAPICommand("info")
@@ -170,7 +171,7 @@ public class EquipmentGroupCommand implements SLCommand {
         sender.sendRichMessage(String.format("指定された装備グループ(%s)を削除しました", equipmentGroup.id()));
     }
 
-    private void equipmentGroupList(CommandSender sender, CommandArguments args) {
+    private void equipmentGroupList(CommandSender sender) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         Map<String, EquipmentGroup> groups = manager.getAllGroup();
 

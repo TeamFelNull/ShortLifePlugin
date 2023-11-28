@@ -80,6 +80,7 @@ public final class ShortLifePlugin extends JavaPlugin {
     /**
      * バージョン確認
      */
+    @SuppressWarnings("UnstableApiUsage")
     private void versionCheck() {
         // テストモードではバージョン確認をスキップ
         if (!SLConfig.isTestMode()) {

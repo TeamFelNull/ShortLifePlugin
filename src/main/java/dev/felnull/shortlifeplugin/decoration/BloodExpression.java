@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 血液の表現
@@ -95,18 +96,17 @@ public class BloodExpression {
      * @param cause        ダメージケース
      * @return 範囲と限定的なダメージ箇所かどうか
      */
-    @Nullable
-    public static Pair<BoundingBox, Boolean> getDamageBox(@NotNull LivingEntity livingEntity, @NotNull EntityDamageEvent.DamageCause cause) {
+    public static Optional<Pair<BoundingBox, Boolean>> getDamageBox(@NotNull LivingEntity livingEntity, @NotNull EntityDamageEvent.DamageCause cause) {
         return switch (cause) {
             case KILL, CONTACT, ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE, BLOCK_EXPLOSION,
                     ENTITY_EXPLOSION, FALLING_BLOCK, THORNS, FLY_INTO_WALL, CRAMMING, SONIC_BOOM ->
-                    Pair.of(livingEntity.getBoundingBox(), false);
+                    Optional.of(Pair.of(livingEntity.getBoundingBox(), false));
             case FALL -> {
                 BoundingBox entityBox = livingEntity.getBoundingBox();
                 Vector max = entityBox.getMax();
-                yield Pair.of(BoundingBox.of(max.clone().setY(max.getY() - (entityBox.getHeight() / 15d)), entityBox.getMin()), true);
+                yield Optional.of(Pair.of(BoundingBox.of(max.clone().setY(max.getY() - (entityBox.getHeight() / 15d)), entityBox.getMin()), true));
             }
-            default -> null;
+            default -> Optional.empty();
         };
     }
 

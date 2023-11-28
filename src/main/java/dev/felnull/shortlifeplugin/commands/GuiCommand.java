@@ -35,16 +35,10 @@ public class GuiCommand implements SLCommand {
     }
 
     private Argument<SLGuis.WindowProvider> guiArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            SLGuis.WindowProvider windowProvider = SLGuis.getWindowProvider(info.input());
-
-            if (windowProvider == null) {
-                throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput());
-            } else {
-                return windowProvider;
-            }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> SLGuis.getAllGuiIds().toArray(String[]::new)));
+        return new CustomArgument<>(new StringArgument(nodeName), 
+                info -> SLGuis.getWindowProvider(info.input())
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput())))
+                .replaceSuggestions(ArgumentSuggestions.strings(info -> SLGuis.getAllGuiIds().toArray(String[]::new)));
     }
 
     private void guiOpen(CommandSender sender, CommandArguments args) {

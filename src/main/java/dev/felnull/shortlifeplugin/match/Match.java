@@ -383,9 +383,7 @@ public abstract class Match {
             finishTeleport = true;
 
             for (final Player player : players.keySet()) {
-                MatchUtils.teleportToLeave(player, this.matchMapInstance.getMapWorld()
-                        .map(MatchMapWorld::getWorld)
-                        .orElse(null));
+                MatchUtils.teleportToLeave(player, this.matchMapInstance.getMapWorld().map(MatchMapWorld::getWorld));
             }
         }
 
@@ -536,9 +534,7 @@ public abstract class Match {
         // 試合用ワールドにいる場合、ワールド外にテレポート
         Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
         if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
-            MatchUtils.teleportToLeave(player, matchMapWorld
-                    .map(MatchMapWorld::getWorld)
-                    .orElse(null));
+            MatchUtils.teleportToLeave(player, matchMapWorld.map(MatchMapWorld::getWorld));
         }
 
         if (sendMessage) {

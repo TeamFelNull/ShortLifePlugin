@@ -15,7 +15,6 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
@@ -84,9 +83,7 @@ public class CommonListener implements Listener {
         if (!(e instanceof WeaponMechanicsEntityDamageByEntityEvent) && e.getEntity() instanceof LivingEntity livingEntity
                 && BloodExpression.isSpawnDamageParticle(livingEntity, e.getDamage())) {
 
-            Pair<BoundingBox, Boolean> pointAndIsCritical = BloodExpression.getDamageBox(livingEntity, e.getCause());
-
-            if (pointAndIsCritical != null) {
+            BloodExpression.getDamageBox(livingEntity, e.getCause()).ifPresent(pointAndIsCritical -> {
                 BoundingBox damageBox;
                 BoundingBox criticalDamageBox;
 
@@ -99,7 +96,7 @@ public class CommonListener implements Listener {
                 }
 
                 BloodExpression.spawnDamageParticle(livingEntity, damageBox, criticalDamageBox, e.getDamage());
-            }
+            });
         }
     }
 

@@ -16,6 +16,7 @@ import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.CustomArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -75,7 +76,7 @@ public class RoomCommand implements SLCommand {
             List<String> roomIds = roomIds();
             String roomId = info.input();
 
-            if (roomId == null || !roomIds.contains(roomId)) {
+            if (StringUtils.isEmpty(roomId) || !roomIds.contains(roomId)) {
 
                 String errorMessage;
                 if (ALL_ID_NAME.get().containsKey(roomId)) {

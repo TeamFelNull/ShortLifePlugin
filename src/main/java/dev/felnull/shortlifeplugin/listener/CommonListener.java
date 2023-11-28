@@ -32,7 +32,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
 
-import static org.bukkit.Sound.*;
+import static org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
+import static org.bukkit.Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR;
 
 /**
  * 一般的なイベントリスナー

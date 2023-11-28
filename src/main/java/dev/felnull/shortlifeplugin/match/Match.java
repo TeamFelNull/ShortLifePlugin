@@ -25,7 +25,10 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
@@ -663,8 +666,7 @@ public abstract class Match {
      * @return 結果
      */
     private boolean teleportToJoin(@NotNull Player player) {
-        Location respawnPoint = lotterySpawnLocation(player);
-        if (respawnPoint != null) {
+        return lotterySpawnLocation(player).map(respawnPoint -> {
             // 死亡している場合は強制リスポーン
             if (player.isDead()) {
                 player.spigot().respawn();
@@ -672,9 +674,7 @@ public abstract class Match {
 
             player.teleport(respawnPoint);
             return true;
-        }
-
-        return false;
+        }).orElse(false);
     }
 
     /**
@@ -873,29 +873,18 @@ public abstract class Match {
      * @param player プレイヤー
      * @return 場所
      */
-    @Nullable
-    public Location lotterySpawnLocation(@NotNull Player player) {
+    public Optional<Location> lotterySpawnLocation(@NotNull Player player) {
 
-        // マップが読み込み済みならばスポーン地点を抽選する
-        if (this.matchMapInstance.getMapWorld().isPresent()) {
-            MatchMapWorld matchMapWorld = this.matchMapInstance.getMapWorld().get();
-            World world = matchMapWorld.getWorld();
-            MapMarker spawnMarker = getSpawnMaker(matchMapWorld, player);
+        return this.matchMapInstance.getMapWorld().map(matchMapWorld -> {
+            // マップが読み込み済みならばスポーン地点を抽選する
+            return getSpawnMaker(matchMapWorld, player).map(mapMarker -> {
+                BlockVector3 spawnPos = matchMapWorld.offsetCorrection(mapMarker.getPosition());
 
-            // スポーン地点のマーカーを取得できない場合はnullを返す
-            if (spawnMarker == null) {
-                return null;
-            }
-
-            BlockVector3 spawnPos = matchMapWorld.offsetCorrection(spawnMarker.getPosition());
-
-            Location location = new Location(world, spawnPos.getX() + 0.5f, spawnPos.getY(), spawnPos.getZ() + 0.5f);
-            location.setDirection(spawnMarker.getDirection().getDirection());
-
-            return location;
-        }
-
-        return null;
+                Location unSetLocation = new Location(matchMapWorld.getWorld(), spawnPos.getX() + 0.5f, spawnPos.getY(), spawnPos.getZ() + 0.5f);
+                unSetLocation.setDirection(mapMarker.getDirection().getDirection());
+                return Optional.of(unSetLocation);
+            }).orElseGet(Optional::empty); // スポーン地点のマーカーを取得できない場合はnullを返す
+        }).orElseGet(Optional::empty);
     }
 
 
@@ -906,8 +895,7 @@ public abstract class Match {
      * @param player        プレイヤー
      * @return マーカー
      */
-    @Nullable
-    protected abstract MapMarker getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player);
+    protected abstract Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player);
 
     /**
      * 指定されたプレイヤーが無敵かどうか

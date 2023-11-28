@@ -5,7 +5,6 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -51,10 +50,7 @@ public final class MatchListener implements Listener {
             match.onRespawn(e.getPlayer());
 
             // リスポーン地点を変更
-            Location location = match.lotterySpawnLocation(e.getPlayer());
-            if (location != null) {
-                e.setRespawnLocation(location);
-            }
+            match.lotterySpawnLocation(e.getPlayer()).ifPresent(e::setRespawnLocation);
         }
     }
 
@@ -115,7 +111,6 @@ public final class MatchListener implements Listener {
         Player target = e.getPlayer();
         MatchManager matchManager = MatchManager.getInstance();
         Match match = matchManager.getJointedMach(target);
-
 
 
         // 参加者が死亡した場合、試合の死亡処理を呼ぶ

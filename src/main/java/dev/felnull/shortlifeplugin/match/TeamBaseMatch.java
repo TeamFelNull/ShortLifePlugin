@@ -209,14 +209,14 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     }
 
     @Override
-    protected @Nullable MapMarker getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
+    protected Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
         MatchTeam team = getTeamByPlayer(player);
 
         if (team != null) {
             return matchMapWorld.getMakerRandom(team.getRespawnPoint());
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @Override

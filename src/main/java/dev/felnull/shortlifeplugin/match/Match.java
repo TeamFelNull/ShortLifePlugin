@@ -642,6 +642,11 @@ public abstract class Match {
             SLUtils.reportError(new RuntimeException("ワールドの用意が出来ていません"));
         }
 
+        // スポーン保護指定
+        if (playerInfo != null) {
+            playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME));
+        }
+
         // 開始音
         player.playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP.key(), Sound.Source.MASTER, 1, 0.1f));
     }

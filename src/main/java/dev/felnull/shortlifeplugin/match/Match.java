@@ -1672,7 +1672,7 @@ public abstract class Match {
                         specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                     }
                     case BONUS -> {
-                        List<String> winnerCommandList = Arrays.asList(getRewardCommand("winner").split(","));
+                        List<String> winnerCommandList = Arrays.asList(getRewardCommand("normal").split(","));
                         winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                         winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                     }

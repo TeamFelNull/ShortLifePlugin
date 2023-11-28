@@ -229,7 +229,12 @@ public abstract class Match {
     /**
      * チャンス確率
      */
-    private int lucky = 5;
+    private int luckyProbability = 5;
+
+    /**
+     * チャンス確率
+     */
+    private int chanceProbability = 1;
 
 
     /**
@@ -1559,17 +1564,16 @@ public abstract class Match {
          */
         public void giveReward() {
             PotionEffect luckEffect = player.getPotionEffect(PotionEffectType.LUCK);
-            if (luckEffect != null) {
-                if (luckEffect.getAmplifier() >= 95) {
-                    lucky = 100;
-                }
-                lucky += luckEffect.getAmplifier();
-            }
-            boolean bonus = selectBonusNumber(lucky).contains(RANDOM.nextInt(100));
-            boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100)); //確率を変えるにはselectBonusNumber(この部分)を変更します 1なら1% 5なら5%になります RANDOM.nextIntはn/100の値を引いているので変えないでください。
-            double streak = getKillStreakCount() % 5d;
 
-            if (bonusFlag && chance && !chanceFlag) {
+            if (luckEffect != null) {
+                luckyProbability += luckEffect.getAmplifier();
+            }
+
+            double streak = getKillStreakCount() % 5d;
+            boolean bonus = RANDOM.nextInt(100) < luckyProbability;
+            boolean chance = RANDOM.nextInt(100) < chanceProbability;
+
+            if (bonusFlag && !chanceFlag && chance) {
                 chanceFlag = true;
                 killChanceCount = getKillCount();
                 player.sendMessage(Component.text("■■■■■■■■■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
@@ -1597,29 +1601,6 @@ public abstract class Match {
             } else {
                 runCommand(NORMAL);
             }
-        }
-
-        /**
-         * n個の値を返す
-         *
-         * @param probability 確率 例）1->1% ,5->5%
-         * @return n個の要素が入った配列
-         * @author raindazo
-         */
-        private List<Integer> selectBonusNumber(int probability) {
-            List<Integer> value = new ArrayList<>();
-            List<Integer> returnList = new ArrayList<>();
-
-            for (int i = 1; i <= 100; i++) {
-                value.add(i);
-            }
-
-            Collections.shuffle(value);
-
-            for (int i = 0; i < probability; i++) {
-                returnList.add(value.get(i));
-            }
-            return returnList;
         }
 
         /**
@@ -1675,9 +1656,9 @@ public abstract class Match {
                         specialCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                     }
                     case BONUS -> {
-                        List<String> winnerCommandList = Arrays.asList(getRewardCommand("normal").split(","));
-                        winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
-                        winnerCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                        List<String> normalCommandList = Arrays.asList(getRewardCommand("normal").split(","));
+                        normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
+                        normalCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                     }
                     case WINNER -> {
                         List<String> winnerCommandList = Arrays.asList(getRewardCommand("winner").split(","));

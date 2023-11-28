@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin.gui;
 import com.google.common.collect.ImmutableList;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroup;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,7 @@ public class EquipmentGroupModifyItemGui {
      */
     public static void tryOpenGui(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup) {
         if (openItemModifyGui) {
-            player.sendMessage("別のプレイヤーが編集中です");
+            player.sendMessage(Component.text("別のプレイヤーが編集中です"));
             return;
         }
 

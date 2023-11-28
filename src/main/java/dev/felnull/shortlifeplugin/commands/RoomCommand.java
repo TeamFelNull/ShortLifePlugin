@@ -17,6 +17,7 @@ import dev.jorel.commandapi.arguments.CustomArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
 import dev.jorel.commandapi.executors.CommandExecutor;
+import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -128,17 +129,17 @@ public class RoomCommand implements SLCommand {
         Match match = matchManager.getMatch(roomId);
 
         if (match == null) {
-            player.sendMessage("試合を取得できませんでした");
+            player.sendMessage(Component.text("試合を取得できませんでした"));
             return;
         }
 
         Match jointedMatch = matchManager.getJointedMach(player);
 
         if (match == jointedMatch) {
-            player.sendMessage("既に参加しています");
+            player.sendMessage(Component.text("既に参加しています"));
             return;
         } else if (jointedMatch != null) {
-            player.sendMessage("既に別の試合に参加しています");
+            player.sendMessage(Component.text("既に別の試合に参加しています"));
             return;
         }
 
@@ -158,10 +159,10 @@ public class RoomCommand implements SLCommand {
 
         if (jointedMatch != null) {
             if (!jointedMatch.leave(player, true)) {
-                player.sendMessage("退出できませんでした");
+                player.sendMessage(Component.text("退出できませんでした"));
             }
         } else {
-            player.sendMessage("試合に参加していません");
+            player.sendMessage(Component.text("試合に参加していません"));
         }
     }
 }

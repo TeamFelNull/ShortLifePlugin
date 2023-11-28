@@ -65,34 +65,6 @@ public class MatchCommand implements SLCommand {
                         .withArguments(mapArgument("map"))
                         .executes(this::mapInfo));
 
-        // FIXME リリース前に削除
-        CommandAPICommand test = new CommandAPICommand("aikiso")
-                .executes((sender, args) -> {
-                 /*   if (sender instanceof Player player) {
-                        mainIkisugi(player);
-                    }*/
-                   /* if (sender instanceof Player player) {
-                        MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
-                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player, true);
-                    }*/
-                /*    if (sender instanceof Player player) {
-                        MapTest.test(player);
-                    }*/
-
-                    /*if (sender instanceof Player player) {
-                     *//* MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
-                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEAM, matchMap).join(player);*//*
-
-                        ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
-                        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-
-                        Team ikisugiTeam = scoreboard.registerNewTeam("ikisugi");
-
-                        // scoreboard.getS()
-                    }*/
-                });
-
-
         return new CommandAPICommand("match")
                 .withAliases("slm")
                 .withPermission(SLPermissions.COMMANDS_MATCH)

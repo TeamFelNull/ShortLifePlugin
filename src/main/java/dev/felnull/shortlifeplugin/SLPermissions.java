@@ -34,5 +34,6 @@ public final class SLPermissions {
     public static final String COMMANDS_REWARD = "hortlifeplugin.commands.reward";
 
     private SLPermissions() {
+        throw new AssertionError();
     }
 }

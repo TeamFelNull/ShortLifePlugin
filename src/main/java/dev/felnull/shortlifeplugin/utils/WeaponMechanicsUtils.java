@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 public class WeaponMechanicsUtils {
 
     private WeaponMechanicsUtils() {
+        throw new AssertionError();
     }
 
     /**

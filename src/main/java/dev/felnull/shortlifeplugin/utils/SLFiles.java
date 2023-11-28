@@ -10,6 +10,7 @@ import java.io.File;
 public final class SLFiles {
 
     private SLFiles() {
+        throw new AssertionError();
     }
 
     /**

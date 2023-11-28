@@ -49,6 +49,7 @@ public final class MatchUtils {
     private static final NamespacedKey DEFAULT_FORCE_TELEPORT_WORLD = NamespacedKey.minecraft("overworld");
 
     private MatchUtils() {
+        throw new AssertionError();
     }
 
     /**

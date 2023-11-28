@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 public final class SLUtils {
 
     private SLUtils() {
+        throw new AssertionError();
     }
 
     /**

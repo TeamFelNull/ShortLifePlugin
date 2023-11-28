@@ -1564,8 +1564,6 @@ public abstract class Match {
             boolean chance = selectBonusNumber(1).contains(RANDOM.nextInt(100)); //確率を変えるにはselectBonusNumber(この部分)を変更します 1なら1% 5なら5%になります RANDOM.nextIntはn/100の値を引いているので変えないでください。
             double streak = getKillStreakCount() % 5d;
 
-
-            runCommand("normal");
             if (bonusFlag && chance && !chanceFlag) {
                 chanceFlag = true;
                 killChanceCount = getKillCount();

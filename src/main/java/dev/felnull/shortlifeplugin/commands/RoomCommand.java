@@ -133,7 +133,7 @@ public class RoomCommand implements SLCommand {
             return;
         }
 
-        Match jointedMatch = matchManager.getJointedMach(player);
+        Match jointedMatch = matchManager.getJoinedMatch(player);
 
         if (match == jointedMatch) {
             player.sendMessage(Component.text("既に参加しています"));
@@ -155,7 +155,7 @@ public class RoomCommand implements SLCommand {
         }
 
         MatchManager matchManager = MatchManager.getInstance();
-        Match jointedMatch = matchManager.getJointedMach(player);
+        Match jointedMatch = matchManager.getJoinedMatch(player);
 
         if (jointedMatch != null) {
             if (!jointedMatch.leave(player, true)) {

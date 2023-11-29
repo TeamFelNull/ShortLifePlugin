@@ -13,7 +13,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
@@ -178,13 +177,11 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
      * @param player プレイヤー
      * @return チーム
      */
-    @Nullable
-    public MatchTeam getTeamByPlayer(@NotNull Player player) {
+    public Optional<MatchTeam> getTeamByPlayer(@NotNull Player player) {
         return this.teams.stream()
                 .filter(team -> team.hasParticipation(player))
                 .limit(1)
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
 
@@ -196,26 +193,16 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
      * @return 色
      */
     public static NamedTextColor getTeamColor(@NotNull Player player) {
-        NamedTextColor color = NamedTextColor.WHITE;
-        Match match = MatchManager.getInstance().getJointedMach(player);
-        if (match instanceof TeamBaseMatch teamMatch) {
-            TeamBaseMatch.MatchTeam team = teamMatch.getTeamByPlayer(player);
-            if (team != null) {
-                color = team.getColor();
-            }
-        }
-        return color;
+        return MatchManager.getInstance().getJoinedMatch(player)
+                .stream().filter(match -> match instanceof TeamBaseMatch).findFirst()
+                .map(match -> 
+                        ((TeamBaseMatch) match).getTeamByPlayer(player).map(MatchTeam::getColor).orElse(NamedTextColor.WHITE))
+                .orElse(NamedTextColor.WHITE);
     }
 
     @Override
     protected Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
-        MatchTeam team = getTeamByPlayer(player);
-
-        if (team != null) {
-            return matchMapWorld.getMakerRandom(team.getRespawnPoint());
-        }
-
-        return Optional.empty();
+        return getTeamByPlayer(player).flatMap(matchTeam -> matchMapWorld.getMakerRandom(matchTeam.getRespawnPoint()));
     }
 
     @Override
@@ -399,14 +386,12 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
          * @param sidebarInfos サイドバー情報の文字列リスト
          */
         protected void appendSidebarTeamInfo(@NotNull List<Component> sidebarInfos) {
-            MatchTeam team = getTeamByPlayer(getPlayer());
-
-            if (team != null) {
+            getTeamByPlayer(getPlayer()).ifPresent(team -> {
                 Component teamComponent = Component.text(team.getName()).color(team.getColor());
 
                 sidebarInfos.add(Component.text("チーム: ").color(NamedTextColor.GREEN)
                         .append(teamComponent));
-            }
+            });
         }
     }
 }

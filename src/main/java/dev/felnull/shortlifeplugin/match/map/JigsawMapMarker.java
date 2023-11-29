@@ -8,9 +8,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Jigsaw;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * ジグソー用のマップマーカー実装
@@ -56,16 +56,15 @@ public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKe
      * @param baseBlock ベースブロック
      * @return マップマーカー
      */
-    @Nullable
-    public static JigsawMapMarker of(@NotNull BlockVector3 position, @NotNull BaseBlock baseBlock, @NotNull BlockData blockData) {
+    public static Optional<JigsawMapMarker> of(@NotNull BlockVector3 position, @NotNull BaseBlock baseBlock, @NotNull BlockData blockData) {
         CompoundTag tag = baseBlock.getNbtData();
 
         if (tag == null) {
-            return null;
+            return Optional.empty();
         }
 
         if (!(blockData instanceof Jigsaw jigsaw)) {
-            return null;
+            return Optional.empty();
         }
 
         NamespacedKey name = Objects.requireNonNull(NamespacedKey.fromString(tag.getString("name")));
@@ -81,6 +80,6 @@ public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKe
             case SOUTH_UP -> BlockFace.SOUTH;
         };
 
-        return new JigsawMapMarker(name, pointName, replaceBlockId, position, blockFace);
+        return Optional.of(new JigsawMapMarker(name, pointName, replaceBlockId, position, blockFace));
     }
 }

@@ -41,17 +41,17 @@ public final class MatchListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerRespawn(PlayerRespawnEvent e) {
         MatchManager matchManager = MatchManager.getInstance();
-        Match match = matchManager.getJointedMach(e.getPlayer());
+        matchManager.getJoinedMatch(e.getPlayer()).ifPresent(match -> {
+            if (match.getStatus() == Match.Status.STARTED) {
+                /* 試合に参加済みで試合中の場合 */
 
-        if (match != null && match.getStatus() == Match.Status.STARTED) {
-            /* 試合に参加済みで試合中の場合 */
+                // リスポーン処理
+                match.onRespawn(e.getPlayer());
 
-            // リスポーン処理
-            match.onRespawn(e.getPlayer());
-
-            // リスポーン地点を変更
-            match.lotterySpawnLocation(e.getPlayer()).ifPresent(e::setRespawnLocation);
-        }
+                // リスポーン地点を変更
+                match.lotterySpawnLocation(e.getPlayer()).ifPresent(e::setRespawnLocation);
+            }
+        });
     }
 
     /**
@@ -64,9 +64,7 @@ public final class MatchListener implements Listener {
 
         if (e.getEntity() instanceof Player target) {
             MatchManager matchManager = MatchManager.getInstance();
-            Match match = matchManager.getJointedMach(target);
-
-            if (match != null) {
+            matchManager.getJoinedMatch(target).ifPresent(match -> {
                 Player attacker;
 
                 // プレイヤーからのダメージかどうか
@@ -81,7 +79,7 @@ public final class MatchListener implements Listener {
                 if (!match.onPlayerDamage(target, attacker, e.getDamage(), e.getCause())) {
                     e.setCancelled(true);
                 }
-            }
+            });
         }
     }
 
@@ -93,12 +91,10 @@ public final class MatchListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onJoin(PlayerJoinEvent e) {
         MatchManager matchManager = MatchManager.getInstance();
-        Match worldMatch = matchManager.getMachByWorld(e.getPlayer().getWorld());
-
         // 試合に参加してないプレイヤーが、試合ワールドに参加した場合に強制退出
-        if (worldMatch != null) {
+        matchManager.getMatchByWorld(e.getPlayer().getWorld()).ifPresent(worldMatch -> {
             MatchUtils.teleportToLeave(e.getPlayer(), worldMatch.getMatchMapInstance().getStrictWorld());
-        }
+        });
     }
 
     /**
@@ -110,7 +106,7 @@ public final class MatchListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent e) throws IOException {
         Player target = e.getPlayer();
         MatchManager matchManager = MatchManager.getInstance();
-        Match match = matchManager.getJointedMach(target);
+        Match match = matchManager.getJoinedMatch(target);
 
 
         // 参加者が死亡した場合、試合の死亡処理を呼ぶ

@@ -185,13 +185,11 @@ public final class MatchManager {
      * @param player 対象のプレイヤー
      * @return 対象のプレイヤーが参加する試合 (未参加の場合はnull)
      */
-    @Nullable
-    public Match getJointedMach(@NotNull Player player) {
+    public Optional<Match> getJoinedMatch(@NotNull Player player) {
         return matches.values().stream()
                 .filter(match -> match.hasParticipation(player))
                 .limit(1)
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
     /**
@@ -200,13 +198,12 @@ public final class MatchManager {
      * @param world ワールド
      * @return 試合
      */
-    @Nullable
-    public Match getMachByWorld(@NotNull World world) {
-        return matches.values().stream()
+    public Optional<Match> getMatchByWorld(@NotNull World world) {
+        return Optional.ofNullable(matches.values().stream()
                 .filter(match -> match.getMatchMapInstance().isStrictWorldMatch(world))
                 .limit(1)
                 .findFirst()
-                .orElse(null);
+                .orElse(null));
     }
 
     public MatchMapLoader getMapLoader() {

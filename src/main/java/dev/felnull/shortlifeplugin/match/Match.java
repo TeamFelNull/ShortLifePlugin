@@ -438,7 +438,7 @@ public abstract class Match {
         }
 
         // すでにどれかしらの試合に参加しているプレイヤーは参加不可
-        if (MatchManager.getInstance().getJointedMach(player) != null) {
+        if (MatchManager.getInstance().getJoinedMatch(player) != null) {
             return false;
         }
 

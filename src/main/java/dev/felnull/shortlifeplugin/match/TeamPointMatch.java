@@ -94,12 +94,12 @@ public class TeamPointMatch extends TeamBaseMatch {
     protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) throws IOException {
         super.onPlayerKill(target, attacker);
 
-        PointMatchTeam targetMatchTeam = (PointMatchTeam) getTeamByPlayer(target);
-        PointMatchTeam attackerMatchTeam = (PointMatchTeam) getTeamByPlayer(attacker);
-
+        Optional<PointMatchTeam> targetMatchTeam = getTeamByPlayer(target).map(matchTeam -> (PointMatchTeam) matchTeam);
+        Optional<PointMatchTeam> attackerMatchTeam = getTeamByPlayer(attacker).map(matchTeam -> (PointMatchTeam) matchTeam);
+        
         // ポイントを付与
-        if (targetMatchTeam != null && attackerMatchTeam != null && targetMatchTeam != attackerMatchTeam) {
-            attackerMatchTeam.setPoint(attackerMatchTeam.getPoint() + 1);
+        if (targetMatchTeam.isPresent() && attackerMatchTeam.isPresent() && !targetMatchTeam.equals(attackerMatchTeam)) {
+            attackerMatchTeam.ifPresent(pointMatchTeam -> pointMatchTeam.setPoint(pointMatchTeam.getPoint() + 1));
         }
     }
 

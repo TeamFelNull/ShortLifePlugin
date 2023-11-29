@@ -200,9 +200,8 @@ public class MatchMapLoader {
      * @param mapId マップID
      * @return 試合用マップ
      */
-    @Nullable
-    public MatchMap getMap(@NotNull String mapId) {
-        return this.maps.get(mapId);
+    public Optional<MatchMap> getMap(@NotNull String mapId) {
+        return Optional.ofNullable(this.maps.get(mapId));
     }
 
     @Unmodifiable
@@ -217,18 +216,17 @@ public class MatchMapLoader {
      * @param matchMode 試合モード
      * @return 試合マップ
      */
-    @Nullable
-    public MatchMap getRandomMap(@NotNull MatchMode matchMode) {
+    public Optional<MatchMap> getRandomMap(@NotNull MatchMode matchMode) {
         List<MatchMap> availableMaps = this.maps.values().stream()
                 .filter(map -> map.availableMatchModes().contains(matchMode))
                 .toList();
 
         if (availableMaps.isEmpty()) {
-            return null;
+            return Optional.empty();
         } else if (availableMaps.size() == 1) {
-            return availableMaps.get(0);
+            return Optional.of(availableMaps.get(0));
         } else {
-            return availableMaps.get(RANDOM.nextInt(availableMaps.size()));
+            return Optional.of(availableMaps.get(RANDOM.nextInt(availableMaps.size())));
         }
     }
 

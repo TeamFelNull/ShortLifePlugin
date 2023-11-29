@@ -91,16 +91,11 @@ public class MatchCommand implements SLCommand {
     }
 
     private Argument<MatchMap> mapArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            MatchMap matchMap = MatchManager.getInstance().getMapLoader().getMap(info.input());
-
-            if (matchMap == null) {
-                throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput());
-            } else {
-                return matchMap;
-            }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
+        return new CustomArgument<>(new StringArgument(nodeName), 
+                info -> MatchManager.getInstance().getMapLoader().getMap(info.input())
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException
+                .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput())))
+                .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
     }
 
 
@@ -144,7 +139,7 @@ public class MatchCommand implements SLCommand {
                     return;
                 }
 
-                Match jointedMatch = MatchManager.getInstance().getJointedMach(player);
+                Match jointedMatch = MatchManager.getInstance().getJoinedMatch(player);
 
                 if (jointedMatch != null) {
                     if (player == sender) {

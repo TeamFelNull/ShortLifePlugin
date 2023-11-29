@@ -192,15 +192,11 @@ public class CommonListener implements Listener {
         // 試合中のワールドに、想定外の方法で参加した時の警告表示
         if (fromWorld != toWorld) {
             MatchManager matchManager = MatchManager.getInstance();
-            Match worldMatch = matchManager.getMachByWorld(toWorld);
-
-            if (worldMatch != null) {
-                /* 移動先のワールドで試合が行われている場合 */
-                Match playerMatch = matchManager.getJointedMach(player);
-
-                if (playerMatch != worldMatch) {
-                    /* プレイヤーが未参加または、参加している試合が世界の試合と一致しない場合 */
-
+            // 移動先のワールドで試合が行われている場合
+            matchManager.getMatchByWorld(toWorld).ifPresent(worldMatch -> {
+                
+                // プレイヤーが未参加または、参加している試合が世界の試合と一致しない場合
+                if (matchManager.getJoinedMatch(player).stream().noneMatch(match -> match == worldMatch)) {
                     Component message = Component.text("試合中").color(NamedTextColor.RED)
                             .append(worldMatch.createDisplayComponent().color(NamedTextColor.GOLD))
                             .append(Component.text("のワールドに、想定外の方法で侵入したようです。"));
@@ -221,7 +217,7 @@ public class CommonListener implements Listener {
 
                     player.sendMessage(message);
                 }
-            }
+            });
         }
     }
 }

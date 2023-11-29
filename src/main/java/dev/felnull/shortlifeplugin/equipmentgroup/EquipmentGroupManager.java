@@ -231,10 +231,9 @@ public class EquipmentGroupManager {
      * @param id 装備グループID
      * @return 装備グループ(存在しない場合はnullを返す)
      */
-    @Nullable
-    public EquipmentGroup getGroup(@NotNull String id) {
+    public Optional<EquipmentGroup> getGroup(@NotNull String id) {
         Objects.requireNonNull(id);
-        return this.equipmentGroups.get(id);
+        return Optional.ofNullable(this.equipmentGroups.get(id));
     }
 
     /**

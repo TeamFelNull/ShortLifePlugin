@@ -11,6 +11,8 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 /**
  * WeaponMechanics関係のユーティリティクライアント
  *
@@ -30,11 +32,10 @@ public class WeaponMechanicsUtils {
      * @return 範囲
      * @see <a href="https://github.com/WeaponMechanics/MechanicsMain/blob/HEAD/WeaponMechanics/src/main/java/me/deecaad/weaponmechanics/weapon/HitHandler.java">参考</a>
      */
-    @Nullable
-    public static BoundingBox getDamagePointBox(@NotNull LivingEntity livingEntity, @Nullable DamagePoint damagePoint) {
+    public static Optional<BoundingBox> getDamagePointBox(@NotNull LivingEntity livingEntity, @Nullable DamagePoint damagePoint) {
 
         if (damagePoint == null) {
-            return null;
+            return Optional.empty();
         }
 
         BoundingBox ret = null;
@@ -86,6 +87,6 @@ public class WeaponMechanicsUtils {
             }
         }
 
-        return ret;
+        return Optional.ofNullable(ret);
     }
 }

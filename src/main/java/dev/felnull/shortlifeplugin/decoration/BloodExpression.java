@@ -10,7 +10,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +43,7 @@ public class BloodExpression {
      * @param criticalDamageBox 主なダメージ箇所の範囲
      * @param damage            ダメージ量
      */
-    public static void spawnDamageParticle(@NotNull LivingEntity livingEntity, @NotNull BoundingBox damageBox, @Nullable BoundingBox criticalDamageBox, double damage) {
+    public static void spawnDamageParticle(@NotNull LivingEntity livingEntity, @NotNull BoundingBox damageBox, Optional<BoundingBox> criticalDamageBox, double damage) {
         if (damage > 0) {
             int range = 100;
             List<Player> receivers;
@@ -61,7 +60,7 @@ public class BloodExpression {
             }
 
             double countPar = Math.min(damage / 10d, 20d);
-            int count = Math.min((int) (((criticalDamageBox != null) ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
+            int count = Math.min((int) ((criticalDamageBox.isPresent() ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
                     MAX_PARTICLE_COUNT);
 
             // 全体的なパーティクルを表示
@@ -73,19 +72,19 @@ public class BloodExpression {
             }
             particleBuilder.spawn();
 
-            if (criticalDamageBox != null) {
+            criticalDamageBox.ifPresent(boundingBox -> {
                 int criticalCount = Math.min((int) (15d * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
                         MAX_PARTICLE_COUNT);
 
                 // 致命的な箇所のパーティクルを表示
-                ParticleBuilder criticalParticleBuilder = createBloodParticleBuilder(livingEntity, criticalDamageBox, true);
+                ParticleBuilder criticalParticleBuilder = createBloodParticleBuilder(livingEntity, boundingBox, true);
                 criticalParticleBuilder.count(criticalCount);
                 criticalParticleBuilder.receivers(receivers);
                 if (livingEntity instanceof Player player) {
                     criticalParticleBuilder.source(player);
                 }
                 criticalParticleBuilder.spawn();
-            }
+            });
         }
     }
 

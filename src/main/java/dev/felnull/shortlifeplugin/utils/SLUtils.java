@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -182,20 +183,15 @@ public final class SLUtils {
      * @param textColor テキストカラー
      * @return 文字とフォーマット
      */
-    @Nullable
-    public static CharacterAndFormat getCharacterAndFormatByTextColor(TextColor textColor) {
-
-        NamedTextColor convertColor;
-        if (textColor instanceof NamedTextColor namedTextColor) {
-            convertColor = namedTextColor;
-        } else {
+    public static Optional<CharacterAndFormat> getCharacterAndFormatByTextColor(TextColor textColor) {
+        if (!(textColor instanceof NamedTextColor namedTextColor)) {
             // 必要であれば、TextColor#nearestColorToを使用して実装してください。
             throw new RuntimeException("未サポートのテキストカラー");
         }
 
         return CharacterAndFormat.defaults().stream()
-                .filter(it -> it.format() == convertColor)
+                .filter(it -> it.format() == namedTextColor)
                 .limit(1)
-                .findFirst().orElse(null);
+                .findFirst();
     }
 }

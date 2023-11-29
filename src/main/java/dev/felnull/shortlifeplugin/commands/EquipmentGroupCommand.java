@@ -84,14 +84,8 @@ public class EquipmentGroupCommand implements SLCommand {
     private Argument<EquipmentGroup> equipmentGroupArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
             EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-            EquipmentGroup equipmentGroup = manager.getGroup(info.input());
-
-            if (equipmentGroup == null) {
-                throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown equipment group: ").appendArgInput());
-            } else {
-                return equipmentGroup;
-            }
+            return manager.getGroup(info.input()).orElseThrow(() -> CustomArgument.CustomArgumentException
+                    .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown equipment group: ").appendArgInput()));
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> EquipmentGroupManager.getInstance().getAllGroup().keySet().toArray(String[]::new)));
     }
 

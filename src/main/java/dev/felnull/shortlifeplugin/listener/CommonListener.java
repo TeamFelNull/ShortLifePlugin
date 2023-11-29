@@ -31,6 +31,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
 
+import java.util.Optional;
+
 import static org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
 import static org.bukkit.Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR;
 
@@ -85,14 +87,14 @@ public class CommonListener implements Listener {
 
             BloodExpression.getDamageBox(livingEntity, e.getCause()).ifPresent(pointAndIsCritical -> {
                 BoundingBox damageBox;
-                BoundingBox criticalDamageBox;
+                Optional<BoundingBox> criticalDamageBox;
 
                 if (pointAndIsCritical.getRight()) {
                     damageBox = livingEntity.getBoundingBox();
-                    criticalDamageBox = pointAndIsCritical.getLeft();
+                    criticalDamageBox = Optional.of(pointAndIsCritical.getLeft());
                 } else {
                     damageBox = pointAndIsCritical.getLeft();
-                    criticalDamageBox = null;
+                    criticalDamageBox = Optional.empty();
                 }
 
                 BloodExpression.spawnDamageParticle(livingEntity, damageBox, criticalDamageBox, e.getDamage());
@@ -110,7 +112,7 @@ public class CommonListener implements Listener {
         LivingEntity livingEntity = e.getVictim();
         double damage = e.getFinalDamage();
         if (BloodExpression.isSpawnDamageParticle(livingEntity, damage)) {
-            BoundingBox damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
+            Optional<BoundingBox> damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
             BloodExpression.spawnDamageParticle(livingEntity, livingEntity.getBoundingBox(), damagePointBox, damage);
         }
     }

@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ import java.util.logging.Logger;
 public final class SLUtils {
 
     private SLUtils() {
+        throw new AssertionError();
     }
 
     /**
@@ -157,6 +159,7 @@ public final class SLUtils {
      * @param path パス
      * @return NamespacedKey形式文字列
      */
+    @SuppressWarnings("unused")
     public static String plLocStr(@NotNull String path) {
         return ShortLifePlugin.PLUGIN_ID + ":" + path;
     }
@@ -167,6 +170,7 @@ public final class SLUtils {
      * @param team チーム
      * @return 登録されていればtrue、なければfalse
      */
+    @SuppressWarnings("unused")
     public static boolean isTeamRegistered(@NotNull Team team) {
         ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
@@ -179,20 +183,15 @@ public final class SLUtils {
      * @param textColor テキストカラー
      * @return 文字とフォーマット
      */
-    @Nullable
-    public static CharacterAndFormat getCharacterAndFormatByTextColor(TextColor textColor) {
-
-        NamedTextColor convertColor;
-        if (textColor instanceof NamedTextColor namedTextColor) {
-            convertColor = namedTextColor;
-        } else {
+    public static Optional<CharacterAndFormat> getCharacterAndFormatByTextColor(TextColor textColor) {
+        if (!(textColor instanceof NamedTextColor namedTextColor)) {
             // 必要であれば、TextColor#nearestColorToを使用して実装してください。
             throw new RuntimeException("未サポートのテキストカラー");
         }
 
         return CharacterAndFormat.defaults().stream()
-                .filter(it -> it.format() == convertColor)
+                .filter(it -> it.format() == namedTextColor)
                 .limit(1)
-                .findFirst().orElse(null);
+                .findFirst();
     }
 }

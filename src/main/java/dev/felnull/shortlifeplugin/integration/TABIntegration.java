@@ -11,6 +11,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 /**
  * TABの連携関係
  *
@@ -40,15 +42,13 @@ public class TABIntegration {
 
             if (tabPlayer != null) {
                 if (color != null) {
-                    CharacterAndFormat characterAndFormat = SLUtils.getCharacterAndFormatByTextColor(color);
-
-                    // とりあえず、非対応文字カラーの場合は白に設定する
-                    if (characterAndFormat == null) {
-                        characterAndFormat = CharacterAndFormat.WHITE;
-                    }
-
-                    tabListFormatManager.setPrefix(tabPlayer, String.valueOf(LegacyComponentSerializer.SECTION_CHAR) + characterAndFormat.character());
-                    tabListFormatManager.setSuffix(tabPlayer, RESET_TEXT);
+                    SLUtils.getCharacterAndFormatByTextColor(color)
+                            // とりあえず、非対応文字カラーの場合は白に設定する
+                            .or(() -> Optional.of(CharacterAndFormat.WHITE))
+                            .ifPresent(characterAndFormat -> {
+                                tabListFormatManager.setPrefix(tabPlayer, String.valueOf(LegacyComponentSerializer.SECTION_CHAR) + characterAndFormat.character());
+                                tabListFormatManager.setSuffix(tabPlayer, RESET_TEXT);
+                            });
                 } else {
                     tabListFormatManager.setPrefix(tabPlayer, null);
                     tabListFormatManager.setSuffix(tabPlayer, null);

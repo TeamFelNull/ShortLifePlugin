@@ -31,6 +31,7 @@ public record MatchMode(@NotNull String id, @NotNull String name, @NotNull Mater
      *
      * @author MORIMORI031
      */
+    @SuppressWarnings("unused")
     public interface MatchProvider {
 
         /**

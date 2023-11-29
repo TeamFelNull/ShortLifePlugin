@@ -4,11 +4,7 @@ import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.commands.SLCommands;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
-import dev.felnull.shortlifeplugin.listener.CommonListener;
-import dev.felnull.shortlifeplugin.listener.EquipmentGroupListener;
-import dev.felnull.shortlifeplugin.listener.MatchListener;
-import dev.felnull.shortlifeplugin.listener.PlayerInventoryListener;
-import dev.felnull.shortlifeplugin.listener.WeaponMechanicsListener;
+import dev.felnull.shortlifeplugin.listener.*;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
@@ -84,6 +80,7 @@ public final class ShortLifePlugin extends JavaPlugin {
     /**
      * バージョン確認
      */
+    @SuppressWarnings("UnstableApiUsage")
     private void versionCheck() {
         // テストモードではバージョン確認をスキップ
         if (!SLConfig.isTestMode()) {

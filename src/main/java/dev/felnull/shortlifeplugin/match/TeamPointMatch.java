@@ -9,7 +9,6 @@ import net.kyori.adventure.util.Ticks;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.IOException;
@@ -17,7 +16,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 /**
  * ポイント制チーム試合
@@ -86,21 +85,21 @@ public class TeamPointMatch extends TeamBaseMatch {
      * @param player プレイヤー
      * @return プレイヤー情報
      */
-    @Nullable
-    public TeamPointMatch.PointTeamPlayerInfo getPointTeamPlayerInfo(@NotNull Player player) {
-        return (PointTeamPlayerInfo) getTeamPlayerInfo(player);
+    @SuppressWarnings("unused")
+    public Optional<TeamPointMatch.PointTeamPlayerInfo> getPointTeamPlayerInfo(@NotNull Player player) {
+        return getPlayerInfo(player).map(playerInfo -> (PointTeamPlayerInfo) playerInfo);
     }
 
     @Override
     protected void onPlayerKill(@NotNull Player target, @NotNull Player attacker) throws IOException {
         super.onPlayerKill(target, attacker);
 
-        PointMatchTeam targetMatchTeam = (PointMatchTeam) getTeamByPlayer(target);
-        PointMatchTeam attackerMatchTeam = (PointMatchTeam) getTeamByPlayer(attacker);
-
+        Optional<PointMatchTeam> targetMatchTeam = getTeamByPlayer(target).map(matchTeam -> (PointMatchTeam) matchTeam);
+        Optional<PointMatchTeam> attackerMatchTeam = getTeamByPlayer(attacker).map(matchTeam -> (PointMatchTeam) matchTeam);
+        
         // ポイントを付与
-        if (targetMatchTeam != null && attackerMatchTeam != null && targetMatchTeam != attackerMatchTeam) {
-            attackerMatchTeam.setPoint(attackerMatchTeam.getPoint() + 1);
+        if (targetMatchTeam.isPresent() && attackerMatchTeam.isPresent() && !targetMatchTeam.equals(attackerMatchTeam)) {
+            attackerMatchTeam.ifPresent(pointMatchTeam -> pointMatchTeam.setPoint(pointMatchTeam.getPoint() + 1));
         }
     }
 
@@ -168,9 +167,8 @@ public class TeamPointMatch extends TeamBaseMatch {
             team.audience().showTitle(title);
 
             if (win) {
-                team.getParticipationPlayers().forEach(player -> {
-                    Objects.requireNonNull(getPlayerInfo(player)).runCommand(WINNER);
-                });
+                team.getParticipationPlayers().forEach(player ->
+                        getPlayerInfo(player).orElseThrow().runCommand(WINNER));
             }
         }
     }

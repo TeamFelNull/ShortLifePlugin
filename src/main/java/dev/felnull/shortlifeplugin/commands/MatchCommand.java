@@ -10,6 +10,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -30,7 +31,7 @@ public class MatchCommand implements SLCommand {
     public CommandAPICommand create() {
         // https://commandapi.jorel.dev/9.0.3/commandregistration.html <-参考
         CommandAPICommand list = new CommandAPICommand("list")
-                .executes(this::matchList);
+                .executes((CommandExecutor) (sender, args) -> matchList(sender));
 
         CommandAPICommand info = new CommandAPICommand("info")
                 .withArguments(matchArgument("match"))
@@ -60,43 +61,15 @@ public class MatchCommand implements SLCommand {
 
         CommandAPICommand map = new CommandAPICommand("map")
                 .withSubcommands(new CommandAPICommand("list")
-                        .executes(this::mapList))
+                        .executes((CommandExecutor) (sender, args) -> mapList(sender))
                 .withSubcommands(new CommandAPICommand("info")
                         .withArguments(mapArgument("map"))
-                        .executes(this::mapInfo));
-
-        // FIXME リリース前に削除
-        CommandAPICommand test = new CommandAPICommand("aikiso")
-                .executes((sender, args) -> {
-                 /*   if (sender instanceof Player player) {
-                        mainIkisugi(player);
-                    }*/
-                   /* if (sender instanceof Player player) {
-                        MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
-                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEST, matchMap).join(player, true);
-                    }*/
-                /*    if (sender instanceof Player player) {
-                        MapTest.test(player);
-                    }*/
-
-                    /*if (sender instanceof Player player) {
-                     *//* MatchMap matchMap = MatchUtils.getMatchManager().getMapLoader().getMap("test");
-                        MatchUtils.getMatchManager().addMatch("team-test", MatchModes.TEAM, matchMap).join(player);*//*
-
-                        ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
-                        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-
-                        Team ikisugiTeam = scoreboard.registerNewTeam("ikisugi");
-
-                        // scoreboard.getS()
-                    }*/
-                });
-
+                        .executes(this::mapInfo)));
 
         return new CommandAPICommand("match")
                 .withAliases("slm")
                 .withPermission(SLPermissions.COMMANDS_MATCH)
-                .withSubcommands(list, info, join, leave, finish, start, remove, map, test);
+                .withSubcommands(list, info, join, leave, finish, start, remove, map);
     }
 
     @Override
@@ -118,20 +91,15 @@ public class MatchCommand implements SLCommand {
     }
 
     private Argument<MatchMap> mapArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            MatchMap matchMap = MatchManager.getInstance().getMapLoader().getMap(info.input());
-
-            if (matchMap == null) {
-                throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput());
-            } else {
-                return matchMap;
-            }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
+        return new CustomArgument<>(new StringArgument(nodeName), 
+                info -> MatchManager.getInstance().getMapLoader().getMap(info.input())
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException
+                .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput())))
+                .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
     }
 
 
-    private void matchList(CommandSender sender, CommandArguments args) {
+    private void matchList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         Map<String, Match> matches = matchManager.getAllMatch();
 
@@ -171,30 +139,27 @@ public class MatchCommand implements SLCommand {
                     return;
                 }
 
-                Match jointedMatch = MatchManager.getInstance().getJointedMach(player);
-
-                if (jointedMatch != null) {
+                MatchManager.getInstance().getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
                     if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加済みです", jointedMatch.getId()));
+                        sender.sendRichMessage(String.format("%sに参加済みです", joinedMatch.getId()));
                     } else {
-                        sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), jointedMatch.getId()));
+                        sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), joinedMatch.getId()));
                     }
-                    return;
-                }
-
-                if (match.join(player, player != sender)) {
-                    if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                }, () -> {
+                    if (match.join(player, player != sender)) {
+                        if (player == sender) {
+                            sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                        } else {
+                            sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                        }
                     } else {
-                        sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                        if (player == sender) {
+                            sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
+                        } else {
+                            sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
+                        }
                     }
-                } else {
-                    if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
-                    } else {
-                        sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
-                    }
-                }
+                });
 
             } else {
                 int joinCount = 0;
@@ -286,7 +251,7 @@ public class MatchCommand implements SLCommand {
         sender.sendRichMessage(String.format("%sを削除します", match.getId()));
     }
 
-    private void mapList(CommandSender sender, CommandArguments args) {
+    private void mapList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         MatchMapLoader mapLoader = matchManager.getMapLoader();
         Map<String, MatchMap> maps = mapLoader.getAllMap();

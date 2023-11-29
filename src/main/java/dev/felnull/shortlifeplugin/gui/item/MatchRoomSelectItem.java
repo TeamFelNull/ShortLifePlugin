@@ -120,35 +120,31 @@ public class MatchRoomSelectItem extends AbstractItem {
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
-        Match jointedMatch = matchManager.getJointedMach(player);
         Match match = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber));
-
-        // 別の試合に参加している場合の処理
-        if (jointedMatch != null) {
-
-            if (match != null && match == jointedMatch) {
+        
+        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            // 別の試合に参加している場合の処理
+            if (match == joinedMatch) {
                 player.sendMessage(ALREADY_JOIN_MATCH_MESSAGE);
             } else {
                 player.sendMessage(ALREADY_JOIN_OTHER_MATCH_MESSAGE);
             }
+        }, () -> {
+            if (match != null) {
+                // 試合に参加
+                if (match.join(player, false)) {
+                    player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
+                } else {
+                    player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
+                }
 
-            return;
-        }
-
-        if (match != null) {
-            // 試合に参加
-            if (match.join(player, false)) {
-                player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
+                getWindows().forEach(Window::close);
             } else {
-                player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
+                // Window遷移
+                getWindows().forEach(Window::close);
+                MatchSelectorGui.matchCreateWindow(player, matchType, MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).open();
             }
-
-            getWindows().forEach(Window::close);
-        } else {
-            // Window遷移
-            getWindows().forEach(Window::close);
-            MatchSelectorGui.matchCreateWindow(player, matchType, MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).open();
-        }
+        });
     }
 
     /**

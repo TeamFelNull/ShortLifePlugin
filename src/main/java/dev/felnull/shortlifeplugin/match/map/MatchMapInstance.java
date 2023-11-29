@@ -54,7 +54,7 @@ public class MatchMapInstance {
 
             // ワールドに残るプレイヤーを強制退去
             for (Player player : players) {
-                MatchUtils.teleportToLeave(player, this.strictWorld);
+                MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld));
             }
 
             File worldFolder = this.strictWorld.getWorldFolder();
@@ -134,9 +134,8 @@ public class MatchMapInstance {
     public boolean isStrictWorldMatch(@NotNull World world) {
         return this.strictWorld != null && this.strictWorld == world;
     }
-
-    @Nullable
-    public World getStrictWorld() {
-        return strictWorld;
+    
+    public Optional<World> getStrictWorld() {
+        return Optional.ofNullable(strictWorld);
     }
 }

@@ -25,7 +25,10 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
@@ -72,10 +75,11 @@ public abstract class Match {
     /**
      * 報酬コマンド実行用インスタントリプレイ
      */
+    @SuppressWarnings("unused")
     protected static final RewardCommand REWARD_COMMAND = new RewardCommand();
 
     /**
-     * Gsonインスタント
+     * Gsonインスタンス
      */
     private static final Gson GSON = new Gson();
 
@@ -231,11 +235,6 @@ public abstract class Match {
      */
     private int luckyProbability = 5;
 
-    /**
-     * チャンス確率
-     */
-    private int chanceProbability = 1;
-
 
     /**
      * コンストラクタ
@@ -291,9 +290,7 @@ public abstract class Match {
 
 
         // プレイヤーごとのTick処理
-        this.players.forEach((player, playerInfo) -> {
-            playerInfo.tick();
-        });
+        this.players.forEach((player, playerInfo) -> playerInfo.tick());
 
         Match.this.dirtyAllInfo = false;
     }
@@ -386,9 +383,7 @@ public abstract class Match {
             finishTeleport = true;
 
             for (final Player player : players.keySet()) {
-                MatchUtils.teleportToLeave(player, this.matchMapInstance.getMapWorld()
-                        .map(MatchMapWorld::getWorld)
-                        .orElse(null));
+                MatchUtils.teleportToLeave(player, this.matchMapInstance.getMapWorld().map(MatchMapWorld::getWorld));
             }
         }
 
@@ -421,9 +416,7 @@ public abstract class Match {
         if (this.status != Status.NONE) {
             Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
 
-            if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() != player.getWorld()) {
-                return false;
-            }
+            return matchMapWorld.isEmpty() || matchMapWorld.get().getWorld() == player.getWorld();
         }
 
         return true;
@@ -445,7 +438,7 @@ public abstract class Match {
         }
 
         // すでにどれかしらの試合に参加しているプレイヤーは参加不可
-        if (MatchManager.getInstance().getJointedMach(player) != null) {
+        if (MatchManager.getInstance().getJoinedMatch(player).isPresent()) {
             return false;
         }
 
@@ -499,9 +492,8 @@ public abstract class Match {
      * @param player プレイヤー
      * @return プレイヤー情報
      */
-    @Nullable
-    public Match.PlayerInfo getPlayerInfo(@NotNull Player player) {
-        return this.players.get(player);
+    public Optional<Match.PlayerInfo> getPlayerInfo(@NotNull Player player) {
+        return Optional.of(this.players.get(player));
     }
 
     /**
@@ -542,9 +534,7 @@ public abstract class Match {
         // 試合用ワールドにいる場合、ワールド外にテレポート
         Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
         if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
-            MatchUtils.teleportToLeave(player, matchMapWorld
-                    .map(MatchMapWorld::getWorld)
-                    .orElse(null));
+            MatchUtils.teleportToLeave(player, matchMapWorld.map(MatchMapWorld::getWorld));
         }
 
         if (sendMessage) {
@@ -615,12 +605,10 @@ public abstract class Match {
      * @param player プレイヤー
      */
     protected void playerStart(@NotNull Player player) {
-        PlayerInfo playerInfo = getPlayerInfo(player);
+        Optional<PlayerInfo> playerInfo = getPlayerInfo(player);
 
         // ゲームモードを変更
-        if (playerInfo != null) {
-            playerInfo.setPreGameMode(player.getGameMode());
-        }
+        playerInfo.ifPresent(playerInfo1 -> playerInfo1.setPreGameMode(player.getGameMode()));
         player.setGameMode(GameMode.ADVENTURE);
 
         // 体力全回復
@@ -648,9 +636,7 @@ public abstract class Match {
         }
 
         // スポーン保護指定
-        if (playerInfo != null) {
-            playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME));
-        }
+        playerInfo.ifPresent(playerInfo1 -> playerInfo1.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME)));
 
         // 開始音
         player.playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP.key(), Sound.Source.MASTER, 1, 0.1f));
@@ -663,8 +649,7 @@ public abstract class Match {
      * @return 結果
      */
     private boolean teleportToJoin(@NotNull Player player) {
-        Location respawnPoint = lotterySpawnLocation(player);
-        if (respawnPoint != null) {
+        return lotterySpawnLocation(player).map(respawnPoint -> {
             // 死亡している場合は強制リスポーン
             if (player.isDead()) {
                 player.spigot().respawn();
@@ -672,9 +657,7 @@ public abstract class Match {
 
             player.teleport(respawnPoint);
             return true;
-        }
-
-        return false;
+        }).orElse(false);
     }
 
     /**
@@ -873,29 +856,18 @@ public abstract class Match {
      * @param player プレイヤー
      * @return 場所
      */
-    @Nullable
-    public Location lotterySpawnLocation(@NotNull Player player) {
+    public Optional<Location> lotterySpawnLocation(@NotNull Player player) {
 
-        // マップが読み込み済みならばスポーン地点を抽選する
-        if (this.matchMapInstance.getMapWorld().isPresent()) {
-            MatchMapWorld matchMapWorld = this.matchMapInstance.getMapWorld().get();
-            World world = matchMapWorld.getWorld();
-            MapMarker spawnMarker = getSpawnMaker(matchMapWorld, player);
+        return this.matchMapInstance.getMapWorld().map(matchMapWorld -> {
+            // マップが読み込み済みならばスポーン地点を抽選する
+            return getSpawnMaker(matchMapWorld, player).map(mapMarker -> {
+                BlockVector3 spawnPos = matchMapWorld.offsetCorrection(mapMarker.getPosition());
 
-            // スポーン地点のマーカーを取得できない場合はnullを返す
-            if (spawnMarker == null) {
-                return null;
-            }
-
-            BlockVector3 spawnPos = matchMapWorld.offsetCorrection(spawnMarker.getPosition());
-
-            Location location = new Location(world, spawnPos.getX() + 0.5f, spawnPos.getY(), spawnPos.getZ() + 0.5f);
-            location.setDirection(spawnMarker.getDirection().getDirection());
-
-            return location;
-        }
-
-        return null;
+                Location unSetLocation = new Location(matchMapWorld.getWorld(), spawnPos.getX() + 0.5f, spawnPos.getY(), spawnPos.getZ() + 0.5f);
+                unSetLocation.setDirection(mapMarker.getDirection().getDirection());
+                return Optional.of(unSetLocation);
+            }).orElseGet(Optional::empty); // スポーン地点のマーカーを取得できない場合はnullを返す
+        }).orElseGet(Optional::empty);
     }
 
 
@@ -906,8 +878,7 @@ public abstract class Match {
      * @param player        プレイヤー
      * @return マーカー
      */
-    @Nullable
-    protected abstract MapMarker getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player);
+    protected abstract Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player);
 
     /**
      * 指定されたプレイヤーが無敵かどうか
@@ -923,14 +894,8 @@ public abstract class Match {
             return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
         } else if (status == Status.STARTED) {
             /* 試合中 */
-            PlayerInfo playerInfo = getPlayerInfo(player);
-
             // スポーン保護状態は無敵
-            if (playerInfo != null) {
-                return playerInfo.isSpawnProtect();
-            }
-
-            return false;
+            return getPlayerInfo(player).map(PlayerInfo::isSpawnProtect).orElse(false);
         }
         return false;
     }
@@ -945,12 +910,9 @@ public abstract class Match {
      * @param player プレイヤー
      */
     public void onRespawn(@NotNull Player player) {
-        PlayerInfo playerInfo = getPlayerInfo(player);
-
         // スポーン保護指定
-        if (playerInfo != null) {
-            playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME));
-        }
+        getPlayerInfo(player).ifPresent(
+                playerInfo ->  playerInfo.setSpawnProtectTime(SLUtils.toTick(TimeUnit.MILLISECONDS, SPAWN_INVINCIBILITY_TIME)));
     }
 
     /**
@@ -962,9 +924,7 @@ public abstract class Match {
         // 試合中のみ
         if (getStatus() == Match.Status.STARTED) {
 
-            PlayerInfo targetInfo = getPlayerInfo(target);
-
-            if (targetInfo != null) {
+            getPlayerInfo(target).ifPresent(targetInfo -> {
                 targetInfo.setDeathCount(targetInfo.getDeathCount() + 1);
 
                 if (targetInfo.getKillStreakCount() > targetInfo.getMaxKillStreakCount()) {
@@ -974,7 +934,7 @@ public abstract class Match {
                 targetInfo.setKillStreakCount(0);
                 targetInfo.setLifeTime(0);
                 targetInfo.initRewardFlag();
-            }
+            });
         }
 
         Player attacker = target.getKiller();
@@ -999,7 +959,10 @@ public abstract class Match {
             attacker.playSound(attacker, BLOCK_ANVIL_PLACE, 0.6f, 0.5f);
             Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(1000), Duration.ofMillis(1000));
             Title kill = Title.title(Component.empty(), Component.text("1").color(NamedTextColor.RED).append(Component.text("Kill").color(NamedTextColor.GRAY)), times);
-            Title killstreak = Title.title(Component.empty(), Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), times);
+            Title killstreak = Title.title(
+                    Component.empty(), 
+                    Component.text(attackerInfo.killStreakCount).color(NamedTextColor.RED).append(Component.text("KillStreak!").color(NamedTextColor.GRAY)), 
+                    times);
 
 
             attacker.showTitle(kill);
@@ -1022,19 +985,20 @@ public abstract class Match {
      * @param damageCause  ダメージケース
      * @return falseであればダメージをキャンセル
      */
-    public boolean onPlayerDamage(@NotNull Player target, @Nullable Player attacker, double damageAmount, @NotNull EntityDamageEvent.DamageCause damageCause) {
+    public boolean onPlayerDamage(@NotNull Player target, @Nullable Player attacker, 
+                                  @SuppressWarnings("unused") double damageAmount, @NotNull EntityDamageEvent.DamageCause damageCause) {
         // 無敵とされているプレイヤーであれば、Kill以外のダメージをキャンセル
         if (damageCause != EntityDamageEvent.DamageCause.KILL && isInvinciblePlayer(target)) {
-            PlayerInfo playerInfo = getPlayerInfo(target);
-
-            if (playerInfo != null && playerInfo.isSpawnProtect()) {
+            getPlayerInfo(target).ifPresent(playerInfo -> {
                 /* スポーン保護状態の場合 */
+                if (playerInfo.isSpawnProtect()) {
 
-                // 攻撃者に警告音
-                if (attacker != null) {
-                    attacker.playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL.key(), Sound.Source.MASTER, 30, 1.5f + RANDOM.nextFloat() * 0.07f), target);
+                    // 攻撃者に警告音
+                    if (attacker != null) {
+                        attacker.playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL.key(), Sound.Source.MASTER, 30, 1.5f + RANDOM.nextFloat() * 0.07f), target);
+                    }
                 }
-            }
+            });
 
             return false;
         }
@@ -1533,6 +1497,7 @@ public abstract class Match {
             return player;
         }
 
+        @SuppressWarnings("unused")
         public int getLifeTime() {
             return lifeTime;
         }
@@ -1571,7 +1536,7 @@ public abstract class Match {
 
             double streak = getKillStreakCount() % 5d;
             boolean bonus = RANDOM.nextInt(100) < luckyProbability;
-            boolean chance = RANDOM.nextInt(100) < chanceProbability;
+            boolean chance = RANDOM.nextInt(100) < 1; //チャンス確率
 
             if (bonusFlag && !chanceFlag && chance) {
                 chanceFlag = true;
@@ -1674,7 +1639,7 @@ public abstract class Match {
             } catch (IOException e) {
                 SLUtils.getLogger().info(String.valueOf(e));
             } catch (NullPointerException e) {
-                String errorFunctionName = "";
+                String errorFunctionName;
                 switch (functionName) {
                     case NORMAL -> errorFunctionName = "”通常報酬”";
                     case BONUS -> errorFunctionName = "”ボーナス報酬”";

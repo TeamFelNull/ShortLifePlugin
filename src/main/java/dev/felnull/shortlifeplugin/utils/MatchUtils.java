@@ -9,9 +9,9 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 試合関係のユーティリティクラス
@@ -23,6 +23,7 @@ public final class MatchUtils {
     /**
      * チーム選定で、優先的に使用される順番に格納されたチームカラー
      */
+    @SuppressWarnings("unused")
     public static final NamedTextColor[] TEAM_COLORS = {
             NamedTextColor.RED,
             NamedTextColor.BLUE,
@@ -48,6 +49,7 @@ public final class MatchUtils {
     private static final NamespacedKey DEFAULT_FORCE_TELEPORT_WORLD = NamespacedKey.minecraft("overworld");
 
     private MatchUtils() {
+        throw new AssertionError();
     }
 
     /**
@@ -56,7 +58,7 @@ public final class MatchUtils {
      * @param player     プレイヤー
      * @param leaveWorld 退出したいワールド
      */
-    public static void teleportToLeave(@NotNull Player player, @Nullable World leaveWorld) {
+    public static void teleportToLeave(@NotNull Player player, Optional<World> leaveWorld) {
         boolean needForceTeleport = false;
 
         // 死亡している場合は強制リスポーン
@@ -68,9 +70,11 @@ public final class MatchUtils {
         if (!player.performCommand(SLConfig.getMatchLeavePerformCommand())) {
             // コマンドの実行に失敗した場合
             needForceTeleport = true;
-        } else if (leaveWorld != null && leaveWorld == player.getWorld()) {
-            // コマンドの実行は出来たが、まだ退出したいワールドにいる場合
-            needForceTeleport = true;
+        } else {
+            needForceTeleport = leaveWorld.map(world -> {
+                // コマンドの実行は出来たが、まだ退出したいワールドにいる場合
+                return world == player.getWorld();
+            }).orElse(needForceTeleport);
         }
 
         // 強制移動

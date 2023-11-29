@@ -16,6 +16,9 @@ import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.CustomArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
+import net.kyori.adventure.text.Component;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -57,7 +60,7 @@ public class RoomCommand implements SLCommand {
                 .executes(this::join);
 
         CommandAPICommand leave = new CommandAPICommand("leave")
-                .executes(this::leave);
+                .executes((CommandExecutor) (sender, args) -> leave(sender));
 
         return new CommandAPICommand("room")
                 .withAliases("slr")
@@ -75,7 +78,7 @@ public class RoomCommand implements SLCommand {
             List<String> roomIds = roomIds();
             String roomId = info.input();
 
-            if (roomId == null || !roomIds.contains(roomId)) {
+            if (StringUtils.isEmpty(roomId) || !roomIds.contains(roomId)) {
 
                 String errorMessage;
                 if (ALL_ID_NAME.get().containsKey(roomId)) {
@@ -126,40 +129,34 @@ public class RoomCommand implements SLCommand {
         Match match = matchManager.getMatch(roomId);
 
         if (match == null) {
-            player.sendMessage("試合を取得できませんでした");
+            player.sendMessage(Component.text("試合を取得できませんでした"));
             return;
         }
 
-        Match jointedMatch = matchManager.getJointedMach(player);
-
-        if (match == jointedMatch) {
-            player.sendMessage("既に参加しています");
-            return;
-        } else if (jointedMatch != null) {
-            player.sendMessage("既に別の試合に参加しています");
-            return;
-        }
-
-        if (!match.join(player, true)) {
-            sender.sendRichMessage("参加できませんでした");
-        }
+        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            if (match == joinedMatch) {
+                player.sendMessage(Component.text("既に参加しています"));
+            } else {
+                player.sendMessage(Component.text("既に別の試合に参加しています"));
+            }
+        }, () -> {
+            if (!match.join(player, true)) {
+                sender.sendRichMessage("参加できませんでした");
+            }
+        });
     }
 
-    private void leave(CommandSender sender, CommandArguments args) {
+    private void leave(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
             return;
         }
 
         MatchManager matchManager = MatchManager.getInstance();
-        Match jointedMatch = matchManager.getJointedMach(player);
-
-        if (jointedMatch != null) {
-            if (!jointedMatch.leave(player, true)) {
-                player.sendMessage("退出できませんでした");
+        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            if (!joinedMatch.leave(player, true)) {
+                player.sendMessage(Component.text("退出できませんでした"));
             }
-        } else {
-            player.sendMessage("試合に参加していません");
-        }
+        }, () -> player.sendMessage(Component.text("試合に参加していません")));
     }
 }

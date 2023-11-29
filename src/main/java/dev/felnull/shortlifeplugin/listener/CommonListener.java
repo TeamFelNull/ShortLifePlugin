@@ -4,7 +4,6 @@ import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.decoration.BloodExpression;
-import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
@@ -15,7 +14,6 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
@@ -32,7 +30,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
 
-import static org.bukkit.Sound.*;
+import java.util.Optional;
+
+import static org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
+import static org.bukkit.Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR;
 
 /**
  * 一般的なイベントリスナー
@@ -83,22 +84,20 @@ public class CommonListener implements Listener {
         if (!(e instanceof WeaponMechanicsEntityDamageByEntityEvent) && e.getEntity() instanceof LivingEntity livingEntity
                 && BloodExpression.isSpawnDamageParticle(livingEntity, e.getDamage())) {
 
-            Pair<BoundingBox, Boolean> pointAndIsCritical = BloodExpression.getDamageBox(livingEntity, e.getCause());
-
-            if (pointAndIsCritical != null) {
+            BloodExpression.getDamageBox(livingEntity, e.getCause()).ifPresent(pointAndIsCritical -> {
                 BoundingBox damageBox;
-                BoundingBox criticalDamageBox;
+                Optional<BoundingBox> criticalDamageBox;
 
                 if (pointAndIsCritical.getRight()) {
                     damageBox = livingEntity.getBoundingBox();
-                    criticalDamageBox = pointAndIsCritical.getLeft();
+                    criticalDamageBox = Optional.of(pointAndIsCritical.getLeft());
                 } else {
                     damageBox = pointAndIsCritical.getLeft();
-                    criticalDamageBox = null;
+                    criticalDamageBox = Optional.empty();
                 }
 
                 BloodExpression.spawnDamageParticle(livingEntity, damageBox, criticalDamageBox, e.getDamage());
-            }
+            });
         }
     }
 
@@ -112,7 +111,7 @@ public class CommonListener implements Listener {
         LivingEntity livingEntity = e.getVictim();
         double damage = e.getFinalDamage();
         if (BloodExpression.isSpawnDamageParticle(livingEntity, damage)) {
-            BoundingBox damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
+            Optional<BoundingBox> damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
             BloodExpression.spawnDamageParticle(livingEntity, livingEntity.getBoundingBox(), damagePointBox, damage);
         }
     }
@@ -174,7 +173,7 @@ public class CommonListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onServerJoin(PlayerJoinEvent e) {
         Player joinp = e.getPlayer();
-        joinp.sendMessage(Component.text("Shortlifeへようこそ!").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+        joinp.sendMessage(Component.text("ShortLifeへようこそ!").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
 
     }
 
@@ -192,15 +191,11 @@ public class CommonListener implements Listener {
         // 試合中のワールドに、想定外の方法で参加した時の警告表示
         if (fromWorld != toWorld) {
             MatchManager matchManager = MatchManager.getInstance();
-            Match worldMatch = matchManager.getMachByWorld(toWorld);
-
-            if (worldMatch != null) {
-                /* 移動先のワールドで試合が行われている場合 */
-                Match playerMatch = matchManager.getJointedMach(player);
-
-                if (playerMatch != worldMatch) {
-                    /* プレイヤーが未参加または、参加している試合が世界の試合と一致しない場合 */
-
+            // 移動先のワールドで試合が行われている場合
+            matchManager.getMatchByWorld(toWorld).ifPresent(worldMatch -> {
+                
+                // プレイヤーが未参加または、参加している試合が世界の試合と一致しない場合
+                if (matchManager.getJoinedMatch(player).stream().noneMatch(match -> match == worldMatch)) {
                     Component message = Component.text("試合中").color(NamedTextColor.RED)
                             .append(worldMatch.createDisplayComponent().color(NamedTextColor.GOLD))
                             .append(Component.text("のワールドに、想定外の方法で侵入したようです。"));
@@ -221,7 +216,7 @@ public class CommonListener implements Listener {
 
                     player.sendMessage(message);
                 }
-            }
+            });
         }
     }
 }

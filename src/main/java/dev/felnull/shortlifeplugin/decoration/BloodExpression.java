@@ -10,9 +10,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 血液の表現
@@ -43,7 +43,7 @@ public class BloodExpression {
      * @param criticalDamageBox 主なダメージ箇所の範囲
      * @param damage            ダメージ量
      */
-    public static void spawnDamageParticle(@NotNull LivingEntity livingEntity, @NotNull BoundingBox damageBox, @Nullable BoundingBox criticalDamageBox, double damage) {
+    public static void spawnDamageParticle(@NotNull LivingEntity livingEntity, @NotNull BoundingBox damageBox, Optional<BoundingBox> criticalDamageBox, double damage) {
         if (damage > 0) {
             int range = 100;
             List<Player> receivers;
@@ -60,7 +60,7 @@ public class BloodExpression {
             }
 
             double countPar = Math.min(damage / 10d, 20d);
-            int count = Math.min((int) (((criticalDamageBox != null) ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
+            int count = Math.min((int) ((criticalDamageBox.isPresent() ? 3.5d : 10d) * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
                     MAX_PARTICLE_COUNT);
 
             // 全体的なパーティクルを表示
@@ -72,19 +72,19 @@ public class BloodExpression {
             }
             particleBuilder.spawn();
 
-            if (criticalDamageBox != null) {
+            criticalDamageBox.ifPresent(boundingBox -> {
                 int criticalCount = Math.min((int) (15d * countPar * (damageBox.getVolume() / BASE_DAMAGE_PARTICLE_VOLUME)),
                         MAX_PARTICLE_COUNT);
 
                 // 致命的な箇所のパーティクルを表示
-                ParticleBuilder criticalParticleBuilder = createBloodParticleBuilder(livingEntity, criticalDamageBox, true);
+                ParticleBuilder criticalParticleBuilder = createBloodParticleBuilder(livingEntity, boundingBox, true);
                 criticalParticleBuilder.count(criticalCount);
                 criticalParticleBuilder.receivers(receivers);
                 if (livingEntity instanceof Player player) {
                     criticalParticleBuilder.source(player);
                 }
                 criticalParticleBuilder.spawn();
-            }
+            });
         }
     }
 
@@ -95,18 +95,17 @@ public class BloodExpression {
      * @param cause        ダメージケース
      * @return 範囲と限定的なダメージ箇所かどうか
      */
-    @Nullable
-    public static Pair<BoundingBox, Boolean> getDamageBox(@NotNull LivingEntity livingEntity, @NotNull EntityDamageEvent.DamageCause cause) {
+    public static Optional<Pair<BoundingBox, Boolean>> getDamageBox(@NotNull LivingEntity livingEntity, @NotNull EntityDamageEvent.DamageCause cause) {
         return switch (cause) {
             case KILL, CONTACT, ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE, BLOCK_EXPLOSION,
                     ENTITY_EXPLOSION, FALLING_BLOCK, THORNS, FLY_INTO_WALL, CRAMMING, SONIC_BOOM ->
-                    Pair.of(livingEntity.getBoundingBox(), false);
+                    Optional.of(Pair.of(livingEntity.getBoundingBox(), false));
             case FALL -> {
                 BoundingBox entityBox = livingEntity.getBoundingBox();
                 Vector max = entityBox.getMax();
-                yield Pair.of(BoundingBox.of(max.clone().setY(max.getY() - (entityBox.getHeight() / 15d)), entityBox.getMin()), true);
+                yield Optional.of(Pair.of(BoundingBox.of(max.clone().setY(max.getY() - (entityBox.getHeight() / 15d)), entityBox.getMin()), true));
             }
-            default -> null;
+            default -> Optional.empty();
         };
     }
 

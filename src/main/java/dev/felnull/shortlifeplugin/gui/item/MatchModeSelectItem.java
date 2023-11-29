@@ -3,7 +3,6 @@ package dev.felnull.shortlifeplugin.gui.item;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -82,11 +81,8 @@ public class MatchModeSelectItem extends AbstractItem {
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
-        MatchMap matchMap = MatchManager.getInstance().getMapLoader().getRandomMap(matchMode);
 
-        if (matchMap == null) {
-            player.sendMessage(NO_MAP_AVAILABLE_MESSAGE);
-        } else {
+        MatchManager.getInstance().getMapLoader().getRandomMap(matchMode).ifPresentOrElse(matchMap -> {
             Match match = matchManager.addMatch(matchId, matchMode, matchMap);
 
             boolean failure = false;
@@ -105,7 +101,8 @@ public class MatchModeSelectItem extends AbstractItem {
             if (failure) {
                 player.sendMessage(CREATE_MATCH_FAILURE_MESSAGE);
             }
-        }
+        },
+                () -> player.sendMessage(NO_MAP_AVAILABLE_MESSAGE));
 
         getWindows().forEach(Window::close);
     }
@@ -115,7 +112,7 @@ public class MatchModeSelectItem extends AbstractItem {
 
         Audience sendAaudience = Audience.audience(Bukkit.getOnlinePlayers().stream()
                 .filter(pl -> pl != player)
-                .filter(pl -> matchManager.getJointedMach(pl) == null)
+                .filter(pl -> matchManager.getJoinedMatch(pl).isEmpty())
                 .toList());
 
         Component notifierMessage = Component.text(player.getName())

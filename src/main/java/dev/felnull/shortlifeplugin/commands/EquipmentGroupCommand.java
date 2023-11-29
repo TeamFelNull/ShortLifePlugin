@@ -9,6 +9,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.executors.CommandExecutor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -61,7 +62,7 @@ public class EquipmentGroupCommand implements SLCommand {
 
 
         CommandAPICommand list = new CommandAPICommand("list")
-                .executes(this::equipmentGroupList);
+                .executes((CommandExecutor) (sender, args) -> equipmentGroupList(sender));
 
 
         CommandAPICommand info = new CommandAPICommand("info")
@@ -83,14 +84,8 @@ public class EquipmentGroupCommand implements SLCommand {
     private Argument<EquipmentGroup> equipmentGroupArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
             EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-            EquipmentGroup equipmentGroup = manager.getGroup(info.input());
-
-            if (equipmentGroup == null) {
-                throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown equipment group: ").appendArgInput());
-            } else {
-                return equipmentGroup;
-            }
+            return manager.getGroup(info.input()).orElseThrow(() -> CustomArgument.CustomArgumentException
+                    .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown equipment group: ").appendArgInput()));
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> EquipmentGroupManager.getInstance().getAllGroup().keySet().toArray(String[]::new)));
     }
 
@@ -99,7 +94,7 @@ public class EquipmentGroupCommand implements SLCommand {
         String id = (String) Objects.requireNonNull(args.get("id"));
         String name = (String) Objects.requireNonNull(args.get("name"));
 
-        if (manager.getGroup(id) != null) {
+        if (manager.getGroup(id).isPresent()) {
             sender.sendRichMessage("指定されたIDの装備グループは既に存在します");
         } else {
             EquipmentGroup equipmentGroup = new EquipmentGroup(id, name, ImmutableList.of(), new EquipmentGroup.Restriction(-1));
@@ -115,7 +110,7 @@ public class EquipmentGroupCommand implements SLCommand {
 
         if (newId.equals(equipmentGroup.id())) {
             sender.sendRichMessage("指定された装備グループのIDと新しいIDが同じです");
-        } else if (manager.getGroup(newId) != null) {
+        } else if (manager.getGroup(newId).isPresent()) {
             sender.sendRichMessage("新しいIDの装備グループが既に存在しています");
         } else {
             manager.removeGroup(equipmentGroup.id());
@@ -170,7 +165,7 @@ public class EquipmentGroupCommand implements SLCommand {
         sender.sendRichMessage(String.format("指定された装備グループ(%s)を削除しました", equipmentGroup.id()));
     }
 
-    private void equipmentGroupList(CommandSender sender, CommandArguments args) {
+    private void equipmentGroupList(CommandSender sender) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         Map<String, EquipmentGroup> groups = manager.getAllGroup();
 

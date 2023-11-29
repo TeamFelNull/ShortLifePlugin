@@ -14,6 +14,7 @@ import java.util.List;
 public final class SLConfig {
 
     private SLConfig() {
+        throw new AssertionError();
     }
 
     /**

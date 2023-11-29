@@ -8,7 +8,8 @@ import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 /**
  * テスト用試合
@@ -42,7 +43,7 @@ public class TestMatch extends Match {
     }
 
     @Override
-    protected @Nullable MapMarker getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
+    protected Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
         return matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN);
     }
 }

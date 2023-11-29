@@ -6,7 +6,6 @@ import dev.felnull.shortlifeplugin.gui.item.SLPageItem;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 import xyz.xenondevs.invui.gui.structure.Structure;
 import xyz.xenondevs.invui.item.ItemProvider;
@@ -16,6 +15,7 @@ import xyz.xenondevs.invui.window.Window;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * このプラグインのGUIレジストリ
@@ -67,9 +67,8 @@ public final class SLGuis {
      * @param id ID
      * @return WindowProvider
      */
-    @Nullable
-    public static SLGuis.WindowProvider getWindowProvider(String id) {
-        return GUI_REGISTRY.get(id);
+    public static Optional<SLGuis.WindowProvider> getWindowProvider(String id) {
+        return Optional.of(GUI_REGISTRY.get(id));
     }
 
     @Unmodifiable

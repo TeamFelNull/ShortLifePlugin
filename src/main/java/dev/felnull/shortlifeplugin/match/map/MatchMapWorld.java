@@ -4,13 +4,9 @@ import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * マップのワールドの作成、保持用クラス
@@ -77,21 +73,20 @@ public class MatchMapWorld {
      * @param pointName ポイント名
      * @return マーカー
      */
-    @Nullable
-    public MapMarker getMakerRandom(NamespacedKey pointName) {
+    public Optional<MapMarker> getMakerRandom(NamespacedKey pointName) {
         Collection<MapMarker> markers = getMarker(pointName);
 
         if (markers.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
         List<MapMarker> makersList = new ArrayList<>(markers);
 
         if (makersList.size() == 1) {
-            return makersList.get(0);
+            return Optional.of(makersList.get(0));
         }
 
-        return makersList.get(RANDOM.nextInt(makersList.size()));
+        return Optional.of(makersList.get(RANDOM.nextInt(makersList.size())));
     }
 
     /**

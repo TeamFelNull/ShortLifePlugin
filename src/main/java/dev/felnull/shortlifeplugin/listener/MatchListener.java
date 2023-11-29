@@ -103,15 +103,16 @@ public final class MatchListener implements Listener {
      * @param e プレイヤー死亡イベント
      */
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerDeath(PlayerDeathEvent e) throws IOException {
+    public void onPlayerDeath(PlayerDeathEvent e) {
         Player target = e.getPlayer();
         MatchManager matchManager = MatchManager.getInstance();
-        Match match = matchManager.getJoinedMatch(target);
-
-
         // 参加者が死亡した場合、試合の死亡処理を呼ぶ
-        if (match != null) {
-            match.onPlayerDeath(target);
-        }
+        matchManager.getJoinedMatch(target).ifPresent(match -> {
+            try {
+                match.onPlayerDeath(target);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
 }

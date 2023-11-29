@@ -112,7 +112,7 @@ public class MatchModeSelectItem extends AbstractItem {
 
         Audience sendAaudience = Audience.audience(Bukkit.getOnlinePlayers().stream()
                 .filter(pl -> pl != player)
-                .filter(pl -> matchManager.getJoinedMatch(pl) == null)
+                .filter(pl -> matchManager.getJoinedMatch(pl).isEmpty())
                 .toList());
 
         Component notifierMessage = Component.text(player.getName())

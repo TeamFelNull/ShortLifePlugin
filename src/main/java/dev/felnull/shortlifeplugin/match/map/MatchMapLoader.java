@@ -44,7 +44,6 @@ import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.*;
@@ -409,11 +408,9 @@ public class MatchMapLoader {
 
                     if (blockData.getMaterial() == Material.JIGSAW) {
                         BaseBlock baseBlock = clipboard.getFullBlock(pos);
-                        JigsawMapMarker jigsawMapMarker = JigsawMapMarker.of(pos.subtract(clipboard.getOrigin()), baseBlock, blockData);
-
-                        if (jigsawMapMarker != null) {
+                        JigsawMapMarker.of(pos.subtract(clipboard.getOrigin()), baseBlock, blockData).ifPresent(jigsawMapMarker -> {
                             mapMarksersBuilder.put(jigsawMapMarker.pointName(), jigsawMapMarker);
-                        }
+                        });
                     }
                 }
             }

@@ -139,30 +139,27 @@ public class MatchCommand implements SLCommand {
                     return;
                 }
 
-                Match jointedMatch = MatchManager.getInstance().getJoinedMatch(player);
-
-                if (jointedMatch != null) {
+                MatchManager.getInstance().getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
                     if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加済みです", jointedMatch.getId()));
+                        sender.sendRichMessage(String.format("%sに参加済みです", joinedMatch.getId()));
                     } else {
-                        sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), jointedMatch.getId()));
+                        sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), joinedMatch.getId()));
                     }
-                    return;
-                }
-
-                if (match.join(player, player != sender)) {
-                    if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                }, () -> {
+                    if (match.join(player, player != sender)) {
+                        if (player == sender) {
+                            sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                        } else {
+                            sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                        }
                     } else {
-                        sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                        if (player == sender) {
+                            sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
+                        } else {
+                            sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
+                        }
                     }
-                } else {
-                    if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
-                    } else {
-                        sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
-                    }
-                }
+                });
 
             } else {
                 int joinCount = 0;

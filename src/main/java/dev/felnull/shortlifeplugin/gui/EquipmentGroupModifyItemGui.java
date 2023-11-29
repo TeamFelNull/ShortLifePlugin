@@ -111,7 +111,7 @@ public class EquipmentGroupModifyItemGui {
     private static void saveItems(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup, @NotNull VirtualInventory virtualInventory) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
 
-        if (manager.getGroup(equipmentGroup.id()) == null) {
+        if (manager.getGroup(equipmentGroup.id()).isEmpty()) {
             player.sendRichMessage(String.format("指定された装備グループ(%s)が存在しません", equipmentGroup.id()));
             return;
         }

@@ -133,19 +133,17 @@ public class RoomCommand implements SLCommand {
             return;
         }
 
-        Match jointedMatch = matchManager.getJoinedMatch(player);
-
-        if (match == jointedMatch) {
-            player.sendMessage(Component.text("既に参加しています"));
-            return;
-        } else if (jointedMatch != null) {
-            player.sendMessage(Component.text("既に別の試合に参加しています"));
-            return;
-        }
-
-        if (!match.join(player, true)) {
-            sender.sendRichMessage("参加できませんでした");
-        }
+        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            if (match == joinedMatch) {
+                player.sendMessage(Component.text("既に参加しています"));
+            } else {
+                player.sendMessage(Component.text("既に別の試合に参加しています"));
+            }
+        }, () -> {
+            if (!match.join(player, true)) {
+                sender.sendRichMessage("参加できませんでした");
+            }
+        });
     }
 
     private void leave(CommandSender sender) {
@@ -155,14 +153,10 @@ public class RoomCommand implements SLCommand {
         }
 
         MatchManager matchManager = MatchManager.getInstance();
-        Match jointedMatch = matchManager.getJoinedMatch(player);
-
-        if (jointedMatch != null) {
-            if (!jointedMatch.leave(player, true)) {
+        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            if (!joinedMatch.leave(player, true)) {
                 player.sendMessage(Component.text("退出できませんでした"));
             }
-        } else {
-            player.sendMessage(Component.text("試合に参加していません"));
-        }
+        }, () -> player.sendMessage(Component.text("試合に参加していません")));
     }
 }

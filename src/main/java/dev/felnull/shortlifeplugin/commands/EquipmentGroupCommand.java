@@ -94,7 +94,7 @@ public class EquipmentGroupCommand implements SLCommand {
         String id = (String) Objects.requireNonNull(args.get("id"));
         String name = (String) Objects.requireNonNull(args.get("name"));
 
-        if (manager.getGroup(id) != null) {
+        if (manager.getGroup(id).isPresent()) {
             sender.sendRichMessage("指定されたIDの装備グループは既に存在します");
         } else {
             EquipmentGroup equipmentGroup = new EquipmentGroup(id, name, ImmutableList.of(), new EquipmentGroup.Restriction(-1));
@@ -110,7 +110,7 @@ public class EquipmentGroupCommand implements SLCommand {
 
         if (newId.equals(equipmentGroup.id())) {
             sender.sendRichMessage("指定された装備グループのIDと新しいIDが同じです");
-        } else if (manager.getGroup(newId) != null) {
+        } else if (manager.getGroup(newId).isPresent()) {
             sender.sendRichMessage("新しいIDの装備グループが既に存在しています");
         } else {
             manager.removeGroup(equipmentGroup.id());

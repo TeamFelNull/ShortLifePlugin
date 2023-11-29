@@ -4,7 +4,6 @@ import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.decoration.BloodExpression;
-import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;

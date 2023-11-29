@@ -39,7 +39,7 @@ public class GuiCommand implements SLCommand {
         CommandAPI.unregister(NAME);
     }
 
-    private Argument<SLGuis.WindowProvider> guiArgument() {
+    private static Argument<SLGuis.WindowProvider> guiArgument() {
         return new CustomArgument<>(new StringArgument("gui"), 
                 info -> SLGuis.getWindowProvider(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput())))

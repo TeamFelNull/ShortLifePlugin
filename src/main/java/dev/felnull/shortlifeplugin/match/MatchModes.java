@@ -6,10 +6,10 @@ import dev.felnull.shortlifeplugin.match.map.MatchMapValidator;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 試合モードのレジストリ
@@ -68,9 +68,8 @@ public final class MatchModes {
      * @param id 試合モードID
      * @return 試合モード
      */
-    @Nullable
-    public static MatchMode getMode(String id) {
-        return MODE_REGISTRY.get(id);
+    public static Optional<MatchMode> getMode(String id) {
+        return Optional.ofNullable(MODE_REGISTRY.get(id));
     }
 
     private static void register(@NotNull MatchMode matchMode) {

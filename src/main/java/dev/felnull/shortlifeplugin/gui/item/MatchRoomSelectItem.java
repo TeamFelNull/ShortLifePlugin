@@ -20,6 +20,7 @@ import xyz.xenondevs.invui.window.Window;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -74,11 +75,8 @@ public class MatchRoomSelectItem extends AbstractItem {
     @Override
     public ItemProvider getItemProvider() {
         MatchManager matchManager = MatchManager.getInstance();
-        Match match = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber));
-
-        ItemBuilder builder;
-
-        if (match != null) {
+        
+        ItemBuilder builderReady = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).map(match -> {
             // 試合が存在する場合
             int playerCount = match.getAllJoinPlayers().size();
             int playerMaxCount = match.getMatchMode().maxPlayerCount();
@@ -91,7 +89,7 @@ public class MatchRoomSelectItem extends AbstractItem {
                 material = (matchType == MatchType.PVP) ? Material.LIME_WOOL : Material.LIME_CONCRETE;
             }
 
-            builder = new ItemBuilder(material);
+            ItemBuilder builder = new ItemBuilder(material);
 
             if (playerCount >= playerMaxCount) {
                 builder.addLoreLines(new AdventureComponentWrapper(Component.text("満員").color(NamedTextColor.RED)));
@@ -105,46 +103,45 @@ public class MatchRoomSelectItem extends AbstractItem {
             desc.stream()
                     .map(AdventureComponentWrapper::new)
                     .forEach(builder::addLoreLines);
-        } else {
+            
+            return builder;
+        }).orElseGet(() -> {
             // 試合が存在しない場合
-            builder = new ItemBuilder((matchType == MatchType.PVP) ? Material.WHITE_WOOL : Material.WHITE_CONCRETE);
+            ItemBuilder builder = new ItemBuilder((matchType == MatchType.PVP) ? Material.WHITE_WOOL : Material.WHITE_CONCRETE);
             builder.addLoreLines(new AdventureComponentWrapper(Component.text("試合を作成").color(NamedTextColor.GRAY)));
-        }
+            
+            return builder;
+        });
 
-        builder.setDisplayName(getRoomName(this.matchType, roomNumber));
-        builder.setAmount(roomNumber + 1);
+        builderReady.setDisplayName(getRoomName(this.matchType, roomNumber));
+        builderReady.setAmount(roomNumber + 1);
 
-        return builder;
+        return builderReady;
     }
 
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
-        Match match = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber));
+        Optional<Match> clickedMatch = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber));
         
         matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
             // 別の試合に参加している場合の処理
-            if (match == joinedMatch) {
-                player.sendMessage(ALREADY_JOIN_MATCH_MESSAGE);
+            clickedMatch.stream().filter(match -> match == joinedMatch).findFirst().ifPresentOrElse(
+                    match -> player.sendMessage(ALREADY_JOIN_MATCH_MESSAGE), () -> player.sendMessage(ALREADY_JOIN_OTHER_MATCH_MESSAGE));
+        }, () -> clickedMatch.ifPresentOrElse(match -> {
+            // 試合に参加
+            if (match.join(player, false)) {
+                player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
             } else {
-                player.sendMessage(ALREADY_JOIN_OTHER_MATCH_MESSAGE);
+                player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
             }
-        }, () -> {
-            if (match != null) {
-                // 試合に参加
-                if (match.join(player, false)) {
-                    player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
-                } else {
-                    player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
-                }
 
-                getWindows().forEach(Window::close);
-            } else {
-                // Window遷移
-                getWindows().forEach(Window::close);
-                MatchSelectorGui.matchCreateWindow(player, matchType, MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).open();
-            }
-        });
+            getWindows().forEach(Window::close);
+        }, () -> {
+            // Window遷移
+            getWindows().forEach(Window::close);
+            MatchSelectorGui.matchCreateWindow(player, matchType, MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).open();
+        }));
     }
 
     /**

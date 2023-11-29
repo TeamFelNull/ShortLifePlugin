@@ -62,10 +62,7 @@ public record MatchMap(@NotNull String id, @NotNull String name, @NotNull String
 
         for (JsonElement modeEntry : availableMatchModesArray) {
             if (modeEntry.isJsonPrimitive() && modeEntry.getAsJsonPrimitive().isString()) {
-                MatchMode matchMode = MatchModes.getMode(modeEntry.getAsJsonPrimitive().getAsString());
-                if (matchMode != null) {
-                    availableMatchModes.add(matchMode);
-                }
+                MatchModes.getMode(modeEntry.getAsJsonPrimitive().getAsString()).ifPresent(availableMatchModes::add);
             }
         }
 

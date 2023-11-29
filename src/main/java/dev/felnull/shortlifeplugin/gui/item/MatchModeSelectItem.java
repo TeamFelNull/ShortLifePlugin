@@ -83,20 +83,15 @@ public class MatchModeSelectItem extends AbstractItem {
         MatchManager matchManager = MatchManager.getInstance();
 
         MatchManager.getInstance().getMapLoader().getRandomMap(matchMode).ifPresentOrElse(matchMap -> {
-            Match match = matchManager.addMatch(matchId, matchMode, matchMap);
-
-            boolean failure = false;
-
-            if (match != null) {
+            boolean failure = matchManager.addMatch(matchId, matchMode, matchMap).map(match -> {
                 if (match.join(player, false)) {
                     player.sendMessage(CREATE_AND_JOIN_MATCH_MESSAGE);
                     broadcastCreateMatch(player, match);
+                    return false;
                 } else {
-                    failure = true;
+                    return true;
                 }
-            } else {
-                failure = true;
-            }
+            }).orElse(true);
 
             if (failure) {
                 player.sendMessage(CREATE_MATCH_FAILURE_MESSAGE);

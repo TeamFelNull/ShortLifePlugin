@@ -86,19 +86,17 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
         for (int i = 0; i < pvpRoomCount; i++) {
             gui.setItem(i, 0, new MatchRoomSelectItem(MatchType.PVP, firstRoomNum + i));
 
-            Match match = matchManager.getMatch(getRoomMatchId(MatchType.PVP, firstRoomNum + i));
-            if (match != null) {
-                gui.setItem(i, 1, new MatchModeIconItem(match.getMatchMode()));
-            }
+            int finalI = i;
+            matchManager.getMatch(getRoomMatchId(MatchType.PVP, firstRoomNum + i)).ifPresent(match -> 
+                    gui.setItem(finalI, 1, new MatchModeIconItem(match.getMatchMode())));
         }
 
         for (int i = 0; i < pveRoomCount; i++) {
             gui.setItem(i, 3, new MatchRoomSelectItem(MatchType.PVE, firstRoomNum + i));
 
-            Match match = matchManager.getMatch(getRoomMatchId(MatchType.PVE, firstRoomNum + i));
-            if (match != null) {
-                gui.setItem(i, 4, new MatchModeIconItem(match.getMatchMode()));
-            }
+            int finalI = i;
+            matchManager.getMatch(getRoomMatchId(MatchType.PVE, firstRoomNum + i)).ifPresent(match -> 
+                    gui.setItem(finalI, 4, new MatchModeIconItem(match.getMatchMode())));
         }
 
         return gui;

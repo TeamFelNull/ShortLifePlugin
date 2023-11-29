@@ -72,7 +72,7 @@ public class EquipmentGroupCommand implements SLCommand {
 
         return new CommandAPICommand("equipmentgroup")
                 .withAliases("sleg")
-                .withPermission(SLPermissions.COMMANDS_EQUIPMENT_GROUP)
+                .withPermission(SLPermissions.COMMANDS_EQUIPMENT_GROUP.get())
                 .withSubcommands(add, modify, remove, list, info);
     }
 

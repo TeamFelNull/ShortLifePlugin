@@ -1,22 +1,9 @@
 package dev.felnull.shortlifeplugin.commands;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import dev.felnull.shortlifeplugin.SLPermissions;
-import dev.felnull.shortlifeplugin.utils.SLFiles;
-import dev.felnull.shortlifeplugin.utils.SLUtils;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.CommandArgument;
-import dev.jorel.commandapi.executors.CommandArguments;
-import dev.jorel.commandapi.executors.CommandExecutor;
-import dev.jorel.commandapi.wrappers.CommandResult;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import static dev.felnull.shortlifeplugin.commands.RewardSubCommands.values;
 
 /**
  * 報酬コマンド
@@ -26,178 +13,24 @@ import java.util.stream.Collectors;
 public class RewardCommand implements SLCommand {
 
     /**
-     * Gsonインスタント
+     * 報酬コマンド本体の名前
      */
-    private static final Gson GSON = new Gson();
-
-    /**
-     * ノーマル
-     */
-    private static final String NORMAL = "normal";
-
-    /**
-     * 勝利
-     */
-    private static final String WINNER = "winner";
-
-
-    /**
-     * 特殊
-     */
-    private static final String SPECIAL = "special";
-
-    /**
-     * ストリーク
-     */
-    private static final String STREAK = "streak";
+    private static final String NAME = "reward";
 
     @Override
     public CommandAPICommand create() {
 
-        CommandAPICommand normalReward = new CommandAPICommand("normal")
-                .withArguments(new CommandArgument("command"))
-                .executes((CommandExecutor) (sender, args) -> normalReward(args));
+        final CommandAPICommand rewardCommand = new CommandAPICommand(NAME)
+                .withPermission(SLPermissions.COMMANDS_REWARD.get());
 
-        CommandAPICommand chanceReward = new CommandAPICommand("special")
-                .withArguments(new CommandArgument("command"))
-                .executes((CommandExecutor) (sender, args) -> specialReward(args));
-
-        CommandAPICommand winnerReward = new CommandAPICommand("winner")
-                .withArguments(new CommandArgument("command"))
-                .executes((CommandExecutor) (sender, args) -> winnerReward(args));
-
-        CommandAPICommand streakReward = new CommandAPICommand("streak")
-                .withArguments(new CommandArgument("command"))
-                .executes((CommandExecutor) (sender, args) -> streakReward(args));
-
-        return new CommandAPICommand("reward")
-                .withPermission(SLPermissions.COMMANDS_REWARD)
-                .withSubcommands(normalReward, chanceReward, winnerReward, streakReward);
+        for (RewardSubCommands value : values()) {
+            rewardCommand.withSubcommand(value.construct());
+        }
+        return rewardCommand;
     }
 
     @Override
     public void unregister() {
 
-    }
-
-    /**
-     * 通常報酬のコマンドを設定する
-     *
-     * @param args   チャットの引数
-     * @author raindazo
-     */
-    private void normalReward(CommandArguments args) {
-        String command = useCommand(args);
-
-        try {
-            this.setConfig(NORMAL, command);
-        } catch (IOException e) {
-            SLUtils.getLogger().info(String.valueOf(e));
-        }
-    }
-
-    /**
-     * 特殊報酬を付与する
-     *
-     * @param args   チャットの引数
-     * @author raindazo
-     */
-    private void specialReward(CommandArguments args) {
-        String command = useCommand(args);
-
-        try {
-            this.setConfig(SPECIAL, command);
-        } catch (IOException e) {
-            SLUtils.getLogger().info(String.valueOf(e));
-        }
-    }
-
-    /**
-     * 勝利時の報酬を付与する
-     *
-     * @param args   チャットの引数
-     * @author raindazo
-     */
-    private void winnerReward(CommandArguments args) {
-        String command = useCommand(args);
-        try {
-            this.setConfig(WINNER, command);
-        } catch (IOException e) {
-            SLUtils.getLogger().info(String.valueOf(e));
-        }
-    }
-
-    /**
-     * ストリート報酬のコマンドを設定する
-     *
-     * @param args   チャットの引数
-     * @author raindazo
-     */
-    private void streakReward(CommandArguments args) {
-        String command = useCommand(args);
-
-        try {
-            this.setConfig(STREAK, command);
-        } catch (IOException e) {
-            SLUtils.getLogger().info(String.valueOf(e));
-        }
-    }
-
-    /**
-     * JSONの値を書き換える
-     *
-     * @param functionName 変更対象の機能名
-     * @param changeValue  変更後の値
-     * @author raindazo
-     */
-    private void setConfig(String functionName, String changeValue) throws IOException {
-        File savedJsonFile = SLFiles.rewardCommandConfigJson();
-        JsonObject json;
-        if (!savedJsonFile.exists() || savedJsonFile.isDirectory()) {
-            json = new JsonObject();
-        } else {
-            json = GSON.fromJson(Files.readString(savedJsonFile.toPath()), JsonObject.class);
-        }
-
-        switch (functionName) {
-            case "normal" -> {
-                json.remove("normalReward");
-                json.addProperty("normalReward", changeValue);
-            }
-            case "special" -> {
-                json.remove("specialReward");
-                json.addProperty("specialReward", changeValue);
-            }
-            case "winner" -> {
-                json.remove("winnerReward");
-                json.addProperty("winnerReward", changeValue);
-            }
-            case "streak" -> {
-                json.remove("streakReward");
-                json.addProperty("streakReward", changeValue);
-            }
-            default -> throw new IllegalStateException("Unexpected value: " + functionName);
-        }
-        // Json書き込み
-        try (Writer writer = new BufferedWriter(new FileWriter(savedJsonFile))) {
-            GSON.toJson(json, writer);
-        }
-    }
-
-    /**
-     * コマンドを返却
-     *
-     * @param args コマンド
-     * @author raindazo
-     */
-    private String useCommand(CommandArguments args) {
-        CommandResult command = (CommandResult) args.get(0);
-        List<String> argumentList = Arrays.asList(Objects.requireNonNull(command).args());
-        String useCommand = command.command().getName() + " ";
-        useCommand += argumentList.stream()
-                .map(value -> value + " ")
-                .collect(Collectors.joining());
-
-        return useCommand;
     }
 }

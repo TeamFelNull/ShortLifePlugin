@@ -6,34 +6,47 @@ package dev.felnull.shortlifeplugin;
  *
  * @author MORIMORI0317
  */
-public final class SLPermissions {
-
+public enum SLPermissions {
     /**
      * 試合コマンド用パーミッション
      */
-    public static final String COMMANDS_MATCH = "shortlifeplugin.commands.match";
+    COMMANDS_MATCH("shortlifeplugin.commands.match"),
 
     /**
      * GUIコマンド用パーミッション
      */
-    public static final String COMMANDS_GUI = "shortlifeplugin.commands.gui";
+    COMMANDS_GUI("shortlifeplugin.commands.gui"),
 
     /**
      * 装備グループコマンド用パーミッション
      */
-    public static final String COMMANDS_EQUIPMENT_GROUP = "shortlifeplugin.commands.equipmentgroup";
+    COMMANDS_EQUIPMENT_GROUP("shortlifeplugin.commands.equipmentgroup"),
 
     /**
      * 試合部屋コマンド用パーミッション<br/>
      */
-    public static final String COMMANDS_ROOM = "shortlifeplugin.commands.room";
+    COMMANDS_ROOM("shortlifeplugin.commands.room"),
 
     /**
      * 報酬コマンド用パーミッション<br/>
      */
-    public static final String COMMANDS_REWARD = "hortlifeplugin.commands.reward";
+    COMMANDS_REWARD("hortlifeplugin.commands.reward");
 
-    private SLPermissions() {
-        throw new AssertionError();
+    /**
+     * パーミッション名
+     */
+    private final String name;
+    
+    SLPermissions(String name) {
+        this.name = name;
+    }
+
+    /**
+     * パーミッション名を取得
+     *
+     * @return パーミッション名
+     */
+    public String get() {
+        return name;
     }
 }

@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.gui.MatchSelectorGui;
 import dev.felnull.shortlifeplugin.gui.item.MatchRoomSelectItem;
-import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchType;
 import dev.jorel.commandapi.CommandAPI;
@@ -64,7 +63,7 @@ public class RoomCommand implements SLCommand {
 
         return new CommandAPICommand("room")
                 .withAliases("slr")
-                .withPermission(SLPermissions.COMMANDS_ROOM)
+                .withPermission(SLPermissions.COMMANDS_ROOM.get())
                 .withSubcommands(join, leave);
     }
 
@@ -126,24 +125,20 @@ public class RoomCommand implements SLCommand {
         String roomId = (String) Objects.requireNonNull(args.get("room id"));
 
         MatchManager matchManager = MatchManager.getInstance();
-        Match match = matchManager.getMatch(roomId);
 
-        if (match == null) {
-            player.sendMessage(Component.text("試合を取得できませんでした"));
-            return;
-        }
-
-        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
-            if (match == joinedMatch) {
-                player.sendMessage(Component.text("既に参加しています"));
-            } else {
-                player.sendMessage(Component.text("既に別の試合に参加しています"));
-            }
-        }, () -> {
-            if (!match.join(player, true)) {
-                sender.sendRichMessage("参加できませんでした");
-            }
-        });
+        matchManager.getMatch(roomId).ifPresentOrElse(matchToJoin ->
+                matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+                    if (matchToJoin == joinedMatch) {
+                        player.sendMessage(Component.text("既に参加しています"));
+                    } else {
+                        player.sendMessage(Component.text("既に別の試合に参加しています"));
+                    }
+                }, () -> {
+                    if (!matchToJoin.join(player, true)) {
+                        sender.sendRichMessage("参加できませんでした");
+                    }
+                }), () -> player.sendMessage(Component.text("試合を取得できませんでした"))
+        );
     }
 
     private void leave(CommandSender sender) {

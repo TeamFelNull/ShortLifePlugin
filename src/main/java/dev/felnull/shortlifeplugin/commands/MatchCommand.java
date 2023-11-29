@@ -68,7 +68,7 @@ public class MatchCommand implements SLCommand {
 
         return new CommandAPICommand("match")
                 .withAliases("slm")
-                .withPermission(SLPermissions.COMMANDS_MATCH)
+                .withPermission(SLPermissions.COMMANDS_MATCH.get())
                 .withSubcommands(list, info, join, leave, finish, start, remove, map);
     }
 
@@ -78,16 +78,11 @@ public class MatchCommand implements SLCommand {
     }
 
     private Argument<Match> matchArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            Match match = MatchManager.getInstance().getMatch(info.input());
-
-            if (match == null) {
-                throw CustomArgument.CustomArgumentException
-                        .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合です: ").appendArgInput());
-            } else {
-                return match;
-            }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getAllMatch().keySet().toArray(String[]::new)));
+        return new CustomArgument<>(new StringArgument(nodeName), 
+                info -> MatchManager.getInstance().getMatch(info.input())
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException
+                                .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合です: ").appendArgInput())))
+                .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getAllMatch().keySet().toArray(String[]::new)));
     }
 
     private Argument<MatchMap> mapArgument(String nodeName) {

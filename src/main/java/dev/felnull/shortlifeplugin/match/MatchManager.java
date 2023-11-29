@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
@@ -108,16 +107,15 @@ public final class MatchManager {
      * @param matchMap  試合マップ
      * @return 追加された試合
      */
-    @Nullable
-    public Match addMatch(@NotNull String matchId, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
+    public Optional<Match> addMatch(@NotNull String matchId, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
         if (this.matches.containsKey(matchId)) {
-            return null;
+            return Optional.empty();
         }
 
         Match match = matchMode.matchProvider().provide(matchId, matchMode, matchMap);
         this.matches.put(matchId, match);
         match.init();
-        return match;
+        return Optional.of(match);
     }
 
     /**
@@ -174,9 +172,8 @@ public final class MatchManager {
      * @param matchId 試合ID
      * @return 試合
      */
-    @Nullable
-    public Match getMatch(String matchId) {
-        return matches.get(matchId);
+    public Optional<Match> getMatch(String matchId) {
+        return Optional.ofNullable(matches.get(matchId));
     }
 
     /**

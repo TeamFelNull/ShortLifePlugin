@@ -23,21 +23,21 @@ public final class MatchModes {
      */
     public static final MatchMode TEST =
             new MatchMode("test", "テスト", Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
-                    1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN), true);
+                    1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN.get()), true);
 
     /**
      * チームポイント制試合モード
      */
     public static final MatchMode TEAM_POINT =
             new MatchMode("team_point", "チーム-ポイント制", Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
-                    2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1, MapMarkerPoints.SPAWN_TEAM2), false);
+                    2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1.get(), MapMarkerPoints.SPAWN_TEAM2.get()), false);
 
     /**
      * FFA試合モード
      */
     public static final MatchMode FFA =
             new MatchMode("ffa", "FFA", Material.IRON_SWORD, MatchType.PVP, 1000 * 60 * 10,
-                    2, 30, FFAMatch::new, mapPointCheck(MapMarkerPoints.SPAWN), false);
+                    2, 30, FFAMatch::new, mapPointCheck(MapMarkerPoints.SPAWN.get()), false);
 
     /**
      * 試合モードのレジストリマップ<br/>

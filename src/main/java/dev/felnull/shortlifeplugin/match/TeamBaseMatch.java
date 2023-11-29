@@ -66,8 +66,8 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         super.init();
 
         // チーム初期化
-        teams.add(createMatchTeam("赤", NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1));
-        teams.add(createMatchTeam("青", NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2));
+        teams.add(createMatchTeam("赤", NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1.get()));
+        teams.add(createMatchTeam("青", NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2.get()));
     }
 
     /**

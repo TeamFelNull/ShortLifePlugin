@@ -60,6 +60,6 @@ public class FFAMatch extends PVPBaseMatch {
 
     @Override
     protected Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
-        return matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN);
+        return matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN.get());
     }
 }

@@ -8,22 +8,37 @@ import org.bukkit.NamespacedKey;
  *
  * @author MORIMORI0317
  */
-public final class MapMarkerPoints {
+public enum MapMarkerPoints {
     /**
      * スポーン地点
      */
-    public static final NamespacedKey SPAWN = SLUtils.plLoc("spawn");
-
+    SPAWN(SLUtils.plLoc("spawn")),
+    
     /**
      * 1番チームのスポーン地点
      */
-    public static final NamespacedKey SPAWN_TEAM1 = SLUtils.plLoc("spawn-team1");
+    SPAWN_TEAM1(SLUtils.plLoc("spawn-team1")),
 
     /**
      * 2番チームのスポーン地点
      */
-    public static final NamespacedKey SPAWN_TEAM2 = SLUtils.plLoc("spawn-team2");
+    SPAWN_TEAM2(SLUtils.plLoc("spawn-team2"));
 
-    private MapMarkerPoints() {
+    /**
+     * ポイント名
+     */
+    private NamespacedKey name;
+    
+    MapMarkerPoints(NamespacedKey name) {
+        this.name = name;
+    }
+
+    /**
+     * ポイント名を取得
+     *
+     * @return ポイント名
+     */
+    public NamespacedKey get() {
+        return name;
     }
 }

@@ -1,21 +1,15 @@
 package dev.felnull.shortlifeplugin;
 
-import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.commands.SLCommands;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.felnull.shortlifeplugin.listener.*;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
-import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kunmc.lab.ikisugilogger.IkisugiLogger;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.codehaus.plexus.util.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * プラグインが有効、無効になった際の処理を行うクラス
@@ -56,7 +50,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         getLogger().info(logger.createLn());
 
         SLCommands.register();
-        clearTmpFolder(true);
+        SLUtils.clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
 
@@ -83,39 +77,41 @@ public final class ShortLifePlugin extends JavaPlugin {
     @SuppressWarnings("UnstableApiUsage")
     private void versionCheck() {
         // テストモードではバージョン確認をスキップ
-        if (!SLConfig.isTestMode()) {
-            String version = this.getPluginMeta().getVersion();
-            DefaultArtifactVersion artifactVersion = new DefaultArtifactVersion(version);
+        if (SLConfig.isTestMode()) {
+            return;
+        }
 
-            boolean unstableVersion = false;
+        String version = this.getPluginMeta().getVersion();
+        DefaultArtifactVersion artifactVersion = new DefaultArtifactVersion(version);
 
-            if (artifactVersion.getQualifier().contains("+")) {
-                // 1.x.x-alpha.x+pre.x のようにビルドメタデータが存在する場合は、不安定バージョンとみなす
-                unstableVersion = true;
-            } else if (artifactVersion.getMinorVersion() == 0 && artifactVersion.getMajorVersion() == 0
-                    && artifactVersion.getIncrementalVersion() == 0 && artifactVersion.getBuildNumber() == 0) {
-                // 全てのバージョン値が0であれば、不正な形のバージョンであるため、不安定バージョンとみなす
-                unstableVersion = true;
-            }
+        boolean unstableVersion = false;
 
-            if (unstableVersion) {
-                getLogger().warning("本番環境では、このバージョンを起動できません");
-                getLogger().warning("もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください");
+        if (artifactVersion.getQualifier().contains("+")) {
+            // 1.x.x-alpha.x+pre.x のようにビルドメタデータが存在する場合は、不安定バージョンとみなす
+            unstableVersion = true;
+        } else if (artifactVersion.getMinorVersion() == 0 && artifactVersion.getMajorVersion() == 0
+                && artifactVersion.getIncrementalVersion() == 0 && artifactVersion.getBuildNumber() == 0) {
+            // 全てのバージョン値が0であれば、不正な形のバージョンであるため、不安定バージョンとみなす
+            unstableVersion = true;
+        }
 
-                IkisugiLogger logger = new IkisugiLogger("not ikisugi\nshort life");
-                logger.setColorType(IkisugiLogger.ColorType.CHRISTMAS);
-                logger.setCenter(true);
-                getLogger().info(logger.createLn());
+        if (unstableVersion) {
+            getLogger().warning("本番環境では、このバージョンを起動できません");
+            getLogger().warning("もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください");
 
-                throw new RuntimeException("このバージョンはテストモードでのみ起動可能です");
-            }
+            IkisugiLogger logger = new IkisugiLogger("not ikisugi\nshort life");
+            logger.setColorType(IkisugiLogger.ColorType.CHRISTMAS);
+            logger.setCenter(true);
+            getLogger().info(logger.createLn());
+
+            throw new RuntimeException("このバージョンはテストモードでのみ起動可能です");
         }
     }
 
     @Override
     public void onDisable() {
 
-        // リロード後に補完が動かくなるため、必ずコマンドを登録解除してください。
+        // リロード後に補完が動かなくなるため、必ずコマンドを登録解除してください。
         SLCommands.unregister();
 
         if (this.matchManager != null) {
@@ -128,7 +124,7 @@ public final class ShortLifePlugin extends JavaPlugin {
             this.equipmentGroupManager = null;
         }
 
-        clearTmpFolder(false);
+        SLUtils.clearTmpFolder(false);
         getLogger().info("ShortLife Pluginが停止しました");
     }
 
@@ -138,25 +134,6 @@ public final class ShortLifePlugin extends JavaPlugin {
 
     public EquipmentGroupManager getEquipmentGroupManager() {
         return equipmentGroupManager;
-    }
-
-    /**
-     * 一時フォルダを削除
-     *
-     * @param regenerateFolder 空のTMPフォルダを再生成するかどうか
-     */
-    private static void clearTmpFolder(boolean regenerateFolder) {
-        File tmpFolder = SLFiles.tmpFolder();
-
-        try {
-            FileUtils.deleteDirectory(tmpFolder);
-        } catch (IOException e) {
-            SLUtils.reportError(e, "一時フォルダの削除に失敗");
-        }
-
-        if (regenerateFolder) {
-            FNDataUtil.wishMkdir(tmpFolder);
-        }
     }
 
 }

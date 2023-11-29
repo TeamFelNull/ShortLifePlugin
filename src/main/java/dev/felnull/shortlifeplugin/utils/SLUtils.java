@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.utils;
 
+import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -10,10 +11,12 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
+import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
@@ -178,7 +181,7 @@ public final class SLUtils {
     }
 
     /**
-     * テキストカラーを#CharacterAndFormatへ変換ｎ\
+     * テキストカラーを#CharacterAndFormatへ変換
      *
      * @param textColor テキストカラー
      * @return 文字とフォーマット
@@ -193,5 +196,24 @@ public final class SLUtils {
                 .filter(it -> it.format() == namedTextColor)
                 .limit(1)
                 .findFirst();
+    }
+
+    /**
+     * 一時フォルダを削除
+     *
+     * @param regenerateFolder 空のTMPフォルダを再生成するかどうか
+     */
+    public static void clearTmpFolder(boolean regenerateFolder) {
+        File tmpFolder = SLFiles.tmpFolder();
+
+        try {
+            FileUtils.deleteDirectory(tmpFolder);
+        } catch (IOException e) {
+            SLUtils.reportError(e, "一時フォルダの削除に失敗");
+        }
+
+        if (regenerateFolder) {
+            FNDataUtil.wishMkdir(tmpFolder);
+        }
     }
 }

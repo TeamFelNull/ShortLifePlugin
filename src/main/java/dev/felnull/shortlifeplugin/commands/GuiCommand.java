@@ -22,7 +22,7 @@ public class GuiCommand implements SLCommand {
     public CommandAPICommand create() {
         return new CommandAPICommand("gui")
                 .withAliases("slg")
-                .withPermission(SLPermissions.COMMANDS_GUI)
+                .withPermission(SLPermissions.COMMANDS_GUI.get())
                 .withSubcommands(new CommandAPICommand("open")
                         .withArguments(guiArgument("gui"))
                         .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))

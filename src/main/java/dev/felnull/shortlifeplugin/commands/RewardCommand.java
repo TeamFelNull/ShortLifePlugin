@@ -21,7 +21,7 @@ public class RewardCommand implements SLCommand {
     public CommandAPICommand create() {
 
         final CommandAPICommand rewardCommand = new CommandAPICommand(NAME)
-                .withPermission(SLPermissions.COMMANDS_REWARD);
+                .withPermission(SLPermissions.COMMANDS_REWARD.get());
 
         for (RewardSubCommands value : values()) {
             rewardCommand.withSubcommand(value.construct());

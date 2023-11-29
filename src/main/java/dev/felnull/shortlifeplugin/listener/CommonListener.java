@@ -203,7 +203,7 @@ public class CommonListener implements Listener {
                     message = message.appendNewline().append(Component.text("試合に参加していないため、干渉することはできません。"));
 
                     // 権限がある場合は、参加用メッセージを追加
-                    if (player.hasPermission(SLPermissions.COMMANDS_MATCH)) {
+                    if (player.hasPermission(SLPermissions.COMMANDS_MATCH.get())) {
                         Component clickHere = Component.text("[ここをクリック]")
                                 .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + worldMatch.getId())).build());
 

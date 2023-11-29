@@ -63,7 +63,7 @@ public class RoomCommand implements SLCommand {
 
         return new CommandAPICommand("room")
                 .withAliases("slr")
-                .withPermission(SLPermissions.COMMANDS_ROOM)
+                .withPermission(SLPermissions.COMMANDS_ROOM.get())
                 .withSubcommands(join, leave);
     }
 

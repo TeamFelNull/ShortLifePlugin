@@ -68,7 +68,7 @@ public class MatchCommand implements SLCommand {
 
         return new CommandAPICommand("match")
                 .withAliases("slm")
-                .withPermission(SLPermissions.COMMANDS_MATCH)
+                .withPermission(SLPermissions.COMMANDS_MATCH.get())
                 .withSubcommands(list, info, join, leave, finish, start, remove, map);
     }
 

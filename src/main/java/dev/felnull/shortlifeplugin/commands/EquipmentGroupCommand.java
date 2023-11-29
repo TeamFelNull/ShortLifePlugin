@@ -26,39 +26,45 @@ import java.util.Objects;
  */
 public class EquipmentGroupCommand implements SLCommand {
 
+    /**
+     * コマンド名
+     */
+    private static final String NAME = "equipmentgroup";
+    
+
     @Override
     public CommandAPICommand create() {
         CommandAPICommand add = new CommandAPICommand("add")
                 .withArguments(new StringArgument("id"))
                 .withArguments(new TextArgument("name"))
-                .executes(this::equipmentGroupAdd);
+                .executes(EquipmentGroupCommand::equipmentGroupAdd);
 
         CommandAPICommand modifyId = new CommandAPICommand("id")
-                .withArguments(equipmentGroupArgument("equipment group"))
+                .withArguments(equipmentGroupArgument())
                 .withArguments(new StringArgument("new id"))
-                .executes(this::equipmentGroupModifyId);
+                .executes(EquipmentGroupCommand::equipmentGroupModifyId);
 
         CommandAPICommand modifyName = new CommandAPICommand("name")
-                .withArguments(equipmentGroupArgument("equipment group"))
+                .withArguments(equipmentGroupArgument())
                 .withArguments(new TextArgument("new name"))
-                .executes(this::equipmentGroupModifyName);
+                .executes(EquipmentGroupCommand::equipmentGroupModifyName);
 
         CommandAPICommand modifyItem = new CommandAPICommand("item")
-                .withArguments(equipmentGroupArgument("equipment group"))
-                .executes(this::equipmentGroupModifyItem);
+                .withArguments(equipmentGroupArgument())
+                .executes(EquipmentGroupCommand::equipmentGroupModifyItem);
 
         CommandAPICommand modifyRestriction = new CommandAPICommand("restriction")
-                .withArguments(equipmentGroupArgument("equipment group"))
+                .withArguments(equipmentGroupArgument())
                 .withArguments(new IntegerArgument("new max hotbar exists count", -1, 9))
-                .executes(this::equipmentGroupModifyRestriction);
+                .executes(EquipmentGroupCommand::equipmentGroupModifyRestriction);
 
         CommandAPICommand modify = new CommandAPICommand("modify")
                 .withSubcommands(modifyId, modifyName, modifyItem, modifyRestriction);
 
 
         CommandAPICommand remove = new CommandAPICommand("remove")
-                .withArguments(equipmentGroupArgument("equipment group"))
-                .executes(this::equipmentGroupRemove);
+                .withArguments(equipmentGroupArgument())
+                .executes(EquipmentGroupCommand::equipmentGroupRemove);
 
 
         CommandAPICommand list = new CommandAPICommand("list")
@@ -66,11 +72,11 @@ public class EquipmentGroupCommand implements SLCommand {
 
 
         CommandAPICommand info = new CommandAPICommand("info")
-                .withArguments(equipmentGroupArgument("equipment group"))
-                .executes(this::equipmentGroupInfo);
+                .withArguments(equipmentGroupArgument())
+                .executes(EquipmentGroupCommand::equipmentGroupInfo);
 
 
-        return new CommandAPICommand("equipmentgroup")
+        return new CommandAPICommand(NAME)
                 .withAliases("sleg")
                 .withPermission(SLPermissions.COMMANDS_EQUIPMENT_GROUP.get())
                 .withSubcommands(add, modify, remove, list, info);
@@ -78,18 +84,18 @@ public class EquipmentGroupCommand implements SLCommand {
 
     @Override
     public void unregister() {
-        CommandAPI.unregister("equipmentgroup");
+        CommandAPI.unregister(NAME);
     }
 
-    private Argument<EquipmentGroup> equipmentGroupArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
+    private static Argument<EquipmentGroup> equipmentGroupArgument() {
+        return new CustomArgument<>(new StringArgument("equipment group"), info -> {
             EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
             return manager.getGroup(info.input()).orElseThrow(() -> CustomArgument.CustomArgumentException
                     .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown equipment group: ").appendArgInput()));
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> EquipmentGroupManager.getInstance().getAllGroup().keySet().toArray(String[]::new)));
     }
 
-    private void equipmentGroupAdd(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupAdd(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         String id = (String) Objects.requireNonNull(args.get("id"));
         String name = (String) Objects.requireNonNull(args.get("name"));
@@ -103,7 +109,7 @@ public class EquipmentGroupCommand implements SLCommand {
         }
     }
 
-    private void equipmentGroupModifyId(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupModifyId(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
         String newId = (String) Objects.requireNonNull(args.get("new id"));
@@ -120,7 +126,7 @@ public class EquipmentGroupCommand implements SLCommand {
         }
     }
 
-    private void equipmentGroupModifyName(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupModifyName(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
         String newName = (String) Objects.requireNonNull(args.get("new name"));
@@ -135,7 +141,7 @@ public class EquipmentGroupCommand implements SLCommand {
         }
     }
 
-    private void equipmentGroupModifyItem(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupModifyItem(CommandSender sender, CommandArguments args) {
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
 
         if (sender instanceof Player player) {
@@ -145,7 +151,7 @@ public class EquipmentGroupCommand implements SLCommand {
         }
     }
 
-    private void equipmentGroupModifyRestriction(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupModifyRestriction(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
         int newMaxHotbarExistsCount = (Integer) Objects.requireNonNull(args.get("new max hotbar exists count"));
@@ -157,7 +163,7 @@ public class EquipmentGroupCommand implements SLCommand {
         sender.sendRichMessage(String.format("装備グループ(%s)の装備制限を変更しました", equipmentGroup.id()));
     }
 
-    private void equipmentGroupRemove(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupRemove(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
 
@@ -165,7 +171,7 @@ public class EquipmentGroupCommand implements SLCommand {
         sender.sendRichMessage(String.format("指定された装備グループ(%s)を削除しました", equipmentGroup.id()));
     }
 
-    private void equipmentGroupList(CommandSender sender) {
+    private static void equipmentGroupList(CommandSender sender) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         Map<String, EquipmentGroup> groups = manager.getAllGroup();
 
@@ -180,7 +186,7 @@ public class EquipmentGroupCommand implements SLCommand {
         }
     }
 
-    private void equipmentGroupInfo(CommandSender sender, CommandArguments args) {
+    private static void equipmentGroupInfo(CommandSender sender, CommandArguments args) {
         EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
 
         sender.sendRichMessage(String.format("%sの装備グループ情報:", equipmentGroup.id()));

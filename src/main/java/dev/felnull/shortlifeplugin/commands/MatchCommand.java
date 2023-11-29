@@ -27,6 +27,11 @@ import java.util.Objects;
  */
 public class MatchCommand implements SLCommand {
 
+    /**
+     * コマンド名
+     */
+    private static final String NAME = "match";
+    
     @Override
     public CommandAPICommand create() {
         // https://commandapi.jorel.dev/9.0.3/commandregistration.html <-参考
@@ -34,39 +39,39 @@ public class MatchCommand implements SLCommand {
                 .executes((CommandExecutor) (sender, args) -> matchList(sender));
 
         CommandAPICommand info = new CommandAPICommand("info")
-                .withArguments(matchArgument("match"))
-                .executes(this::matchInfo);
+                .withArguments(matchArgument())
+                .executes(MatchCommand::matchInfo);
 
         CommandAPICommand join = new CommandAPICommand("join")
-                .withArguments(matchArgument("match"))
+                .withArguments(matchArgument())
                 .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-                .executes(this::matchJoin);
+                .executes(MatchCommand::matchJoin);
 
         CommandAPICommand leave = new CommandAPICommand("leave")
-                .withArguments(matchArgument("match"))
+                .withArguments(matchArgument())
                 .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-                .executes(this::matchLeave);
+                .executes(MatchCommand::matchLeave);
 
         CommandAPICommand start = new CommandAPICommand("start")
-                .withArguments(matchArgument("match"))
-                .executes(this::matchStart);
+                .withArguments(matchArgument())
+                .executes(MatchCommand::matchStart);
 
         CommandAPICommand finish = new CommandAPICommand("finish")
-                .withArguments(matchArgument("match"))
-                .executes(this::matchFinish);
+                .withArguments(matchArgument())
+                .executes(MatchCommand::matchFinish);
 
         CommandAPICommand remove = new CommandAPICommand("remove")
-                .withArguments(matchArgument("match"))
-                .executes(this::matchRemove);
+                .withArguments(matchArgument())
+                .executes(MatchCommand::matchRemove);
 
         CommandAPICommand map = new CommandAPICommand("map")
                 .withSubcommands(new CommandAPICommand("list")
                         .executes((CommandExecutor) (sender, args) -> mapList(sender))
                 .withSubcommands(new CommandAPICommand("info")
-                        .withArguments(mapArgument("map"))
-                        .executes(this::mapInfo)));
+                        .withArguments(mapArgument())
+                        .executes(MatchCommand::mapInfo)));
 
-        return new CommandAPICommand("match")
+        return new CommandAPICommand(NAME)
                 .withAliases("slm")
                 .withPermission(SLPermissions.COMMANDS_MATCH.get())
                 .withSubcommands(list, info, join, leave, finish, start, remove, map);
@@ -74,19 +79,19 @@ public class MatchCommand implements SLCommand {
 
     @Override
     public void unregister() {
-        CommandAPI.unregister("match");
+        CommandAPI.unregister(NAME);
     }
 
-    private Argument<Match> matchArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), 
+    private Argument<Match> matchArgument() {
+        return new CustomArgument<>(new StringArgument("match"), 
                 info -> MatchManager.getInstance().getMatch(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException
                                 .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合です: ").appendArgInput())))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getAllMatch().keySet().toArray(String[]::new)));
     }
 
-    private Argument<MatchMap> mapArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), 
+    private Argument<MatchMap> mapArgument() {
+        return new CustomArgument<>(new StringArgument("map"), 
                 info -> MatchManager.getInstance().getMapLoader().getMap(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException
                 .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput())))
@@ -94,7 +99,7 @@ public class MatchCommand implements SLCommand {
     }
 
 
-    private void matchList(CommandSender sender) {
+    private static void matchList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         Map<String, Match> matches = matchManager.getAllMatch();
 
@@ -110,7 +115,7 @@ public class MatchCommand implements SLCommand {
         }
     }
 
-    private void matchInfo(CommandSender sender, CommandArguments args) {
+    private static void matchInfo(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
         sender.sendRichMessage(String.format("%sの試合情報:", match.getId()));
@@ -119,9 +124,9 @@ public class MatchCommand implements SLCommand {
         list.forEach(sender::sendMessage);
     }
 
-    private void matchJoin(CommandSender sender, CommandArguments args) {
+    private static void matchJoin(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
-        getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
+        SLCommand.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
             if (players.size() == 1) {
                 Player player = players.get(0);
 
@@ -175,10 +180,10 @@ public class MatchCommand implements SLCommand {
 
     }
 
-    private void matchLeave(CommandSender sender, CommandArguments args) {
+    private static void matchLeave(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
-        getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
+        SLCommand.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
             if (players.size() == 1) {
                 Player player = players.get(0);
 
@@ -211,7 +216,7 @@ public class MatchCommand implements SLCommand {
         });
     }
 
-    private void matchStart(CommandSender sender, CommandArguments args) {
+    private static void matchStart(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
         if (match.getStatus() != Match.Status.NONE) {
@@ -226,7 +231,7 @@ public class MatchCommand implements SLCommand {
 
     }
 
-    private void matchFinish(CommandSender sender, CommandArguments args) {
+    private static void matchFinish(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
         if (match.getStatus() != Match.Status.STARTED) {
@@ -240,13 +245,13 @@ public class MatchCommand implements SLCommand {
         }
     }
 
-    private void matchRemove(CommandSender sender, CommandArguments args) {
+    private static void matchRemove(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
         match.destroy();
         sender.sendRichMessage(String.format("%sを削除します", match.getId()));
     }
 
-    private void mapList(CommandSender sender) {
+    private static void mapList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         MatchMapLoader mapLoader = matchManager.getMapLoader();
         Map<String, MatchMap> maps = mapLoader.getAllMap();
@@ -261,7 +266,7 @@ public class MatchCommand implements SLCommand {
         }
     }
 
-    private void mapInfo(CommandSender sender, CommandArguments args) {
+    private static void mapInfo(CommandSender sender, CommandArguments args) {
         MatchMap map = (MatchMap) Objects.requireNonNull(args.get("map"));
         String availableMatchModesText = "[" + String.join(",", map.availableMatchModes().stream()
                 .map(MatchMode::id)

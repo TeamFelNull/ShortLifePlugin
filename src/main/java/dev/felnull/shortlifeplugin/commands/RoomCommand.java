@@ -34,6 +34,11 @@ import java.util.function.Supplier;
 public class RoomCommand implements SLCommand {
 
     /**
+     * コマンド名
+     */
+    private static final String NAME = "room";
+
+    /**
      * 試合中、未試合中関係なく全ての部屋IDと名前
      */
     private static final Supplier<Map<String, String>> ALL_ID_NAME = Suppliers.memoize(() -> {
@@ -55,13 +60,13 @@ public class RoomCommand implements SLCommand {
     @Override
     public CommandAPICommand create() {
         CommandAPICommand join = new CommandAPICommand("join")
-                .withArguments(roomIdArgument("room id"))
-                .executes(this::join);
+                .withArguments(roomIdArgument())
+                .executes(RoomCommand::join);
 
         CommandAPICommand leave = new CommandAPICommand("leave")
                 .executes((CommandExecutor) (sender, args) -> leave(sender));
 
-        return new CommandAPICommand("room")
+        return new CommandAPICommand(NAME)
                 .withAliases("slr")
                 .withPermission(SLPermissions.COMMANDS_ROOM.get())
                 .withSubcommands(join, leave);
@@ -69,11 +74,11 @@ public class RoomCommand implements SLCommand {
 
     @Override
     public void unregister() {
-        CommandAPI.unregister("room");
+        CommandAPI.unregister(NAME);
     }
 
-    private Argument<String> roomIdArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
+    private Argument<String> roomIdArgument() {
+        return new CustomArgument<>(new StringArgument("room id"), info -> {
             List<String> roomIds = roomIds();
             String roomId = info.input();
 
@@ -94,7 +99,7 @@ public class RoomCommand implements SLCommand {
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> roomIds().toArray(String[]::new)));
     }
 
-    private List<String> roomIds() {
+    private static List<String> roomIds() {
         MatchManager matchManager = MatchManager.getInstance();
         ImmutableList.Builder<String> ids = new ImmutableList.Builder<>();
 
@@ -117,7 +122,7 @@ public class RoomCommand implements SLCommand {
         return ids.build();
     }
 
-    private void join(CommandSender sender, CommandArguments args) {
+    private static void join(CommandSender sender, CommandArguments args) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
             return;
@@ -141,7 +146,7 @@ public class RoomCommand implements SLCommand {
         );
     }
 
-    private void leave(CommandSender sender) {
+    private static void leave(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
             return;

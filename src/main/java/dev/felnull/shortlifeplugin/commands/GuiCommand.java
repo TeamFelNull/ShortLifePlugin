@@ -18,31 +18,36 @@ import java.util.Objects;
  */
 public class GuiCommand implements SLCommand {
 
+    /**
+     * コマンド名
+     */
+    private static final String NAME = "gui";
+    
     @Override
     public CommandAPICommand create() {
-        return new CommandAPICommand("gui")
+        return new CommandAPICommand(NAME)
                 .withAliases("slg")
                 .withPermission(SLPermissions.COMMANDS_GUI.get())
                 .withSubcommands(new CommandAPICommand("open")
-                        .withArguments(guiArgument("gui"))
+                        .withArguments(guiArgument())
                         .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-                        .executes(this::guiOpen));
+                        .executes(GuiCommand::guiOpen));
     }
 
     @Override
     public void unregister() {
-        CommandAPI.unregister("gui");
+        CommandAPI.unregister(NAME);
     }
 
-    private Argument<SLGuis.WindowProvider> guiArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), 
+    private Argument<SLGuis.WindowProvider> guiArgument() {
+        return new CustomArgument<>(new StringArgument("gui"), 
                 info -> SLGuis.getWindowProvider(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput())))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> SLGuis.getAllGuiIds().toArray(String[]::new)));
     }
 
-    private void guiOpen(CommandSender sender, CommandArguments args) {
-        getSenderOrSelectedPlayers(sender, args).ifPresent(players -> players.forEach(player -> {
+    private static void guiOpen(CommandSender sender, CommandArguments args) {
+        SLCommand.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> players.forEach(player -> {
             Window window = ((SLGuis.WindowProvider) Objects.requireNonNull(args.get("gui"))).provide(player);
             window.open();
         }));

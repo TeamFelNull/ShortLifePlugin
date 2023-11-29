@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.commands;
 
 import dev.felnull.shortlifeplugin.SLPermissions;
+import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 
 import static dev.felnull.shortlifeplugin.commands.RewardSubCommands.values;
@@ -31,6 +32,6 @@ public class RewardCommand implements SLCommand {
 
     @Override
     public void unregister() {
-
+        CommandAPI.unregister(NAME);
     }
 }

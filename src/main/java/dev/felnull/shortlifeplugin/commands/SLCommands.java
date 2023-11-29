@@ -16,6 +16,7 @@ public final class SLCommands {
     private static final List<SLCommand> COMMAND_PROVIDERS = new LinkedList<>();
 
     private SLCommands() {
+        throw new AssertionError();
     }
 
     /**

@@ -35,7 +35,7 @@ public interface SLCommand {
      * @param args   CommandArguments
      * @return オプショナルなプレイヤーリスト
      */
-    default Optional<List<Player>> getSenderOrSelectedPlayers(CommandSender sender, CommandArguments args) {
+    static Optional<List<Player>> getSenderOrSelectedPlayers(CommandSender sender, CommandArguments args) {
         @SuppressWarnings("unchecked")
         Optional<List<Player>> players = args.getOptional("player")
                 .map(it -> (List<Player>) it);

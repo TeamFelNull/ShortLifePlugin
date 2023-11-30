@@ -19,19 +19,12 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.window.Window;
 
-import java.util.Random;
-
 /**
  * 試合モード選択GUIアイテム
  *
  * @author MORIMORI0317
  */
 public class MatchModeSelectItem extends AbstractItem {
-
-    /**
-     * ランダム
-     */
-    private static final Random RANDOM = new Random();
 
     /**
      * 試合を作成して参加する際のメッセージ
@@ -119,11 +112,7 @@ public class MatchModeSelectItem extends AbstractItem {
         sendAaudience.sendMessage(notifierMessage);
 
         String clickHereText;
-        if (RANDOM.nextInt(810) == 0) {
-            clickHereText = "[こ↑こ↓をクリック]";
-        } else {
-            clickHereText = "[ここをクリック]";
-        }
+        clickHereText = "[ここをクリック]";
 
         Component clickHere = Component.text(clickHereText)
                 .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/room join " + match.getId())).build());

@@ -6,7 +6,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
-import dev.felnull.shortlifeplugin.commands.RewardCommand;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
@@ -71,12 +70,6 @@ public abstract class Match {
      * 試合終了後にテレポートするまでの時間
      */
     protected static final long FINISH_WAIT_FOR_TELEPORT = 1000 * 10;
-
-    /**
-     * 報酬コマンド実行用インスタントリプレイ
-     */
-    @SuppressWarnings("unused")
-    protected static final RewardCommand REWARD_COMMAND = new RewardCommand();
 
     /**
      * Gsonインスタンス

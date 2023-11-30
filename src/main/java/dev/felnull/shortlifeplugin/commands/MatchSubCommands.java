@@ -148,7 +148,7 @@ public enum MatchSubCommands {
 
     private static void matchJoin(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
-        SLCommand.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
+        SLCommands.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
             if (players.size() == 1) {
                 Player player = players.get(0);
 
@@ -205,7 +205,7 @@ public enum MatchSubCommands {
     private static void matchLeave(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
-        SLCommand.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
+        SLCommands.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
             if (players.size() == 1) {
                 Player player = players.get(0);
 

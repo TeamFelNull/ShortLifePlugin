@@ -112,7 +112,7 @@ public final class ShortLifePlugin extends JavaPlugin {
     public void onDisable() {
 
         // リロード後に補完が動かなくなるため、必ずコマンドを登録解除してください。
-        SLCommands.unregister();
+        SLCommands.unregisterAll();
 
         if (this.matchManager != null) {
             this.matchManager.dispose();

@@ -3,20 +3,16 @@ package dev.felnull.shortlifeplugin.commands;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.gui.MatchSelectorGui;
 import dev.felnull.shortlifeplugin.gui.item.MatchRoomSelectItem;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchType;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.CustomArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
-import dev.jorel.commandapi.executors.CommandExecutor;
 import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
@@ -33,13 +29,8 @@ import java.util.function.Supplier;
  *
  * @author MORIMORI0317
  */
-public class RoomCommand implements SLCommand {
-
-    /**
-     * コマンド名
-     */
-    private static final String NAME = "room";
-
+public class RoomCommand {
+    
     /**
      * 試合中、未試合中関係なく全ての部屋IDと名前
      */
@@ -55,6 +46,10 @@ public class RoomCommand implements SLCommand {
         return idAndNames.build();
     });
 
+    private RoomCommand() {
+        throw new AssertionError();
+    }
+
     /**
      * 全ての特定のタイプの試合の部屋を取得
      *
@@ -68,27 +63,12 @@ public class RoomCommand implements SLCommand {
         }
     }
 
-    @Override
-    public CommandAPICommand create() {
-        CommandAPICommand join = new CommandAPICommand("join")
-                .withArguments(roomIdArgument())
-                .executes(RoomCommand::join);
-
-        CommandAPICommand leave = new CommandAPICommand("leave")
-                .executes((CommandExecutor) (sender, args) -> leave(sender));
-
-        return new CommandAPICommand(NAME)
-                .withAliases("slr")
-                .withPermission(SLPermissions.COMMANDS_ROOM.get())
-                .withSubcommands(join, leave);
-    }
-
-    @Override
-    public void unregister() {
-        CommandAPI.unregister(NAME);
-    }
-
-    private static Argument<String> roomIdArgument() {
+    /**
+     * 部屋ID引数
+     *
+     * @return 部屋ID引数
+     */
+    public static Argument<String> roomIdArgument() {
         return new CustomArgument<>(new StringArgument("room id"), info -> {
             List<String> roomIds = getExistingRoomIds();
             String roomId = info.input();
@@ -149,7 +129,7 @@ public class RoomCommand implements SLCommand {
      * @param sender コマンド送信者
      * @param args 引数
      */
-    private static void join(CommandSender sender, CommandArguments args) {
+    public static void join(CommandSender sender, CommandArguments args) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
             return;
@@ -169,7 +149,7 @@ public class RoomCommand implements SLCommand {
      * @param matchManager マッチマネージャー
      * @param matchToJoin 参加させたい試合
      */
-    private static void joinMatch(Player player, MatchManager matchManager, @NotNull Match matchToJoin) {
+    public static void joinMatch(Player player, MatchManager matchManager, @NotNull Match matchToJoin) {
         matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
             if (matchToJoin == joinedMatch) {
                 player.sendMessage(Component.text("既に参加しています"));
@@ -188,7 +168,7 @@ public class RoomCommand implements SLCommand {
      *
      * @param sender コマンド送信者
      */
-    private static void leave(CommandSender sender) {
+    public static void leave(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
             return;

@@ -31,6 +31,17 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
         componentList.add(Component.text("ID: ").append(Component.text(this.id)));
         componentList.add(Component.text("名前: ").append(Component.text(this.name)));
 
+        addItemListDesc(componentList);
+
+        addRestrictionDesc(componentList);
+    }
+
+    /**
+     * リストにアイテムリストの追加を行う
+     *
+     * @param componentList 情報説明コンポーネントのリスト
+     */
+    private void addItemListDesc(@NotNull List<Component> componentList) {
         Component[] itemComponents = this.itemStacks.stream()
                 .map(ItemStack::displayName)
                 .toArray(Component[]::new);
@@ -41,7 +52,14 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
         Component itemsComponent = Component.join(builder, itemComponents);
 
         componentList.add(Component.text("アイテム一覧: ").append(itemsComponent));
+    }
 
+    /**
+     * リストに装備制限説明の追加を行う
+     *
+     * @param componentList 情報説明コンポーネントのリスト
+     */
+    private void addRestrictionDesc(@NotNull List<Component> componentList) {
         componentList.add(Component.text(" - 装備制限 - "));
 
         Component maxHotbarExistsCountText;
@@ -53,7 +71,6 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
         }
         componentList.add(Component.text("ホットバーに存在できる最大数: ").append(maxHotbarExistsCountText));
     }
-
 
     /**
      * 指定したアイテムスタックが所属しているかどうか
@@ -74,6 +91,13 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
     }
 
 
+    /**
+     * 指定したアイテムスタック2つが同じ種類かどうか
+     *
+     * @param stack1 アイテムスタック1
+     * @param stack2 アイテムスタック2
+     * @return 同じ種類かどうか
+     */
     private boolean isMatch(@NotNull ItemStack stack1, @NotNull ItemStack stack2) {
 
         // 完全に同じかどうか比較

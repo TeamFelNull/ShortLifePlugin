@@ -6,7 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -151,42 +150,71 @@ public class BloodExpression {
         };
     }
 
+    /**
+     * 血のパーティクルビルダーを取得する
+     *
+     * @param livingEntity 出血対象
+     * @param damageBox ダメージ箇所の範囲
+     * @param critical クリティカルダメージかどうか
+     * @return パーティクルビルダー
+     */
     private static ParticleBuilder createBloodParticleBuilder(@NotNull LivingEntity livingEntity, @NotNull BoundingBox damageBox, boolean critical) {
-        ParticleBuilder particleBuilder;
-
-        if (livingEntity instanceof Enderman || livingEntity instanceof EnderDragon || livingEntity instanceof Endermite || livingEntity instanceof Shulker) {
-            particleBuilder = new ParticleBuilder(Particle.PORTAL);
-        } else if (livingEntity instanceof MagmaCube || livingEntity instanceof Blaze) {
-            particleBuilder = new ParticleBuilder(Particle.FLAME);
-        } else if (livingEntity instanceof Creeper) {
-            particleBuilder = new ParticleBuilder(Particle.ITEM_CRACK);
-            particleBuilder.data(new ItemStack(Material.GUNPOWDER));
-        } else {
-            particleBuilder = new ParticleBuilder(critical ? Particle.BLOCK_DUST : Particle.BLOCK_CRACK);
-
-            if (livingEntity instanceof Allay) {
-                particleBuilder.data(Material.AMETHYST_BLOCK.createBlockData());
-            } else if (livingEntity instanceof Vex) {
-                particleBuilder.data(Material.SOUL_FIRE.createBlockData());
-            } else if (livingEntity instanceof Warden) {
-                particleBuilder.data(Material.SCULK.createBlockData());
-            } else if (livingEntity instanceof WitherSkeleton || livingEntity instanceof Wither) {
-                particleBuilder.data(Material.OBSIDIAN.createBlockData());
-            } else if (livingEntity instanceof Skeleton || livingEntity instanceof SkeletonHorse) {
-                particleBuilder.data(Material.BONE_BLOCK.createBlockData());
-            } else if (livingEntity instanceof Slime) {
-                particleBuilder.data(Material.SLIME_BLOCK.createBlockData());
-            } else if (livingEntity instanceof IronGolem) {
-                particleBuilder.data(Material.IRON_BLOCK.createBlockData());
-            } else {
-                particleBuilder.data(Material.REDSTONE_BLOCK.createBlockData());
-            }
-        }
+        ParticleBuilder particleBuilder = getBaseParticleBuilderFromBloodParticleTypeEnum(livingEntity)
+                .orElseGet(() -> getBaseParticleBuilderFromBloodMaterialType(livingEntity, critical));
 
         particleBuilder.location(livingEntity.getWorld(), damageBox.getCenterX(), damageBox.getCenterY(), damageBox.getCenterZ());
         particleBuilder.offset(damageBox.getWidthX() / 4d, damageBox.getHeight() / 4d, damageBox.getWidthZ() / 4d);
 
         return particleBuilder;
+    }
+
+    /**
+     * パーティクルenumから出血のパーティクルビルダーの素を取得する
+     *
+     * @param livingEntity 出血対象
+     * @return パーティクルビルダー
+     */
+    private static Optional<ParticleBuilder> getBaseParticleBuilderFromBloodParticleTypeEnum(@NotNull LivingEntity livingEntity) {
+        Optional<ParticleBuilder> particleBuilder = Optional.empty();
+
+        for (EntityBloodParticleType type : EntityBloodParticleType.values()) {
+            for (Class<? extends LivingEntity> aClass : type.getEntityList()) {
+                if (aClass.isInstance(livingEntity)) {
+                    particleBuilder = Optional.of(type.getParticle());
+                    break;
+                }
+            }
+        }
+        return particleBuilder;
+    }
+
+    /**
+     * マテリアルenumから出血のパーティクルビルダーの素を取得する
+     *
+     * @param livingEntity 出血対象
+     * @param critical クリティカルかどうか
+     * @return パーティクルビルダー
+     */
+    @NotNull
+    private static ParticleBuilder getBaseParticleBuilderFromBloodMaterialType(@NotNull LivingEntity livingEntity, boolean critical) {
+        ParticleBuilder blockParticleBuilder = new ParticleBuilder(critical ? Particle.BLOCK_DUST : Particle.BLOCK_CRACK);
+
+        boolean isAssigned = false;
+        for (EntityBloodMaterialType type : EntityBloodMaterialType.values()) {
+            for (Class<? extends LivingEntity> aClass : type.getEntityList()) {
+                if (aClass.isInstance(livingEntity)) {
+                    blockParticleBuilder.data(type.getMaterial().createBlockData());
+                    isAssigned = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isAssigned) {
+            blockParticleBuilder.data(Material.REDSTONE_BLOCK.createBlockData());
+        }
+
+        return blockParticleBuilder;
     }
 
     /**

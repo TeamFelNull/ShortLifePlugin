@@ -75,73 +75,132 @@ public class MatchRoomSelectItem extends AbstractItem {
     @Override
     public ItemProvider getItemProvider() {
         MatchManager matchManager = MatchManager.getInstance();
-        
-        ItemBuilder builderReady = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).map(match -> {
-            // 試合が存在する場合
-            int playerCount = match.getAllJoinPlayers().size();
-            int playerMaxCount = match.getMatchMode().maxPlayerCount();
-            Material material;
+
+        return matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber))
+                .map(this::getItemBuilderFromMatch)
+                .orElseGet(this::getItemBuilderWhenMatchNotExists);
+    }
+
+    /**
+     * 試合からItemBuilderを取得する
+     *
+     * @param match 試合
+     * @return ItemBuilder アイテムビルダー
+     */
+    @NotNull
+    private ItemBuilder getItemBuilderFromMatch(Match match) {
+        int playerCount = match.getAllJoinPlayers().size();
+        int playerMaxCount = match.getMatchMode().maxPlayerCount();
+        Material material;
 
 
-            if (playerCount >= playerMaxCount) {
-                material = (matchType == MatchType.PVP) ? Material.RED_WOOL : Material.RED_CONCRETE;
-            } else {
-                material = (matchType == MatchType.PVP) ? Material.LIME_WOOL : Material.LIME_CONCRETE;
-            }
+        if (playerCount >= playerMaxCount) {
+            material = (matchType == MatchType.PVP) ? Material.RED_WOOL : Material.RED_CONCRETE;
+        } else {
+            material = (matchType == MatchType.PVP) ? Material.LIME_WOOL : Material.LIME_CONCRETE;
+        }
 
-            ItemBuilder builder = new ItemBuilder(material);
+        ItemBuilder builder = new ItemBuilder(material);
 
-            if (playerCount >= playerMaxCount) {
-                builder.addLoreLines(new AdventureComponentWrapper(Component.text("満員").color(NamedTextColor.RED)));
-            } else {
-                builder.addLoreLines(new AdventureComponentWrapper(Component.text("参加可能").color(NamedTextColor.GREEN)));
-            }
+        if (playerCount >= playerMaxCount) {
+            builder.addLoreLines(new AdventureComponentWrapper(Component.text("満員").color(NamedTextColor.RED)));
+        } else {
+            builder.addLoreLines(new AdventureComponentWrapper(Component.text("参加可能").color(NamedTextColor.GREEN)));
+        }
 
-            // 試合の情報を追加
-            List<Component> desc = new LinkedList<>();
-            match.appendInfoDesc(desc);
-            desc.stream()
-                    .map(AdventureComponentWrapper::new)
-                    .forEach(builder::addLoreLines);
-            
-            return builder;
-        }).orElseGet(() -> {
-            // 試合が存在しない場合
-            ItemBuilder builder = new ItemBuilder((matchType == MatchType.PVP) ? Material.WHITE_WOOL : Material.WHITE_CONCRETE);
-            builder.addLoreLines(new AdventureComponentWrapper(Component.text("試合を作成").color(NamedTextColor.GRAY)));
-            
-            return builder;
-        });
+        addMatchInfo(match, builder);
+        addRoomCommonInfo(builder);
 
-        builderReady.setDisplayName(getRoomName(this.matchType, roomNumber));
-        builderReady.setAmount(roomNumber + 1);
+        return builder;
+    }
 
-        return builderReady;
+    /**
+     * 試合が存在しない場合のItemBuilderを取得する
+     *
+     * @return ItemBuilder
+     */
+    @NotNull
+    private ItemBuilder getItemBuilderWhenMatchNotExists() {
+        ItemBuilder builder = new ItemBuilder((matchType == MatchType.PVP) ? Material.WHITE_WOOL : Material.WHITE_CONCRETE);
+        builder.addLoreLines(new AdventureComponentWrapper(Component.text("試合を作成").color(NamedTextColor.GRAY)));
+
+        addRoomCommonInfo(builder);
+
+        return builder;
+    }
+
+    /**
+     * 試合の情報をアイテムに追加
+     *
+     * @param match   試合
+     * @param builder ItemBuilder
+     */
+    private static void addMatchInfo(Match match, ItemBuilder builder) {
+        List<Component> desc = new LinkedList<>();
+        match.appendInfoDesc(desc);
+        desc.stream()
+                .map(AdventureComponentWrapper::new)
+                .forEach(builder::addLoreLines);
+    }
+
+    /**
+     * 部屋の共通する情報をItemBuilderに追加する
+     *
+     * @param builder ItemBuilder
+     */
+    private void addRoomCommonInfo(ItemBuilder builder) {
+        builder.setDisplayName(getRoomName(this.matchType, roomNumber));
+        builder.setAmount(roomNumber + 1);
     }
 
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
         Optional<Match> clickedMatch = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber));
-        
-        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
-            // 別の試合に参加している場合の処理
-            clickedMatch.stream().filter(match -> match == joinedMatch).findFirst().ifPresentOrElse(
-                    match -> player.sendMessage(ALREADY_JOIN_MATCH_MESSAGE), () -> player.sendMessage(ALREADY_JOIN_OTHER_MATCH_MESSAGE));
-        }, () -> clickedMatch.ifPresentOrElse(match -> {
-            // 試合に参加
-            if (match.join(player, false)) {
-                player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
-            } else {
-                player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
-            }
 
-            getWindows().forEach(Window::close);
-        }, () -> {
-            // Window遷移
-            getWindows().forEach(Window::close);
-            MatchSelectorGui.matchCreateWindow(player, matchType, MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).open();
-        }));
+        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            onAlreadyJoined(player, clickedMatch, joinedMatch);
+        }, () -> clickedMatch.ifPresentOrElse(
+                match -> tryJoinMatch(player, match),
+                () -> windowTransition(player)));
+    }
+
+    /**
+     * 別の試合に参加している場合の処理
+     *
+     * @param player       プレイヤー
+     * @param clickedMatch クリックされた試合
+     * @param joinedMatch  参加している試合
+     */
+    private static void onAlreadyJoined(@NotNull Player player, Optional<Match> clickedMatch, Match joinedMatch) {
+        clickedMatch.stream().filter(match -> match == joinedMatch).findFirst().ifPresentOrElse(
+                match -> player.sendMessage(ALREADY_JOIN_MATCH_MESSAGE), () -> player.sendMessage(ALREADY_JOIN_OTHER_MATCH_MESSAGE));
+    }
+
+    /**
+     * 試合に参加させる
+     *
+     * @param player プレイヤー
+     * @param match  試合
+     */
+    private void tryJoinMatch(@NotNull Player player, Match match) {
+        if (match.join(player, false)) {
+            player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
+        } else {
+            player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
+        }
+
+        getWindows().forEach(Window::close);
+    }
+
+    /**
+     * ウィンドウ遷移
+     *
+     * @param player プレイヤー
+     */
+    private void windowTransition(@NotNull Player player) {
+        getWindows().forEach(Window::close);
+        MatchSelectorGui.matchCreateWindow(player, matchType, MatchSelectorGui.getRoomMatchId(matchType, roomNumber)).open();
     }
 
     /**

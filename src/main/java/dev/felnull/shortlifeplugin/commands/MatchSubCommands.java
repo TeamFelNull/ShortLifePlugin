@@ -44,7 +44,7 @@ public enum MatchSubCommands {
     JOIN(new CommandAPICommand("join")
             .withArguments(matchArgument())
             .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-            .executes(MatchSubCommands::matchJoin)),
+            .executes(MatchSubCommands::onMatchJoinCommand)),
 
     /**
      * 退出
@@ -52,7 +52,7 @@ public enum MatchSubCommands {
     LEAVE(new CommandAPICommand("leave")
             .withArguments(matchArgument())
             .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-            .executes(MatchSubCommands::matchLeave)),
+            .executes(MatchSubCommands::onMatchLeaveCommand)),
 
     /**
      * 開始
@@ -104,6 +104,11 @@ public enum MatchSubCommands {
         return subCommand;
     }
 
+    /**
+     * 試合の引数
+     *
+     * @return 試合引数
+     */
     private static Argument<Match> matchArgument() {
         return new CustomArgument<>(new StringArgument("match"),
                 info -> MatchManager.getInstance().getMatch(info.input())
@@ -112,6 +117,11 @@ public enum MatchSubCommands {
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getAllMatch().keySet().toArray(String[]::new)));
     }
 
+    /**
+     * マップの引数
+     *
+     * @return マップ引数
+     */
     private static Argument<MatchMap> mapArgument() {
         return new CustomArgument<>(new StringArgument("map"),
                 info -> MatchManager.getInstance().getMapLoader().getMap(info.input())
@@ -120,7 +130,11 @@ public enum MatchSubCommands {
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
     }
 
-
+    /**
+     * 試合リストをコマンド送信者に表示
+     *
+     * @param sender 送信者
+     */
     private static void matchList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
         Map<String, Match> matches = matchManager.getAllMatch();
@@ -137,6 +151,12 @@ public enum MatchSubCommands {
         }
     }
 
+    /**
+     * 試合情報を表示
+     *
+     * @param sender コマンド送信者
+     * @param args   試合引数
+     */
     private static void matchInfo(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
@@ -146,96 +166,140 @@ public enum MatchSubCommands {
         list.forEach(sender::sendMessage);
     }
 
-    private static void matchJoin(CommandSender sender, CommandArguments args) {
+    /**
+     * コマンドを元に試合に参加させる
+     *
+     * @param sender コマンド送信者
+     * @param args   試合引数
+     */
+    private static void onMatchJoinCommand(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
         SLCommands.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
             if (players.size() == 1) {
-                Player player = players.get(0);
-
-                if (match.hasParticipation(player)) {
-                    if (player == sender) {
-                        sender.sendRichMessage("既に参加済みです");
-                    } else {
-                        sender.sendRichMessage(String.format("%sは既に参加済みです", player.getName()));
-                    }
-                    return;
-                }
-
-                MatchManager.getInstance().getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
-                    if (player == sender) {
-                        sender.sendRichMessage(String.format("%sに参加済みです", joinedMatch.getId()));
-                    } else {
-                        sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), joinedMatch.getId()));
-                    }
-                }, () -> {
-                    if (match.join(player, player != sender)) {
-                        if (player == sender) {
-                            sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
-                        } else {
-                            sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
-                        }
-                    } else {
-                        if (player == sender) {
-                            sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
-                        } else {
-                            sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
-                        }
-                    }
-                });
-
+                matchJoinPlayer(sender, match, players.get(0));
             } else {
-                int joinCount = 0;
-
-                for (Player player : players) {
-                    if (match.join(player, true)) {
-                        joinCount++;
-                    }
-                }
-
-                if (joinCount != 0) {
-                    sender.sendRichMessage(String.format("%d人のプレイヤーを%sに参加させました", joinCount, match.getId()));
-                } else {
-                    sender.sendRichMessage(String.format("プレイヤーを%sに参加させられませんでした", match.getId()));
-                }
+                matchJoinPlayers(sender, match, players);
             }
         });
 
     }
 
-    private static void matchLeave(CommandSender sender, CommandArguments args) {
+    /**
+     * プレイヤー一人を試合に参加させる
+     *
+     * @param sender コマンド送信者
+     * @param match  試合
+     * @param player 参加させるプレイヤー
+     */
+    private static void matchJoinPlayer(CommandSender sender, Match match, Player player) {
+        if (match.hasParticipation(player)) {
+            if (player == sender) {
+                sender.sendRichMessage("既に参加済みです");
+            } else {
+                sender.sendRichMessage(String.format("%sは既に参加済みです", player.getName()));
+            }
+            return;
+        }
+
+        MatchManager.getInstance().getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
+            if (player == sender) {
+                sender.sendRichMessage(String.format("%sに参加済みです", joinedMatch.getId()));
+            } else {
+                sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), joinedMatch.getId()));
+            }
+        }, () -> {
+            if (match.join(player, player != sender)) {
+                if (player == sender) {
+                    sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                } else {
+                    sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                }
+            } else {
+                if (player == sender) {
+                    sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
+                } else {
+                    sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
+                }
+            }
+        });
+    }
+
+    /**
+     * プレイヤー複数人を試合に参加させる
+     *
+     * @param sender  コマンド送信者
+     * @param match   試合
+     * @param players プレイヤー達
+     */
+    private static void matchJoinPlayers(CommandSender sender, Match match, List<Player> players) {
+        int joinCount = 0;
+
+        for (Player player : players) {
+            if (match.join(player, true)) {
+                joinCount++;
+            }
+        }
+
+        if (joinCount != 0) {
+            sender.sendRichMessage(String.format("%d人のプレイヤーを%sに参加させました", joinCount, match.getId()));
+        } else {
+            sender.sendRichMessage(String.format("プレイヤーを%sに参加させられませんでした", match.getId()));
+        }
+    }
+
+    private static void onMatchLeaveCommand(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
         SLCommands.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> {
             if (players.size() == 1) {
-                Player player = players.get(0);
-
-                if (!match.hasParticipation(player)) {
-                    sender.sendRichMessage(String.format("%sは試合に参加していません", player.getName()));
-                    return;
-                }
-
-                if (match.leave(player, true)) {
-                    sender.sendRichMessage(String.format("%sを%sから退出させました", player.getName(), match.getId()));
-                } else {
-                    sender.sendRichMessage(String.format("%sを%sから退出できませんでした", player.getName(), match.getId()));
-                }
-
+                matchLeavePlayer(sender, match, players.get(0));
             } else {
-                int leaveCount = 0;
-
-                for (Player player : players) {
-                    if (match.leave(player, true)) {
-                        leaveCount++;
-                    }
-                }
-
-                if (leaveCount != 0) {
-                    sender.sendRichMessage(String.format("%d人のプレイヤーを%sから退出させました", leaveCount, match.getId()));
-                } else {
-                    sender.sendRichMessage(String.format("プレイヤーを%sから退出できませんでした", match.getId()));
-                }
+                matchLeavePlayers(sender, match, players);
             }
         });
+    }
+
+    /**
+     * プレイヤー一人を試合から退出させる
+     *
+     * @param sender 送信者
+     * @param match  試合
+     * @param player プレイヤー
+     */
+    private static void matchLeavePlayer(CommandSender sender, Match match, Player player) {
+        if (!match.hasParticipation(player)) {
+            sender.sendRichMessage(String.format("%sは試合に参加していません", player.getName()));
+            return;
+        }
+
+        if (match.leave(player, true)) {
+            sender.sendRichMessage(String.format("%sを%sから退出させました", player.getName(), match.getId()));
+        } else {
+            sender.sendRichMessage(String.format("%sを%sから退出できませんでした", player.getName(), match.getId()));
+        }
+    }
+
+    /**
+     * プレイヤー複数人を試合から退出させる
+     *
+     * @param sender  送信者
+     * @param match   試合
+     * @param players プレイヤーのリスト
+     */
+    private static void matchLeavePlayers(CommandSender sender, Match match, List<Player> players) {
+        int leaveCount = 0;
+
+        for (Player player : players) {
+            if (match.leave(player, true)) {
+                leaveCount++;
+            }
+        }
+
+        if (leaveCount != 0) {
+            sender.sendRichMessage(String.format("%d人のプレイヤーを%sから退出させました", leaveCount, match.getId()));
+        } else {
+            sender.sendRichMessage(String.format("プレイヤーを%sから退出できませんでした", match.getId()));
+        }
     }
 
     private static void matchStart(CommandSender sender, CommandArguments args) {

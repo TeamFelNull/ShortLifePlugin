@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * 装備グループ読み書き
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 class EquipmentGroupIO {
 

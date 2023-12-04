@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * 装備グループ用イベントリスナー
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class EquipmentGroupListener implements Listener {
 

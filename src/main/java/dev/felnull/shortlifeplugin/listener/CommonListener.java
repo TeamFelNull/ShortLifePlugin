@@ -39,7 +39,7 @@ import static org.bukkit.Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR;
 /**
  * 一般的なイベントリスナー
  *
- * @author MORIMORI0317, miyabi0333, nin8995
+ * @author MORIMORI0317, miyabi0333, nin8995, Quarri6343
  */
 public class CommonListener implements Listener {
 

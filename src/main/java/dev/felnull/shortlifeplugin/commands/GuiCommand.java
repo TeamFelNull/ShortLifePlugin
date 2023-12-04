@@ -14,7 +14,7 @@ import java.util.Objects;
 /**
  * GUIコマンド
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class GuiCommand {
 

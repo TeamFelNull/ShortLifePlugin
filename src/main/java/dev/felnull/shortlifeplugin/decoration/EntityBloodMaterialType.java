@@ -7,7 +7,7 @@ import org.bukkit.entity.*;
 /**
  * エンティティと出血マテリアルの対応
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 public enum EntityBloodMaterialType {
     /**

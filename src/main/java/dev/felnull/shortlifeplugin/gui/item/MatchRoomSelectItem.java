@@ -26,7 +26,7 @@ import java.util.function.Function;
 /**
  * 試合選択GUIアイテム
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchRoomSelectItem extends AbstractItem {
 

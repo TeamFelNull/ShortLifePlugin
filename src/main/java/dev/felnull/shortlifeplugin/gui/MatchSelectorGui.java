@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * 試合選択GUI
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchSelectorGui implements SLGuis.WindowProvider {
 

@@ -23,7 +23,7 @@ import xyz.xenondevs.invui.window.Window;
 /**
  * 試合モード選択GUIアイテム
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchModeSelectItem extends AbstractItem {
 

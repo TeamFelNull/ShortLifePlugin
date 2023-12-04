@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 /**
  * 部屋コマンド
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class RoomCommand {
     

@@ -16,7 +16,7 @@ import java.util.List;
  * @param name        名前
  * @param itemStacks  アイテムスタックのリスト
  * @param restriction 制限
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public record EquipmentGroup(@NotNull String id, @NotNull String name,
                              @NotNull @Unmodifiable List<ItemStack> itemStacks,

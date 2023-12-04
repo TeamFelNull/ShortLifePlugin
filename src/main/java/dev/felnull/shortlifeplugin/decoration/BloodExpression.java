@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * 血液の表現
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  * @see <a href="https://www.spigotmc.org/threads/comprehensive-particle-spawning-guide-1-13-1-19.343001/">参考</a>
  */
 public class BloodExpression {

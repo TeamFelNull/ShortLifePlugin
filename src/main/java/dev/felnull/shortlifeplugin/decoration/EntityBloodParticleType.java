@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * エンティティと出血パーティクルの対応
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 public enum EntityBloodParticleType {
     /**

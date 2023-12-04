@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * このプラグインのコマンド登録処理など
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class SLCommands {
 

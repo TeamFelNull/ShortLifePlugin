@@ -16,7 +16,7 @@ import java.util.*;
 /**
  * 試合用マップの管理クラス
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchMapHandler {
 

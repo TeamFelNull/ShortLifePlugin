@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * 装備グループサブコマンド
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 public enum EquipmentGroupSubCommands {
 

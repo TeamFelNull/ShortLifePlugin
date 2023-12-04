@@ -17,7 +17,7 @@ import java.util.*;
  * 装備グループ管理<br/>
  * このクラスはスレッドセーフではないので、サーバーTickからアクセスしてください。
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class EquipmentGroupManager {
 

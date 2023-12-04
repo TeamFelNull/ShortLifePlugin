@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * 試合サブコマンド
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 public enum MatchSubCommands {
 

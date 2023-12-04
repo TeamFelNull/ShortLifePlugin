@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * 試合用イベントリスナー
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public final class MatchListener implements Listener {
 

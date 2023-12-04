@@ -20,7 +20,7 @@ import java.util.List;
  * @param schematic           スケマティックのID
  * @param offset              スケマティック生成オフセット
  * @param availableMatchModes 使用可能な試合モード
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public record MatchMap(@NotNull String id, @NotNull String name, @NotNull String schematic,
                        @NotNull BlockVector3 offset, @NotNull @Unmodifiable List<MatchMode> availableMatchModes) {

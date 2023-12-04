@@ -20,7 +20,7 @@ import java.util.Optional;
  * @param replaceBlockId 置き換え先のブロックID
  * @param position       地点
  * @param direction      方向
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKey pointName,
                               @NotNull NamespacedKey replaceBlockId, @NotNull BlockVector3 position,

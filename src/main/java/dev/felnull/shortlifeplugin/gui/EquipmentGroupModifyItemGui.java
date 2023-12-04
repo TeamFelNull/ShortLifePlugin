@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
 /**
  * 装備グループアイテム変更のGUI
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class EquipmentGroupModifyItemGui {
 

@@ -68,6 +68,23 @@ public class EquipmentGroupModifyItemGui {
         openItemModifyGui = true;
         VirtualInventory virtualInventory = VirtualInventoryManager.getInstance().createNew(UUID.randomUUID(), MODIFY_ITEM_COLUMN * 9);
 
+        setItemStacksToInv(equipmentGroup, virtualInventory);
+
+        String[] structure = getStructure();
+
+        Gui gui = Gui.normal()
+                .setStructure(structure)
+                .build();
+
+        int size = gui.getSize();
+        for (int i = 0; i < size; i++) {
+            gui.setSlotElement(i, new SlotElement.InventorySlotElement(virtualInventory, i));
+        }
+
+        return buildWindow(player, equipmentGroup, virtualInventory, gui);
+    }
+
+    private static void setItemStacksToInv(@NotNull EquipmentGroup equipmentGroup, VirtualInventory virtualInventory) {
         for (int i = 0; i < virtualInventory.getSize(); i++) {
             virtualInventory.setMaxStackSize(i, 1);
         }
@@ -81,20 +98,17 @@ public class EquipmentGroupModifyItemGui {
             stack.setAmount(1);
             virtualInventory.setItemSilently(i, stack);
         }
+    }
 
-        String[] structure = IntStream.range(0, MODIFY_ITEM_COLUMN)
+    @NotNull
+    private static String[] getStructure() {
+        return IntStream.range(0, MODIFY_ITEM_COLUMN)
                 .mapToObj(it -> "#########")
                 .toArray(String[]::new);
+    }
 
-        Gui gui = Gui.normal()
-                .setStructure(structure)
-                .build();
-
-        int size = gui.getSize();
-        for (int i = 0; i < size; i++) {
-            gui.setSlotElement(i, new SlotElement.InventorySlotElement(virtualInventory, i));
-        }
-
+    @NotNull
+    private static Window buildWindow(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup, VirtualInventory virtualInventory, Gui gui) {
         return Window.single()
                 .setViewer(player)
                 .setTitle(String.format("%sのアイテム変更", equipmentGroup.id()))
@@ -116,14 +130,19 @@ public class EquipmentGroupModifyItemGui {
             return;
         }
 
-        List<ItemStack> stacks = Arrays.stream(virtualInventory.getItems())
-                .filter(itemStack -> itemStack != null && !itemStack.isEmpty())
-                .distinct()
-                .toList();
+        List<ItemStack> stacks = getItemStacksFromInv(virtualInventory);
 
         manager.removeGroup(equipmentGroup.id());
         EquipmentGroup newEquipmentGroup = new EquipmentGroup(equipmentGroup.id(), equipmentGroup.name(), ImmutableList.copyOf(stacks), equipmentGroup.restriction());
         manager.addGroup(newEquipmentGroup);
         player.sendRichMessage(String.format("装備グループ(%s)のアイテムを変更しました", equipmentGroup.id()));
+    }
+
+    @NotNull
+    private static List<ItemStack> getItemStacksFromInv(@NotNull VirtualInventory virtualInventory) {
+        return Arrays.stream(virtualInventory.getItems())
+                .filter(itemStack -> itemStack != null && !itemStack.isEmpty())
+                .distinct()
+                .toList();
     }
 }

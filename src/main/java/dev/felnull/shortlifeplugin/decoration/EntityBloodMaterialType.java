@@ -10,39 +10,18 @@ import org.bukkit.entity.*;
  * @author MORIMORI0317, Quarri6343
  */
 public enum EntityBloodMaterialType {
-    /**
-     * アメジスト
-     */
     AMETHYST(Material.AMETHYST_BLOCK, ImmutableList.of(Creeper.class)),
-
-    /**
-     * ソウルファイア
-     */
+    
     SOUL_FIRE(Material.SOUL_FIRE, ImmutableList.of(Vex.class)),
-
-    /**
-     * スカルク
-     */
+    
     SCULK(Material.SCULK, ImmutableList.of(Warden.class)),
-
-    /**
-     * 黒曜石
-     */
+    
     OBSIDIAN(Material.OBSIDIAN, ImmutableList.of(WitherSkeleton.class, Wither.class)),
-
-    /**
-     * 骨
-     */
+    
     BONE(Material.BONE_BLOCK, ImmutableList.of(Skeleton.class, SkeletonHorse.class)),
-
-    /**
-     * スライム
-     */
+    
     SLIME(Material.SLIME_BLOCK, ImmutableList.of(Slime.class)),
-
-    /**
-     * 鉄
-     */
+    
     IRON(Material.IRON_BLOCK, ImmutableList.of(IronGolem.class));
     
     /**

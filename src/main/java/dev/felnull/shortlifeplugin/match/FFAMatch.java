@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * FFA試合
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class FFAMatch extends PVPBaseMatch {
 

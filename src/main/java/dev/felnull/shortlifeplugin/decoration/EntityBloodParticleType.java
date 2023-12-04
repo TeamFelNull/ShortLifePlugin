@@ -13,19 +13,10 @@ import org.bukkit.inventory.ItemStack;
  * @author MORIMORI0317, Quarri6343
  */
 public enum EntityBloodParticleType {
-    /**
-     * ポータル
-     */
     PORTAL(new ParticleBuilder(Particle.PORTAL), ImmutableList.of(Enderman.class, EnderDragon.class, Endermite.class, Shulker.class)),
-
-    /**
-     * 炎
-     */
+    
     FLAME(new ParticleBuilder(Particle.FLAME), ImmutableList.of(MagmaCube.class, Blaze.class)),
-
-    /**
-     * クリーパー
-     */
+    
     CREEPER(new ParticleBuilder(Particle.ITEM_CRACK).data(new ItemStack(Material.GUNPOWDER)), ImmutableList.of(Creeper.class));
     
     /**

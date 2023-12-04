@@ -48,12 +48,12 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
-import static dev.felnull.shortlifeplugin.match.map.MatchMapLoader.WORLD_NAME_PREFIX;
+import static dev.felnull.shortlifeplugin.match.map.MatchMapHandler.WORLD_NAME_PREFIX;
 
 /**
  * 試合用マップインスタンスをロードする
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchMapInstanceLoader {
     

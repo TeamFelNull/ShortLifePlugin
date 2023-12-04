@@ -1,41 +1,29 @@
 package dev.felnull.shortlifeplugin.match.map;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import dev.felnull.fnjl.util.FNDataUtil;
-import dev.felnull.fnjl.util.FNStringUtil;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
-import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
- * 試合用マップの読み込み関係
+ * 試合用マップの管理クラス
  *
  * @author MORIMORI0317
  */
-public class MatchMapLoader {
+public class MatchMapHandler {
 
     /**
      * ワールド名の接頭辞
      */
     public static final String WORLD_NAME_PREFIX = "world_match/";
-    
-    /**
-     * GSON
-     */
-    private static final Gson GSON = new Gson();
 
     /**
      * ランダム
@@ -45,7 +33,12 @@ public class MatchMapLoader {
     /**
      * 読み込まれた全てのマップ
      */
-    private final Map<String, MatchMap> maps = new HashMap<>();
+    private Map<String, MatchMap> maps = new HashMap<>();
+
+    /**
+     * マップのフォルダ管理クラス
+     */
+    private final MatchMapFolderHandler mapFolderHandler = new MatchMapFolderHandler();
 
     /**
      * マップのインスタンスのローダー
@@ -58,67 +51,17 @@ public class MatchMapLoader {
      * @param plugin プラグイン
      */
     public void init(ShortLifePlugin plugin) {
-        clearMatchWorldFolder();
+        mapFolderHandler.clearMatchWorldFolder();
 
         FNDataUtil.wishMkdir(SLFiles.schematicFolder());
 
         try {
-            loadMap();
+            maps = mapFolderHandler.loadMap();
         } catch (IOException ex) {
             SLUtils.reportError(ex, "全ての試合用マップの読み込みに失敗");
         }
 
         plugin.getLogger().info("マップの読み込み完了");
-    }
-
-
-    /**
-     * マップフォルダの全てのファイルから、マップを読み込み
-     *
-     * @throws IOException 読み込み失敗
-     */
-    private void loadMap() throws IOException {
-        File mapFolder = SLFiles.mapFolder();
-        FNDataUtil.wishMkdir(mapFolder);
-        
-        try (Stream<Path> paths = Files.walk(mapFolder.toPath())) {
-            Stream<File> mapFiles = getMapFiles(paths);
-
-            mapFiles.forEach(file -> loadMapFromJson(mapFolder, file));
-        }
-    }
-
-    /**
-     * パスの内マップファイルであるものを全て取得
-     *
-     * @param paths パス
-     * @return マップファイル
-     */
-    @NotNull
-    private static Stream<File> getMapFiles(Stream<Path> paths) {
-        return paths.map(Path::toFile) // ファイルへ変換
-                .filter(it -> !it.isDirectory()) // ディレクトリを除外
-                .filter(it -> "json".equalsIgnoreCase(FNStringUtil.getExtension(it.getName())));
-    }
-
-    /**
-     * Jsonから試合用マップ情報を読み込む
-     *
-     * @param mapFolder マップフォルダ
-     * @param file マップファイル
-     */
-    private void loadMapFromJson(File mapFolder, File file) {
-        String id = SLUtils.getIdFromPath(file, mapFolder);
-        
-        try (InputStream stream = new FileInputStream(file); Reader reader = new BufferedReader(new InputStreamReader(stream))) {
-            JsonObject jo = GSON.fromJson(reader, JsonObject.class);
-            MatchMap matchMap = MatchMap.of(id, jo);
-            maps.put(id, matchMap);
-
-            SLUtils.getLogger().info(String.format("試合用マップを読み込みました: %s", id));
-        } catch (IOException | RuntimeException e) {
-            SLUtils.reportError(e, String.format("試合用マップの読み込みに失敗: %s", id));
-        }
     }
 
     /**
@@ -140,7 +83,7 @@ public class MatchMapLoader {
      */
     public void dispose() {
         mapInstanceLoader.stopAsyncExecutor();
-        clearMatchWorldFolder();
+        mapFolderHandler.clearMatchWorldFolder();
     }
 
     /**
@@ -176,19 +119,6 @@ public class MatchMapLoader {
             return Optional.of(availableMaps.get(0));
         } else {
             return Optional.of(availableMaps.get(RANDOM.nextInt(availableMaps.size())));
-        }
-    }
-
-    /**
-     * 試合用ワールドフォルダを削除
-     */
-    private void clearMatchWorldFolder() {
-        File matchWorldFolder = new File("./" + WORLD_NAME_PREFIX);
-
-        try {
-            FileUtils.deleteDirectory(matchWorldFolder);
-        } catch (IOException e) {
-            SLUtils.reportError(e, "試合用ワールドフォルダーの削除に失敗");
         }
     }
 }

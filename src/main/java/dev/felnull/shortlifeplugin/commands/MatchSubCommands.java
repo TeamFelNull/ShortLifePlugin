@@ -4,7 +4,7 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
-import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
+import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
@@ -339,7 +339,7 @@ public enum MatchSubCommands {
 
     private static void mapList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
-        MatchMapLoader mapLoader = matchManager.getMapLoader();
+        MatchMapHandler mapLoader = matchManager.getMapLoader();
         Map<String, MatchMap> maps = mapLoader.getAllMap();
 
         if (maps.isEmpty()) {

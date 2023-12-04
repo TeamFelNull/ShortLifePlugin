@@ -9,7 +9,7 @@ import dev.jorel.commandapi.executors.CommandExecutor;
 /**
  * このプラグインのコマンドリスト
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 public enum SLCommandsList {
     /**
@@ -21,7 +21,7 @@ public enum SLCommandsList {
             return new CommandAPICommand(name)
                     .withAliases("sleg")
                     .withPermission(SLPermissions.COMMANDS_EQUIPMENT_GROUP.get())
-                    .withSubcommands(EquipmentGroupSubCommands.ADD.get(), EquipmentGroupSubCommands.MODIFY.get(), 
+                    .withSubcommands(EquipmentGroupSubCommands.ADD.get(), EquipmentGroupSubCommands.MODIFY.get(),
                             EquipmentGroupSubCommands.REMOVE.get(), EquipmentGroupSubCommands.LIST.get(), EquipmentGroupSubCommands.INFO.get());
         }
     },

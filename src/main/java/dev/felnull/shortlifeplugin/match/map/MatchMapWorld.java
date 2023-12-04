@@ -80,13 +80,13 @@ public class MatchMapWorld {
             return Optional.empty();
         }
 
-        List<MapMarker> makersList = new ArrayList<>(markers);
+        List<MapMarker> markersList = new ArrayList<>(markers);
 
-        if (makersList.size() == 1) {
-            return Optional.of(makersList.get(0));
+        if (markersList.size() == 1) {
+            return Optional.of(markersList.get(0));
         }
 
-        return Optional.of(makersList.get(RANDOM.nextInt(makersList.size())));
+        return Optional.of(markersList.get(RANDOM.nextInt(markersList.size())));
     }
 
     /**

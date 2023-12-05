@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.commands;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -55,7 +56,7 @@ public class SLCommands {
 
         if (players.isEmpty()) {
             if (!(sender instanceof Player player)) {
-                sender.sendRichMessage("プレイヤーセレクタを指定しない場合は、プレイヤーのみ実行可能です");
+                sender.sendRichMessage(MsgHandler.get("cmd-general-need-player-selector"));
                 return Optional.empty();
             }
 

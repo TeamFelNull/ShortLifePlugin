@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.equipmentgroup;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import me.deecaad.weaponmechanics.WeaponMechanicsAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -28,8 +29,8 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      * @param componentList 情報説明コンポーネントのリスト
      */
     public void appendInfoDesc(@NotNull List<Component> componentList) {
-        componentList.add(Component.text("ID: ").append(Component.text(this.id)));
-        componentList.add(Component.text("名前: ").append(Component.text(this.name)));
+        componentList.add(Component.text(MsgHandler.get("equip-id")).append(Component.text(this.id)));
+        componentList.add(Component.text(MsgHandler.get("equip-name")).append(Component.text(this.name)));
 
         addItemListDesc(componentList);
 
@@ -51,7 +52,7 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
 
         Component itemsComponent = Component.join(builder, itemComponents);
 
-        componentList.add(Component.text("アイテム一覧: ").append(itemsComponent));
+        componentList.add(Component.text(MsgHandler.get("equip-item-list")).append(itemsComponent));
     }
 
     /**
@@ -60,16 +61,16 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      * @param componentList 情報説明コンポーネントのリスト
      */
     private void addRestrictionDesc(@NotNull List<Component> componentList) {
-        componentList.add(Component.text(" - 装備制限 - "));
+        componentList.add(Component.text(MsgHandler.get("equip-restriction")));
 
         Component maxHotbarExistsCountText;
 
         if (this.restriction.maxHotbarExistsCount() >= 0) {
-            maxHotbarExistsCountText = Component.text(this.restriction.maxHotbarExistsCount()).append(Component.text("個"));
+            maxHotbarExistsCountText = Component.text(this.restriction.maxHotbarExistsCount()).append(Component.text(MsgHandler.get("equip-number")));
         } else {
-            maxHotbarExistsCountText = Component.text("制限なし");
+            maxHotbarExistsCountText = Component.text(MsgHandler.get("equip-no-restriction"));
         }
-        componentList.add(Component.text("ホットバーに存在できる最大数: ").append(maxHotbarExistsCountText));
+        componentList.add(Component.text(MsgHandler.get("equip-max-hotbar-number")).append(maxHotbarExistsCountText));
     }
 
     /**

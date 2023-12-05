@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.tr7zw.changeme.nbtapi.NBT;
 import de.tr7zw.changeme.nbtapi.iface.ReadWriteNBT;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.inventory.ItemStack;
@@ -37,7 +38,7 @@ class EquipmentGroupIO {
     }
 
     /**
-     * ディスクから装備グループを読み取る
+     * データフォルダから装備グループを読み取る
      *
      * @throws IOException 読み取り失敗
      */
@@ -63,7 +64,7 @@ class EquipmentGroupIO {
      */
     private static boolean isFileExists(File savedJsonFile) {
         if (!savedJsonFile.exists() || savedJsonFile.isDirectory()) {
-            SLUtils.getLogger().info("装備グループの保存ファイルは存在しません");
+            SLUtils.getLogger().info(MsgHandler.get("equip-no-file"));
             return false;
         }
         
@@ -93,7 +94,7 @@ class EquipmentGroupIO {
     private static void verifyVersion(JsonObject savedJson) {
         int version = savedJson.getAsJsonPrimitive("_version").getAsInt();
         if (SAVE_JSON_VERSION != version) {
-            throw new RuntimeException("サポートしていない保存ファイルバージョン");
+            SLUtils.getLogger().severe(MsgHandler.get("error-unsupported-file-version"));
         }
     }
 
@@ -111,7 +112,7 @@ class EquipmentGroupIO {
             JsonObject jo = groupJson.getAsJsonObject();
             EquipmentGroup equipmentGroup = loadEquipmentGroup(jo);
             equipmentGroups.put(equipmentGroup.id(), equipmentGroup);
-            SLUtils.getLogger().info(String.format("装備グループを読み込みました: %s", equipmentGroup.id()));
+            SLUtils.getLogger().info(MsgHandler.getFormatted("equip-file-loaded", equipmentGroup.id()));
         });
         
         return equipmentGroups;

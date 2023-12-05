@@ -27,7 +27,7 @@ public enum EntityBloodMaterialType {
     /**
      * マテリアル
      */
-    private Material material;
+    private final Material material;
 
     /**
      * パーティクルが適用されるエンティティ

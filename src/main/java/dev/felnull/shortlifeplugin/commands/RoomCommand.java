@@ -96,11 +96,8 @@ public class RoomCommand {
      */
     private static List<String> getExistingRoomIds() {
         ImmutableList.Builder<String> ids = new ImmutableList.Builder<>();
-
-        // 全PVPルームを取得
+        
         getExistingRoomIdsOfType(MatchSelectorGui.PVP_ROOM_SIZE, MatchType.PVP, ids);
-
-        // 全PVEルームを取得
         getExistingRoomIdsOfType(MatchSelectorGui.PVE_ROOM_SIZE, MatchType.PVE, ids);
 
         return ids.build();

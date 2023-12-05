@@ -72,3 +72,18 @@ cmd-room-match-not-joined: "試合に参加していません"
 cmd-room-match-failed-to-leave: "退出できませんでした"
 
 cmd-general-player-only: "プレイヤーのみ実行可能です"
+cmd-general-need-player-selector: "プレイヤーセレクタを指定しない場合は、プレイヤーのみ実行可能です"
+
+#装備グループ
+equip-id: "ID: "
+equip-name: "名前: "
+equip-item-list: "アイテム一覧: "
+equip-restriction: " - 装備制限 - "
+equip-number: "個"
+equip-no-restriction: "制限なし"
+equip-max-hotbar-number: "ホットバーに存在できる最大数: "
+equip-no-file: "装備グループの保存ファイルは存在しません"
+equip-file-loaded: "装備グループを読み込みました: %s"
+
+#エラーメッセージ
+error-unsupported-file-version: "サポートしていない保存ファイルバージョン"

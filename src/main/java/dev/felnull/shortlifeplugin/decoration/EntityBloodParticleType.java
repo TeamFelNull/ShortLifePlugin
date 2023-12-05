@@ -22,12 +22,12 @@ public enum EntityBloodParticleType {
     /**
      * パーティクル
      */
-    private ParticleBuilder particle;
+    private final ParticleBuilder particle;
 
     /**
      * パーティクルが適用されるエンティティ
      */
-    private ImmutableList<Class<? extends LivingEntity>> entityList;
+    private final ImmutableList<Class<? extends LivingEntity>> entityList;
     
     EntityBloodParticleType(ParticleBuilder particle, ImmutableList<Class<? extends LivingEntity>> entityList) {
         this.particle = particle;

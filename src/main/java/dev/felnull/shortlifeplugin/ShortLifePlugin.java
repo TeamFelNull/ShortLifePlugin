@@ -14,7 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * プラグインが有効、無効になった際の処理を行うクラス
  *
- * @author IDEA自動生成, MORIMORI0317, miyabi0333, nin8995
+ * @author IDEA自動生成, MORIMORI0317, miyabi0333, nin8995, Quarri6343
  */
 public final class ShortLifePlugin extends JavaPlugin {
 
@@ -45,23 +45,14 @@ public final class ShortLifePlugin extends JavaPlugin {
         SLConfig.init(this);
         versionCheck();
 
-        // IKISUGI LOG
-        IkisugiLogger logger = new IkisugiLogger(MsgHandler.get("system-logger-start"));
-        logger.setColorType(IkisugiLogger.ColorType.RAINBOW);
-        logger.setCenter(true);
-        getLogger().info(logger.createLn());
+        setUpLogger("system-logger-start", IkisugiLogger.ColorType.RAINBOW);
 
         SLCommands.register();
         SLUtils.clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
-
-        // イベントリスナー
-        CommonListener.init(this);
-        MatchListener.init(this);
-        EquipmentGroupListener.init(this);
-        WeaponMechanicsListener.init(this);
-        PlayerInventoryListener.init(this);
+        
+        initEventListeners();
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);
@@ -72,6 +63,29 @@ public final class ShortLifePlugin extends JavaPlugin {
         getLogger().info(MsgHandler.get("system-started"));
     }
 
+    /**
+     * IKISUGI LOG
+     *
+     * @param key 起動メッセージ
+     * @param colorType 色の種類
+     */
+    private void setUpLogger(String key, IkisugiLogger.ColorType colorType) {
+        IkisugiLogger logger = new IkisugiLogger(MsgHandler.get(key));
+        logger.setColorType(colorType);
+        logger.setCenter(true);
+        getLogger().info(logger.createLn());
+    }
+
+    /**
+     * イベントリスナー起動
+     */
+    private void initEventListeners() {
+        CommonListener.init(this);
+        MatchListener.init(this);
+        EquipmentGroupListener.init(this);
+        WeaponMechanicsListener.init(this);
+        PlayerInventoryListener.init(this);
+    }
 
     /**
      * バージョン確認
@@ -86,28 +100,41 @@ public final class ShortLifePlugin extends JavaPlugin {
         String version = this.getPluginMeta().getVersion();
         DefaultArtifactVersion artifactVersion = new DefaultArtifactVersion(version);
 
-        boolean unstableVersion = false;
+        boolean unstableVersion = isUnstableVersion(artifactVersion);
 
+        if (unstableVersion) {
+            terminateUnstableVersionPlugin();
+        }
+    }
+
+    /**
+     * 不安定バージョンかどうか
+     *
+     * @param artifactVersion バージョン番号
+     * @return 不安定バージョンかどうか
+     */
+    private static boolean isUnstableVersion(DefaultArtifactVersion artifactVersion) {
         if (artifactVersion.getQualifier().contains("+")) {
             // 1.x.x-alpha.x+pre.x のようにビルドメタデータが存在する場合は、不安定バージョンとみなす
-            unstableVersion = true;
+            return true;
         } else if (artifactVersion.getMinorVersion() == 0 && artifactVersion.getMajorVersion() == 0
                 && artifactVersion.getIncrementalVersion() == 0 && artifactVersion.getBuildNumber() == 0) {
             // 全てのバージョン値が0であれば、不正な形のバージョンであるため、不安定バージョンとみなす
-            unstableVersion = true;
+            return true;
         }
+        return false;
+    }
 
-        if (unstableVersion) {
-            getLogger().warning("本番環境では、このバージョンを起動できません");
-            getLogger().warning("もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください");
+    /**
+     * 不安定バージョンのプラグインを強制停止する
+     */
+    private void terminateUnstableVersionPlugin() {
+        getLogger().warning(MsgHandler.get("system-test-warn-1"));
+        getLogger().warning(MsgHandler.get("system-test-warn-2"));
 
-            IkisugiLogger logger = new IkisugiLogger("not ikisugi\nshort life");
-            logger.setColorType(IkisugiLogger.ColorType.CHRISTMAS);
-            logger.setCenter(true);
-            getLogger().info(logger.createLn());
+        setUpLogger("system-logger-test", IkisugiLogger.ColorType.CHRISTMAS);
 
-            throw new RuntimeException("このバージョンはテストモードでのみ起動可能です");
-        }
+        throw new RuntimeException(MsgHandler.get("error-unstable-version"));
     }
 
     @Override

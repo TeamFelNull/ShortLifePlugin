@@ -1,4 +1,10 @@
 # システムメッセージ
 system-logger-start: "very ikisugi\nshort life"
+system-logger-test: "not ikisugi\nshort life"
 system-plugin-started: "ShortLife Pluginが開始しました"
 system-plugin-stopped: "ShortLife Pluginが停止しました"
+system-test-warn-1: "本番環境では、このバージョンを起動できません"
+system-test-warn-2: "もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください"
+
+# エラーメッセージ
+error-unstable-version: "このバージョンはテストモードでのみ起動可能です"

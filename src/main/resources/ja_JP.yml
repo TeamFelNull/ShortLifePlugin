@@ -1,0 +1,4 @@
+# システムメッセージ
+system-logger-start: "very ikisugi\nshort life"
+system-plugin-started: "ShortLife Pluginが開始しました"
+system-plugin-stopped: "ShortLife Pluginが停止しました"

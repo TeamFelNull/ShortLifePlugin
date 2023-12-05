@@ -182,7 +182,8 @@ public class MatchMapInstanceLoader {
      * @return 試合ワールドデータ
      */
     @NotNull
-    private static MatchMapWorld generateSchematicStructure(@NotNull String worldId, @NotNull MatchMap matchMap, World world, Pair<Clipboard, MapMarkerSet> clipboardMapMarkerSetPair) {
+    private static MatchMapWorld generateSchematicStructure(@NotNull String worldId, @NotNull MatchMap matchMap,
+                                                            World world, Pair<Clipboard, MapMarkerSet> clipboardMapMarkerSetPair) {
         com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
 
         try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {

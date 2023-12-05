@@ -40,11 +40,13 @@ public final class ShortLifePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        MsgHandler.load(this);
+        
         SLConfig.init(this);
         versionCheck();
 
         // IKISUGI LOG
-        IkisugiLogger logger = new IkisugiLogger("very ikisugi\nshort life");
+        IkisugiLogger logger = new IkisugiLogger(MsgHandler.get("system-logger-start"));
         logger.setColorType(IkisugiLogger.ColorType.RAINBOW);
         logger.setCenter(true);
         getLogger().info(logger.createLn());
@@ -67,7 +69,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         this.equipmentGroupManager = new EquipmentGroupManager();
         this.equipmentGroupManager.init(this);
 
-        getLogger().info("ShortLife Pluginが開始しました");
+        getLogger().info(MsgHandler.get("system-started"));
     }
 
 
@@ -125,7 +127,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         }
 
         SLUtils.clearTmpFolder(false);
-        getLogger().info("ShortLife Pluginが停止しました");
+        getLogger().info(MsgHandler.get("system-plugin-stopped"));
     }
 
     public MatchManager getMatchManager() {

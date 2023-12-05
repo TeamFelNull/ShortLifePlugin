@@ -178,12 +178,10 @@ public class BloodExpression {
         Optional<ParticleBuilder> particleBuilder = Optional.empty();
 
         for (EntityBloodParticleType type : EntityBloodParticleType.values()) {
-            for (Class<? extends LivingEntity> aClass : type.getEntityList()) {
-                if (aClass.isInstance(livingEntity)) {
-                    particleBuilder = Optional.of(type.getParticle());
-                    break;
-                }
-            }
+            particleBuilder = type.getEntityList().stream()
+                    .filter(aClass -> aClass.isInstance(livingEntity))
+                    .findFirst()
+                    .map(aClass -> type.getParticle());
         }
         return particleBuilder;
     }

@@ -232,13 +232,9 @@ public enum MatchSubCommands {
      * @param players プレイヤー達
      */
     private static void matchJoinPlayers(CommandSender sender, Match match, List<Player> players) {
-        int joinCount = 0;
-
-        for (Player player : players) {
-            if (match.join(player, true)) {
-                joinCount++;
-            }
-        }
+        long joinCount = players.stream()
+                .filter(player -> match.join(player, true))
+                .count();
 
         if (joinCount != 0) {
             sender.sendRichMessage(String.format("%d人のプレイヤーを%sに参加させました", joinCount, match.getId()));
@@ -287,13 +283,9 @@ public enum MatchSubCommands {
      * @param players プレイヤーのリスト
      */
     private static void matchLeavePlayers(CommandSender sender, Match match, List<Player> players) {
-        int leaveCount = 0;
-
-        for (Player player : players) {
-            if (match.leave(player, true)) {
-                leaveCount++;
-            }
-        }
+        int leaveCount = (int) players.stream()
+                .filter(player -> match.leave(player, true))
+                .count();
 
         if (leaveCount != 0) {
             sender.sendRichMessage(String.format("%d人のプレイヤーを%sから退出させました", leaveCount, match.getId()));

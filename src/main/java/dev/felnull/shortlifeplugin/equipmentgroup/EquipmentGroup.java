@@ -79,15 +79,7 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      * @return 所属していればtrue、してなければfalse
      */
     public boolean isBelongs(@NotNull ItemStack stack) {
-
-        // スタック全比較
-        for (ItemStack itemStack : itemStacks) {
-            if (isMatch(itemStack, stack)) {
-                return true;
-            }
-        }
-
-        return false;
+        return itemStacks.stream().anyMatch(itemStack -> isMatch(itemStack, stack));
     }
 
 
@@ -128,15 +120,11 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
 
         if (restriction().maxHotbarExistsCount() >= 0) {
             // ホットバーのアイテム数確認
-            int hotbarCount = 0;
-            for (ItemStack hotbarStack : hotbarStacks) {
-                if (isBelongs(hotbarStack)) {
-                    hotbarCount++;
-                    if (hotbarCount > restriction().maxHotbarExistsCount()) {
-                        return true;
-                    }
-                }
-            }
+            int hotbarCount = (int) hotbarStacks.stream()
+                    .filter(this::isBelongs)
+                    .count();
+
+            return hotbarCount > restriction().maxHotbarExistsCount();
         }
 
         return false;

@@ -24,10 +24,7 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
@@ -375,9 +372,9 @@ public abstract class Match {
         if (!finishTeleport && this.statusTick >= totalTime) {
             finishTeleport = true;
 
-            for (final Player player : players.keySet()) {
-                MatchUtils.teleportToLeave(player, this.matchMapInstance.getMapWorld().map(MatchMapWorld::getWorld));
-            }
+            Optional<World> leaveWorld = this.matchMapInstance.getMapWorld().map(MatchMapWorld::getWorld);
+            players.keySet()
+                    .forEach(player -> MatchUtils.teleportToLeave(player, leaveWorld));
         }
 
         // 破棄されるまでしばらく待機
@@ -582,9 +579,7 @@ public abstract class Match {
         changeStatus(Status.STARTED);
 
         // 参加中のプレイヤーに開始処理
-        for (Player player : this.players.keySet()) {
-            playerStart(player);
-        }
+        this.players.keySet().forEach(this::playerStart);
 
         broadcast(MATCH_START_MESSAGE);
 

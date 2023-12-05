@@ -145,10 +145,8 @@ public final class MatchManager {
 
         // 全試合を破棄
         List<String> allMatchId = ImmutableList.copyOf(this.matches.keySet());
-
-        for (String matchId : allMatchId) {
-            removeMatch(matchId);
-        }
+        
+        allMatchId.forEach(this::removeMatch);
 
         this.matches.clear();
 

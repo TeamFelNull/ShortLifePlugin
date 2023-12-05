@@ -87,14 +87,8 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     protected void tick() {
 
         if (getStatus() != Status.NONE) {
-            boolean noParticipantsFlag = false;
-
-            for (MatchTeam team : teams) {
-                if (team.getParticipationPlayers().isEmpty()) {
-                    noParticipantsFlag = true;
-                    break;
-                }
-            }
+            boolean noParticipantsFlag = teams.stream()
+                    .anyMatch(team -> team.getParticipationPlayers().isEmpty());
 
             // チームに参加者が居なければ試合終了
             if (noParticipantsFlag) {
@@ -159,9 +153,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     public boolean leave(@NotNull Player player, boolean sendMessage) {
 
         // チームから退出
-        for (MatchTeam team : teams) {
-            team.removePlayer(player);
-        }
+        teams.forEach(matchTeam -> matchTeam.removePlayer(player));
 
         // プレイヤーリスト表記色リセット
         TABIntegration.setPlayerTabListColor(player, null);
@@ -356,9 +348,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
             super.updateInfo();
 
             Set<Team> scTeams = getScoreboard().getTeams();
-            for (Team scTeam : scTeams) {
-                scTeam.removeEntries(scTeam.getEntries());
-            }
+            scTeams.forEach(team -> team.removeEntries(team.getEntries()));
 
             for (int i = 0; i < TeamBaseMatch.this.teams.size(); i++) {
                 MatchTeam matchTeam = TeamBaseMatch.this.teams.get(i);
@@ -366,9 +356,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
 
                 if (sbTeam != null) {
                     List<Player> teamPlayers = matchTeam.getParticipationPlayers();
-                    for (Player teamPlayer : teamPlayers) {
-                        sbTeam.addPlayer(teamPlayer);
-                    }
+                    teamPlayers.forEach(sbTeam::addPlayer);
                 }
             }
 

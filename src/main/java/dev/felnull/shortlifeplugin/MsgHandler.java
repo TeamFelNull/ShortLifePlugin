@@ -35,9 +35,8 @@ public class MsgHandler {
     public static void load(Plugin plugin) {
         Optional.ofNullable(plugin.getResource("ja_JP.yml")).ifPresentOrElse(inputStream -> {
             FileConfiguration translations = YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
-            for (String translation : translations.getKeys(false)) {
-                msgMap.put(translation, translations.getString(translation));
-            } 
+            translations.getKeys(false)
+                    .forEach(translation -> msgMap.put(translation, translations.getString(translation)));
         }, () -> {
             throw new NullPointerException("言語ファイルが見つかりません。プラグインをシャットダウンします"); //Logger起動前にメッセージを読み込むためLoggerは使えない
         });

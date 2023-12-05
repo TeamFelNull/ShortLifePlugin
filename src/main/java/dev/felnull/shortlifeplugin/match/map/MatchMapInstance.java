@@ -56,9 +56,7 @@ public class MatchMapInstance {
         List<Player> players = this.strictWorld.getPlayers();
 
         // ワールドに残るプレイヤーを強制退去
-        for (Player player : players) {
-            MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld));
-        }
+        players.forEach(player -> MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld)));
 
         File worldFolder = this.strictWorld.getWorldFolder();
         Bukkit.unloadWorld(this.strictWorld, false);

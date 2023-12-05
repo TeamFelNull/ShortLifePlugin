@@ -119,16 +119,9 @@ public class TeamPointMatch extends TeamBaseMatch {
             }
         }
 
-
-        boolean draw = true;
-
-        // 引き分け確認
-        for (MatchTeam team : teams) {
-            if (!mostPointTeams.contains((PointMatchTeam) team)) {
-                draw = false;
-                break;
-            }
-        }
+        //引き分け確認
+        boolean draw = teams.stream()
+                .allMatch(team -> mostPointTeams.contains((PointMatchTeam) team));
 
         // 負けチーム、引き分け時は空
         List<PointMatchTeam> losers = new LinkedList<>();

@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.equipmentgroup;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
@@ -45,7 +46,7 @@ public class EquipmentGroupManager {
         EquipmentGroupManager instance = SLUtils.getSLPlugin().getEquipmentGroupManager();
 
         if (instance == null) {
-            throw new IllegalStateException("インスタンスが未作成");
+            throw new IllegalStateException(MsgHandler.get("error-no-instance"));
         }
 
         return instance;
@@ -60,11 +61,11 @@ public class EquipmentGroupManager {
         try {
             EquipmentGroupIO.load().ifPresent(equipmentGroups::putAll);
         } catch (IOException | RuntimeException ex) {
-            SLUtils.reportError(ex, "装備グループの読み込みに失敗");
+            SLUtils.reportError(ex, MsgHandler.get("equip-failed-to-load"));
             throw new RuntimeException(ex);
         }
 
-        plugin.getLogger().info("装備グループの読み込み完了");
+        plugin.getLogger().info(MsgHandler.get("equip-loaded"));
         
         registerAutoSave(plugin);
     }
@@ -88,10 +89,10 @@ public class EquipmentGroupManager {
             try {
                 EquipmentGroupIO.save(equipmentGroups);
             } catch (IOException | RuntimeException ex) {
-                SLUtils.reportError(ex, "装備グループの自動保存に失敗");
+                SLUtils.reportError(ex, MsgHandler.get("equip-failed-to-auto-save"));
             }
 
-            SLUtils.getLogger().info("装備グループの自動保存完了");
+            SLUtils.getLogger().info(MsgHandler.get("equip-auto-saved"));
         }
     }
 
@@ -121,7 +122,7 @@ public class EquipmentGroupManager {
         Objects.requireNonNull(equipmentGroup);
 
         if (this.equipmentGroups.containsKey(equipmentGroup.id())) {
-            throw new RuntimeException("登録済みの装備グループIDです");
+            throw new RuntimeException(MsgHandler.get("equip-id-already-exists"));
         }
 
         this.equipmentGroups.put(equipmentGroup.id(), equipmentGroup);

@@ -84,6 +84,12 @@ equip-no-restriction: "制限なし"
 equip-max-hotbar-number: "ホットバーに存在できる最大数: "
 equip-no-file: "装備グループの保存ファイルは存在しません"
 equip-file-loaded: "装備グループを読み込みました: %s"
+equip-failed-to-load: "装備グループの読み込みに失敗"
+equip-loaded: "装備グループの読み込み完了"
+equip-failed-to-auto-save: "装備グループの自動保存に失敗"
+equip-auto-saved: "装備グループの自動保存完了"
+equip-id-already-exists: "登録済みの装備グループIDです"
 
-#エラーメッセージ
+#汎用エラーメッセージ
 error-unsupported-file-version: "サポートしていない保存ファイルバージョン"
+error-no-instance: "インスタンスが未作成"

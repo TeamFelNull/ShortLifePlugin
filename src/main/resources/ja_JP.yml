@@ -62,4 +62,13 @@ cmd-match-map-schematic: "スケマティック: "
 cmd-match-map-offset: "オフセット: "
 cmd-match-map-available: "利用可能なマップ: "
 
+cmd-room-not-in-game: "試合中ではない部屋です: "
+cmd-room-not-exist: "存在しない試合部屋です: "
+cmd-room-cannot-get-match: "試合を取得できませんでした"
+cmd-room-match-already-joined: "既に参加しています"
+cmd-room-other-match-already-joined: "既に別の試合に参加しています"
+cmd-room-failed-to-join: "参加できませんでした"
+cmd-room-match-not-joined: "試合に参加していません"
+cmd-room-match-failed-to-leave: "退出できませんでした"
+
 cmd-general-player-only: "プレイヤーのみ実行可能です"

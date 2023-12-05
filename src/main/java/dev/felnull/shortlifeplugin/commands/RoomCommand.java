@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin.commands;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.gui.MatchSelectorGui;
 import dev.felnull.shortlifeplugin.gui.item.MatchRoomSelectItem;
 import dev.felnull.shortlifeplugin.match.Match;
@@ -77,9 +78,9 @@ public class RoomCommand {
 
                 String errorMessage;
                 if (ALL_ID_NAME.get().containsKey(roomId)) {
-                    errorMessage = "試合中ではない部屋です: ";
+                    errorMessage = MsgHandler.get("cmd-room-not-in-game");
                 } else {
-                    errorMessage = "存在しない試合部屋です: ";
+                    errorMessage = MsgHandler.get("cmd-room-not-exist");
                 }
 
                 throw CustomArgument.CustomArgumentException
@@ -131,7 +132,7 @@ public class RoomCommand {
      */
     public static void join(CommandSender sender, CommandArguments args) {
         if (!(sender instanceof Player player)) {
-            sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
+            sender.sendRichMessage(MsgHandler.get("cmd-general-player-only"));
             return;
         }
         String roomId = (String) Objects.requireNonNull(args.get("room id"));
@@ -139,7 +140,8 @@ public class RoomCommand {
         MatchManager matchManager = MatchManager.getInstance();
 
         matchManager.getMatch(roomId).ifPresentOrElse(matchToJoin ->
-                joinMatch(player, matchManager, matchToJoin), () -> player.sendMessage(Component.text("試合を取得できませんでした")));
+                joinMatch(player, matchManager, matchToJoin), 
+                () -> player.sendMessage(Component.text(MsgHandler.get("cmd-room-cannot-get-match"))));
     }
 
     /**
@@ -152,13 +154,13 @@ public class RoomCommand {
     public static void joinMatch(Player player, MatchManager matchManager, @NotNull Match matchToJoin) {
         matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
             if (matchToJoin == joinedMatch) {
-                player.sendMessage(Component.text("既に参加しています"));
+                player.sendMessage(Component.text(MsgHandler.get("cmd-room-match-already-joined")));
             } else {
-                player.sendMessage(Component.text("既に別の試合に参加しています"));
+                player.sendMessage(Component.text(MsgHandler.get("cmd-room-other-match-already-joined")));
             }
         }, () -> {
             if (!matchToJoin.join(player, true)) {
-                player.sendRichMessage("参加できませんでした");
+                player.sendRichMessage(MsgHandler.get("cmd-room-failed-to-join"));
             }
         });
     }
@@ -170,13 +172,13 @@ public class RoomCommand {
      */
     public static void leave(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendRichMessage("このコマンドを使用できるのはプレイヤーのみです");
+            sender.sendRichMessage(MsgHandler.get("cmd-general-player-only"));
             return;
         }
 
         MatchManager matchManager = MatchManager.getInstance();
         matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> leaveMatch(player, joinedMatch),
-                () -> player.sendMessage(Component.text("試合に参加していません")));
+                () -> player.sendMessage(Component.text(MsgHandler.get("cmd-room-match-not-joined"))));
     }
 
     /**
@@ -187,7 +189,7 @@ public class RoomCommand {
      */
     private static void leaveMatch(Player player, Match joinedMatch) {
         if (!joinedMatch.leave(player, true)) {
-            player.sendMessage(Component.text("退出できませんでした"));
+            player.sendMessage(Component.text(MsgHandler.get("cmd-room-match-failed-to-leave")));
         }
     }
 }

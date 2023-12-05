@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.commands;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroup;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import dev.felnull.shortlifeplugin.gui.EquipmentGroupModifyItemGui;
@@ -88,6 +89,11 @@ public enum EquipmentGroupSubCommands {
     INFO(new CommandAPICommand("info")
             .withArguments(equipmentGroupArgument())
             .executes(EquipmentGroupSubCommands::equipmentGroupInfo));
+
+    /**
+     * 引数のノード名
+     */
+    private static final String ARG_NODENAME = "equipment group";
     
     /**
      * サブコマンド本体
@@ -108,10 +114,10 @@ public enum EquipmentGroupSubCommands {
     }
 
     private static Argument<EquipmentGroup> equipmentGroupArgument() {
-        return new CustomArgument<>(new StringArgument("equipment group"), info -> {
+        return new CustomArgument<>(new StringArgument(ARG_NODENAME), info -> {
             EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
             return manager.getGroup(info.input()).orElseThrow(() -> CustomArgument.CustomArgumentException
-                    .fromMessageBuilder(new CustomArgument.MessageBuilder("Unknown equipment group: ").appendArgInput()));
+                    .fromMessageBuilder(new CustomArgument.MessageBuilder(MsgHandler.get("cmd-equip-unknown")).appendArgInput()));
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> EquipmentGroupManager.getInstance().getAllGroup().keySet().toArray(String[]::new)));
     }
 
@@ -121,74 +127,74 @@ public enum EquipmentGroupSubCommands {
         String name = (String) Objects.requireNonNull(args.get("name"));
 
         if (manager.getGroup(id).isPresent()) {
-            sender.sendRichMessage("指定されたIDの装備グループは既に存在します");
+            sender.sendRichMessage(MsgHandler.get("cmd-equip-id-already-exists"));
         } else {
             EquipmentGroup equipmentGroup = new EquipmentGroup(id, name, ImmutableList.of(), new EquipmentGroup.Restriction(-1));
             manager.addGroup(equipmentGroup);
-            sender.sendRichMessage(String.format("新しい装備グループ(%s)を作成しました", id));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-create", id));
         }
     }
 
     private static void equipmentGroupModifyId(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
+        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get(ARG_NODENAME));
         String newId = (String) Objects.requireNonNull(args.get("new id"));
 
         if (newId.equals(equipmentGroup.id())) {
-            sender.sendRichMessage("指定された装備グループのIDと新しいIDが同じです");
+            sender.sendRichMessage(MsgHandler.get("cmd-equip-id-same-with-new-id"));
         } else if (manager.getGroup(newId).isPresent()) {
-            sender.sendRichMessage("新しいIDの装備グループが既に存在しています");
+            sender.sendRichMessage(MsgHandler.get("cmd-equip-new-id-already-exists"));
         } else {
             manager.removeGroup(equipmentGroup.id());
             EquipmentGroup newEquipmentGroup = new EquipmentGroup(newId, equipmentGroup.name(), equipmentGroup.itemStacks(), equipmentGroup.restriction());
             manager.addGroup(newEquipmentGroup);
-            sender.sendRichMessage(String.format("装備グループ(%s)のIDを%sに変更しました", equipmentGroup.id(), newId));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-id-changed", equipmentGroup.id(), newId));
         }
     }
 
     private static void equipmentGroupModifyName(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
+        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get(ARG_NODENAME));
         String newName = (String) Objects.requireNonNull(args.get("new name"));
 
         if (newName.equals(equipmentGroup.name())) {
-            sender.sendRichMessage("指定された装備グループの名前と新しい名前が同じです");
+            sender.sendRichMessage(MsgHandler.get("cmd-equip-name-same-with-new-name"));
         } else {
             manager.removeGroup(equipmentGroup.id());
             EquipmentGroup newEquipmentGroup = new EquipmentGroup(equipmentGroup.id(), newName, equipmentGroup.itemStacks(), equipmentGroup.restriction());
             manager.addGroup(newEquipmentGroup);
-            sender.sendRichMessage(String.format("装備グループ(%s)の名前を%sに変更しました", equipmentGroup.id(), newName));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-name-changed", equipmentGroup.id(), newName));
         }
     }
 
     private static void equipmentGroupModifyItem(CommandSender sender, CommandArguments args) {
-        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
+        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get(ARG_NODENAME));
 
         if (sender instanceof Player player) {
             EquipmentGroupModifyItemGui.tryOpenGui(player, equipmentGroup);
         } else {
-            sender.sendRichMessage("プレイヤーのみ実行可能です");
+            sender.sendRichMessage(MsgHandler.get("cmd-general-player-only"));
         }
     }
 
     private static void equipmentGroupModifyRestriction(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
+        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get(ARG_NODENAME));
         int newMaxHotbarExistsCount = (Integer) Objects.requireNonNull(args.get("new max hotbar exists count"));
 
         manager.removeGroup(equipmentGroup.id());
         EquipmentGroup.Restriction restriction = new EquipmentGroup.Restriction(newMaxHotbarExistsCount);
         EquipmentGroup newEquipmentGroup = new EquipmentGroup(equipmentGroup.id(), equipmentGroup.name(), equipmentGroup.itemStacks(), restriction);
         manager.addGroup(newEquipmentGroup);
-        sender.sendRichMessage(String.format("装備グループ(%s)の装備制限を変更しました", equipmentGroup.id()));
+        sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-restriction-changed", equipmentGroup.id()));
     }
 
     private static void equipmentGroupRemove(CommandSender sender, CommandArguments args) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
-        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
+        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get(ARG_NODENAME));
 
         manager.removeGroup(equipmentGroup.id());
-        sender.sendRichMessage(String.format("指定された装備グループ(%s)を削除しました", equipmentGroup.id()));
+        sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-delete", equipmentGroup.id()));
     }
 
     private static void equipmentGroupList(CommandSender sender) {
@@ -196,9 +202,9 @@ public enum EquipmentGroupSubCommands {
         Map<String, EquipmentGroup> groups = manager.getAllGroup();
 
         if (groups.isEmpty()) {
-            sender.sendRichMessage("装備グループは存在しません");
+            sender.sendRichMessage(MsgHandler.get("cmd-equip-empty"));
         } else {
-            sender.sendRichMessage(String.format("%d個の装備グループが存在します", groups.size()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-count", groups.size()));
 
             groups.values().forEach(group -> sender.sendMessage(Component.text(String.format("- %s (", group.id()))
                     .append(Component.text(group.name()))
@@ -207,9 +213,9 @@ public enum EquipmentGroupSubCommands {
     }
 
     private static void equipmentGroupInfo(CommandSender sender, CommandArguments args) {
-        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get("equipment group"));
+        EquipmentGroup equipmentGroup = (EquipmentGroup) Objects.requireNonNull(args.get(ARG_NODENAME));
 
-        sender.sendRichMessage(String.format("%sの装備グループ情報:", equipmentGroup.id()));
+        sender.sendRichMessage(MsgHandler.getFormatted("cmd-equip-info", equipmentGroup.id()));
         List<Component> list = new LinkedList<>();
         equipmentGroup.appendInfoDesc(list);
         list.forEach(sender::sendMessage);

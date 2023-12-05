@@ -8,3 +8,20 @@ system-test-warn-2: "もし本番環境ではない場合は、コンフィグ�
 
 # エラーメッセージ
 error-unstable-version: "このバージョンはテストモードでのみ起動可能です"
+
+# コマンド
+cmd-equip-unknown: "Unknown equipment group: "
+cmd-equip-id-already-exists: "指定されたIDの装備グループは既に存在します"
+cmd-equip-create: "新しい装備グループ(%s)を作成しました"
+cmd-equip-id-same-with-new-id: "指定された装備グループのIDと新しいIDが同じです"
+cmd-equip-new-id-already-exists: "新しいIDの装備グループが既に存在しています"
+cmd-equip-id-changed: "装備グループ(%s)のIDを%sに変更しました"
+cmd-equip-name-same-with-new-name: "指定された装備グループの名前と新しい名前が同じです"
+cmd-equip-name-changed: "装備グループ(%s)の名前を%sに変更しました"
+cmd-equip-restriction-changed: "装備グループ(%s)の装備制限を変更しました"
+cmd-equip-delete: "指定された装備グループ(%s)を削除しました"
+cmd-equip-empty: "装備グループは存在しません"
+cmd-equip-count: "%d個の装備グループが存在します"
+cmd-equip-info: "%sの装備グループ情報:"
+
+cmd-general-player-only: "プレイヤーのみ実行可能です"

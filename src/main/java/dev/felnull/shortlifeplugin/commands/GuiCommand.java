@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.commands;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
@@ -30,7 +31,7 @@ public class GuiCommand {
     public static Argument<SLGuis.WindowProvider> guiArgument() {
         return new CustomArgument<>(new StringArgument("gui"), 
                 info -> SLGuis.getWindowProvider(info.input())
-                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput())))
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder(MsgHandler.get("cmd-gui-unknown")).appendArgInput())))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> SLGuis.getAllGuiIds().toArray(String[]::new)));
     }
 

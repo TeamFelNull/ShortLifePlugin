@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.commands;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
@@ -113,7 +114,7 @@ public enum MatchSubCommands {
         return new CustomArgument<>(new StringArgument("match"),
                 info -> MatchManager.getInstance().getMatch(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException
-                                .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合です: ").appendArgInput())))
+                                .fromMessageBuilder(new CustomArgument.MessageBuilder(MsgHandler.get("cmd-match-unknown")).appendArgInput())))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getAllMatch().keySet().toArray(String[]::new)));
     }
 
@@ -126,7 +127,7 @@ public enum MatchSubCommands {
         return new CustomArgument<>(new StringArgument("map"),
                 info -> MatchManager.getInstance().getMapLoader().getMap(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException
-                                .fromMessageBuilder(new CustomArgument.MessageBuilder("不明な試合マップです: ").appendArgInput())))
+                                .fromMessageBuilder(new CustomArgument.MessageBuilder(MsgHandler.get("cmd-match-map-unknown")).appendArgInput())))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
     }
 
@@ -140,9 +141,9 @@ public enum MatchSubCommands {
         Map<String, Match> matches = matchManager.getAllMatch();
 
         if (matches.isEmpty()) {
-            sender.sendRichMessage("試合は存在しません");
+            sender.sendRichMessage(MsgHandler.get("cmd-match-not-exists"));
         } else {
-            sender.sendRichMessage(String.format("%d個の試合が存在します", matches.size()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-count", matches.size()));
 
             matches.values().forEach(match -> sender.sendMessage(Component.text(String.format("- %s (", match.getId()))
                     .append(Component.text(match.getMatchMode().name()))
@@ -160,7 +161,7 @@ public enum MatchSubCommands {
     private static void matchInfo(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
-        sender.sendRichMessage(String.format("%sの試合情報:", match.getId()));
+        sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-info", match.getId()));
         List<Component> list = new LinkedList<>();
         match.appendInfoDesc(list);
         list.forEach(sender::sendMessage);
@@ -194,31 +195,31 @@ public enum MatchSubCommands {
     private static void matchJoinPlayer(CommandSender sender, Match match, Player player) {
         if (match.hasParticipation(player)) {
             if (player == sender) {
-                sender.sendRichMessage("既に参加済みです");
+                sender.sendRichMessage(MsgHandler.get("cmd-match-already-joined"));
             } else {
-                sender.sendRichMessage(String.format("%sは既に参加済みです", player.getName()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-already-joined", player.getName()));
             }
             return;
         }
 
         MatchManager.getInstance().getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
             if (player == sender) {
-                sender.sendRichMessage(String.format("%sに参加済みです", joinedMatch.getId()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-already-joined-to-match", joinedMatch.getId()));
             } else {
-                sender.sendRichMessage(String.format("%sは%sに参加済みです", player.getName(), joinedMatch.getId()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-already-joined-to-match", player.getName(), joinedMatch.getId()));
             }
         }, () -> {
             if (match.join(player, player != sender)) {
                 if (player == sender) {
-                    sender.sendRichMessage(String.format("%sに参加しました", match.getId()));
+                    sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-joined", match.getId()));
                 } else {
-                    sender.sendRichMessage(String.format("%sを%sに参加させました", player.getName(), match.getId()));
+                    sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-joined", player.getName(), match.getId()));
                 }
             } else {
                 if (player == sender) {
-                    sender.sendRichMessage(String.format("%sに参加できませんでした", match.getId()));
+                    sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-cannot-join", match.getId()));
                 } else {
-                    sender.sendRichMessage(String.format("%sを%sに参加させられませんでした", player.getName(), match.getId()));
+                    sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-cannot-join", player.getName(), match.getId()));
                 }
             }
         });
@@ -237,9 +238,9 @@ public enum MatchSubCommands {
                 .count();
 
         if (joinCount != 0) {
-            sender.sendRichMessage(String.format("%d人のプレイヤーを%sに参加させました", joinCount, match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-players-joined", joinCount, match.getId()));
         } else {
-            sender.sendRichMessage(String.format("プレイヤーを%sに参加させられませんでした", match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-players-cannot-join", match.getId()));
         }
     }
 
@@ -264,14 +265,14 @@ public enum MatchSubCommands {
      */
     private static void matchLeavePlayer(CommandSender sender, Match match, Player player) {
         if (!match.hasParticipation(player)) {
-            sender.sendRichMessage(String.format("%sは試合に参加していません", player.getName()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-not-joined", player.getName()));
             return;
         }
 
         if (match.leave(player, true)) {
-            sender.sendRichMessage(String.format("%sを%sから退出させました", player.getName(), match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-leave", player.getName(), match.getId()));
         } else {
-            sender.sendRichMessage(String.format("%sを%sから退出できませんでした", player.getName(), match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-player-cannot-leave", player.getName(), match.getId()));
         }
     }
 
@@ -288,9 +289,9 @@ public enum MatchSubCommands {
                 .count();
 
         if (leaveCount != 0) {
-            sender.sendRichMessage(String.format("%d人のプレイヤーを%sから退出させました", leaveCount, match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-players-leave", leaveCount, match.getId()));
         } else {
-            sender.sendRichMessage(String.format("プレイヤーを%sから退出できませんでした", match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-players-cannot-leave", match.getId()));
         }
     }
 
@@ -298,12 +299,12 @@ public enum MatchSubCommands {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
         if (match.getStatus() != Match.Status.NONE) {
-            sender.sendRichMessage(String.format("%sは開始できる状態ではありません", match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-not-ready", match.getId()));
         } else {
             if (match.start()) {
-                sender.sendRichMessage(String.format("%sを開始させました", match.getId()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-started", match.getId()));
             } else {
-                sender.sendRichMessage(String.format("%sを開始できませんでした", match.getId()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-cannot-start", match.getId()));
             }
         }
 
@@ -313,12 +314,12 @@ public enum MatchSubCommands {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
         if (match.getStatus() != Match.Status.STARTED) {
-            sender.sendRichMessage(String.format("%sは終了できる状態ではありません", match.getId()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-not-able-to-finish", match.getId()));
         } else {
             if (match.finish()) {
-                sender.sendRichMessage(String.format("%sを終了させました", match.getId()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-finished", match.getId()));
             } else {
-                sender.sendRichMessage(String.format("%sを終了できませんでした", match.getId()));
+                sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-cannot-finish", match.getId()));
             }
         }
     }
@@ -326,7 +327,7 @@ public enum MatchSubCommands {
     private static void matchRemove(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
         match.destroy();
-        sender.sendRichMessage(String.format("%sを削除します", match.getId()));
+        sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-remove", match.getId()));
     }
 
     private static void mapList(CommandSender sender) {
@@ -335,9 +336,9 @@ public enum MatchSubCommands {
         Map<String, MatchMap> maps = mapLoader.getAllMap();
 
         if (maps.isEmpty()) {
-            sender.sendRichMessage("試合用マップは存在しません");
+            sender.sendRichMessage(MsgHandler.get("cmd-match-map-not-exist"));
         } else {
-            sender.sendRichMessage(String.format("%d個の試合用マップが存在します", maps.size()));
+            sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-map-count", maps.size()));
             maps.values().forEach(match -> sender.sendMessage(Component.text(String.format("- %s (", match.id()))
                     .append(Component.text(match.name()))
                     .append(Component.text(")"))));
@@ -350,9 +351,9 @@ public enum MatchSubCommands {
                 .map(MatchMode::id)
                 .toList()) + "]";
 
-        sender.sendRichMessage(String.format("%sの試合用マップ情報:", map.id()));
-        sender.sendRichMessage("スケマティック: " + map.schematic());
-        sender.sendRichMessage("オフセット: " + String.format("[%s, %s, %s]", map.offset().getX(), map.offset().getY(), map.offset().getZ()));
-        sender.sendRichMessage("利用可能なマップ: " + availableMatchModesText);
+        sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-map-id-info", map.id()));
+        sender.sendRichMessage(MsgHandler.get("cmd-match-map-schematic") + map.schematic());
+        sender.sendRichMessage(MsgHandler.get("cmd-match-map-offset") + String.format("[%s, %s, %s]", map.offset().getX(), map.offset().getY(), map.offset().getZ()));
+        sender.sendRichMessage(MsgHandler.get("cmd-match-map-available") + availableMatchModesText);
     }
 }

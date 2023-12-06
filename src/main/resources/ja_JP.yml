@@ -5,6 +5,8 @@ system-plugin-started: "ShortLife Pluginが開始しました"
 system-plugin-stopped: "ShortLife Pluginが停止しました"
 system-test-warn-1: "本番環境では、このバージョンを起動できません"
 system-test-warn-2: "もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください"
+system-test-mode-1: "ShortLifePluginはテストモードです。"
+system-test-mode-2: "このメッセージを見た場合は運営に報告してください！"
 
 
 # エラーメッセージ
@@ -121,6 +123,20 @@ gui-equip-group-not-exists: "指定された装備グループ(%s)が存在し�
 gui-equip-group-item-changed: "装備グループ(%s)のアイテムを変更しました"
 gui-match-select: "試合選択"
 gui-match-creation: "試合作成"
+
+
+#イベント
+event-death-bare-hand: "[素手]"
+event-death-killed: " <-Killed-- "
+event-join-welcome: "ShortLifeへようこそ!"
+event-unexpected-join-in-game-1: "試合中"
+event-unexpected-join-in-game-2: "のワールドに、想定外の方法で侵入したようです。"
+event-unexpected-join-in-game-3: "試合に参加していないため、干渉することはできません。"
+event-unexpected-join-in-game-4: "故意で侵入していない場合は、不具合として報告してください！"
+event-unexpected-join-click-here-1: "[ここをクリック]"
+event-unexpected-join-click-here-2: "参加する場合は"
+event-unexpected-join-click-here-3: "してください。"
+
 
 #汎用エラーメッセージ
 error-unsupported-file-version: "サポートしていない保存ファイルバージョン"

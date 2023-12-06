@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.listener;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.SLPermissions;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
@@ -75,8 +76,8 @@ public class CommonListener implements Listener {
      * @param player プレイヤー
      */
     private static void sendTestMessage(Player player) {
-        Component message = Component.text("ShortLifePluginはテストモードです。");
-        message = message.appendNewline().append(Component.text("このメッセージを見た場合は運営に報告してください！"));
+        Component message = Component.text(MsgHandler.get("system-test-mode-1"));
+        message = message.appendNewline().append(Component.text("system-test-mode-2"));
         message = message.color(NamedTextColor.GREEN);
         player.sendMessage(message);
     }
@@ -169,14 +170,14 @@ public class CommonListener implements Listener {
      */
     private void sendDeathMessage(PlayerDeathEvent e, Player killed, Player killer) {
         ItemStack stack = killer.getEquipment().getItemInMainHand();
-        Component weapon = !stack.isEmpty() ? stack.displayName() : Component.text("[素手]").color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
+        Component weapon = !stack.isEmpty() ? stack.displayName() : Component.text(MsgHandler.get("event-death-bare-hand")).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
         NamedTextColor killedColor = TeamBaseMatch.getTeamColor(killed);
         NamedTextColor killerColor = TeamBaseMatch.getTeamColor(killer);
 
         e.deathMessage(null);
         e.getPlayer().getWorld().sendMessage(Component
                 .text(alignName(killed.getName())).color(killedColor)
-                .append(Component.text(" <-Killed-- ").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
+                .append(Component.text(MsgHandler.get("event-death-killed")).color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD))
                 .append(Component.text(killer.getName() + " ").color(killerColor))
                 .append(weapon));
     }
@@ -231,7 +232,7 @@ public class CommonListener implements Listener {
      * @param e 参加イベント
      */
     private static void sendWelcomeMessage(PlayerJoinEvent e) {
-        e.getPlayer().sendMessage(Component.text("ShortLifeへようこそ!").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+        e.getPlayer().sendMessage(Component.text(MsgHandler.get("event-join-welcome")).color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
     }
 
     /**
@@ -268,23 +269,23 @@ public class CommonListener implements Listener {
      * @param worldMatch 試合
      */
     private static void sendUnexpectedMatchJoinMessage(Player player, Match worldMatch) {
-        Component message = Component.text("試合中").color(NamedTextColor.RED)
+        Component message = Component.text(MsgHandler.get("event-unexpected-join-in-game-1")).color(NamedTextColor.RED)
                 .append(worldMatch.createDisplayComponent().color(NamedTextColor.GOLD))
-                .append(Component.text("のワールドに、想定外の方法で侵入したようです。"));
+                .append(Component.text(MsgHandler.get("event-unexpected-join-in-game-2")));
 
-        message = message.appendNewline().append(Component.text("試合に参加していないため、干渉することはできません。"));
+        message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-3")));
 
         // 権限がある場合は、参加用メッセージを追加
         if (player.hasPermission(SLPermissions.COMMANDS_MATCH.get())) {
-            Component clickHere = Component.text("[ここをクリック]")
+            Component clickHere = Component.text(MsgHandler.get("event-unexpected-join-click-here-1"))
                     .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + worldMatch.getId())).build());
 
-            message = message.appendNewline().append(Component.text("参加する場合は")
+            message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-click-here-2"))
                     .append(clickHere)
-                    .append(Component.text("してください。")));
+                    .append(Component.text(MsgHandler.get("event-unexpected-join-click-here-3"))));
         }
 
-        message = message.appendNewline().append(Component.text("故意で侵入していない場合は、不具合として報告してください！"));
+        message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-4")));
 
         player.sendMessage(message);
     }

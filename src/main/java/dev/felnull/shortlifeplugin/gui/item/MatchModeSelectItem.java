@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.gui.item;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
@@ -26,21 +27,6 @@ import xyz.xenondevs.invui.window.Window;
  * @author MORIMORI0317, Quarri6343
  */
 public class MatchModeSelectItem extends AbstractItem {
-
-    /**
-     * 試合を作成して参加する際のメッセージ
-     */
-    private static final Component CREATE_AND_JOIN_MATCH_MESSAGE = Component.text("試合を作成して参加しました").color(NamedTextColor.WHITE);
-
-    /**
-     * 試合の作成に失敗した際のメッセージ
-     */
-    private static final Component CREATE_MATCH_FAILURE_MESSAGE = Component.text("試合の作成に失敗しました").color(NamedTextColor.RED);
-
-    /**
-     * 利用可能なマップがない場合のメッセージ
-     */
-    private static final Component NO_MAP_AVAILABLE_MESSAGE = Component.text("利用可能なマップがありません").color(NamedTextColor.YELLOW);
 
     /**
      * 試合モード
@@ -78,7 +64,7 @@ public class MatchModeSelectItem extends AbstractItem {
 
         MatchManager.getInstance().getMapLoader().getRandomMap(matchMode).ifPresentOrElse(
                 matchMap -> addMatch(player, matchManager, matchMap),
-                () -> player.sendMessage(NO_MAP_AVAILABLE_MESSAGE));
+                () -> player.sendMessage(Component.text("item-no-map-available").color(NamedTextColor.YELLOW)));
 
         getWindows().forEach(Window::close);
     }
@@ -93,7 +79,7 @@ public class MatchModeSelectItem extends AbstractItem {
     private void addMatch(@NotNull Player player, MatchManager matchManager, MatchMap matchMap) {
         boolean failure = matchManager.addMatch(matchId, matchMode, matchMap).map(match -> {
             if (match.join(player, false)) {
-                player.sendMessage(CREATE_AND_JOIN_MATCH_MESSAGE);
+                player.sendMessage(Component.text(MsgHandler.get("item-create-match-and-join")).color(NamedTextColor.WHITE));
                 broadcastMatch(player, match);
                 return false;
             } else {
@@ -102,7 +88,7 @@ public class MatchModeSelectItem extends AbstractItem {
         }).orElse(true);
 
         if (failure) {
-            player.sendMessage(CREATE_MATCH_FAILURE_MESSAGE);
+            player.sendMessage(Component.text(MsgHandler.get("item-failed-to-create-match")).color(NamedTextColor.RED));
         }
     }
 
@@ -142,9 +128,9 @@ public class MatchModeSelectItem extends AbstractItem {
     @NotNull
     private static Component getMatchCreatedMessage(@NotNull Player player, @NotNull Match match) {
         return Component.text(player.getName())
-                .append(Component.text("が試合("))
+                .append(Component.text(MsgHandler.get("item-match-create-1")))
                 .append(Component.text(match.getMatchMode().name()))
-                .append(Component.text(")を作成しました"))
+                .append(Component.text(MsgHandler.get("item-match-create-2")))
                 .color(NamedTextColor.GREEN);
     }
 
@@ -167,12 +153,12 @@ public class MatchModeSelectItem extends AbstractItem {
      */
     @NotNull
     private static Component getJoinHereMessage(@NotNull Match match) {
-        Component clickHere = Component.text("[ここをクリック]")
+        Component clickHere = Component.text(MsgHandler.get("item-click-here"))
                 .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/room join " + match.getId())).build());
 
-        return Component.text("参加するには")
+        return Component.text(MsgHandler.get("item-join-button-1"))
                 .append(clickHere)
-                .append(Component.text("してください"))
+                .append(Component.text(MsgHandler.get("item-join-button-2")))
                 .color(NamedTextColor.LIGHT_PURPLE);
     }
 

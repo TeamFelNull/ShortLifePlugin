@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.gui.item;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.gui.MatchSelectorGui;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
@@ -21,7 +22,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * 試合選択GUIアイテム
@@ -29,26 +29,6 @@ import java.util.function.Function;
  * @author MORIMORI0317, Quarri6343
  */
 public class MatchRoomSelectItem extends AbstractItem {
-
-    /**
-     * 別の試合に参加している場合のメッセージ
-     */
-    private static final Component ALREADY_JOIN_OTHER_MATCH_MESSAGE = Component.text("別の試合に参加しています");
-
-    /**
-     * 既に参加している場合のメッセージ
-     */
-    private static final Component ALREADY_JOIN_MATCH_MESSAGE = Component.text("既に参加しています");
-
-    /**
-     * 試合に参加した際のメッセージ
-     */
-    private static final Function<String, Component> JOIN_MATCH_MESSAGE = roomName -> Component.text(String.format("%sに参加しました", roomName)).color(NamedTextColor.WHITE);
-
-    /**
-     * 試合に参加出来なかった場合のメッセージ
-     */
-    private static final Component JOIN_MATCH_FAILURE_MESSAGE = Component.text("試合に参加できませんでした").color(NamedTextColor.RED);
 
     /**
      * 試合の種類
@@ -103,9 +83,9 @@ public class MatchRoomSelectItem extends AbstractItem {
         ItemBuilder builder = new ItemBuilder(material);
 
         if (playerCount >= playerMaxCount) {
-            builder.addLoreLines(new AdventureComponentWrapper(Component.text("満員").color(NamedTextColor.RED)));
+            builder.addLoreLines(new AdventureComponentWrapper(Component.text(MsgHandler.get("item-room-full")).color(NamedTextColor.RED)));
         } else {
-            builder.addLoreLines(new AdventureComponentWrapper(Component.text("参加可能").color(NamedTextColor.GREEN)));
+            builder.addLoreLines(new AdventureComponentWrapper(Component.text(MsgHandler.get("item-room-has-space")).color(NamedTextColor.GREEN)));
         }
 
         addMatchInfo(match, builder);
@@ -122,7 +102,7 @@ public class MatchRoomSelectItem extends AbstractItem {
     @NotNull
     private ItemBuilder getItemBuilderWhenMatchNotExists() {
         ItemBuilder builder = new ItemBuilder((matchType == MatchType.PVP) ? Material.WHITE_WOOL : Material.WHITE_CONCRETE);
-        builder.addLoreLines(new AdventureComponentWrapper(Component.text("試合を作成").color(NamedTextColor.GRAY)));
+        builder.addLoreLines(new AdventureComponentWrapper(Component.text(MsgHandler.get("item-create-match")).color(NamedTextColor.GRAY)));
 
         addRoomCommonInfo(builder);
 
@@ -158,11 +138,11 @@ public class MatchRoomSelectItem extends AbstractItem {
         MatchManager matchManager = MatchManager.getInstance();
         Optional<Match> clickedMatch = matchManager.getMatch(MatchSelectorGui.getRoomMatchId(matchType, roomNumber));
 
-        matchManager.getJoinedMatch(player).ifPresentOrElse(joinedMatch -> {
-            onAlreadyJoined(player, clickedMatch, joinedMatch);
-        }, () -> clickedMatch.ifPresentOrElse(
-                match -> tryJoinMatch(player, match),
-                () -> windowTransition(player)));
+        matchManager.getJoinedMatch(player).ifPresentOrElse(
+                joinedMatch -> onAlreadyJoined(player, clickedMatch, joinedMatch), 
+                () -> clickedMatch.ifPresentOrElse(
+                        match -> tryJoinMatch(player, match), 
+                        () -> windowTransition(player)));
     }
 
     /**
@@ -174,7 +154,8 @@ public class MatchRoomSelectItem extends AbstractItem {
      */
     private static void onAlreadyJoined(@NotNull Player player, Optional<Match> clickedMatch, Match joinedMatch) {
         clickedMatch.stream().filter(match -> match == joinedMatch).findFirst().ifPresentOrElse(
-                match -> player.sendMessage(ALREADY_JOIN_MATCH_MESSAGE), () -> player.sendMessage(ALREADY_JOIN_OTHER_MATCH_MESSAGE));
+                match -> player.sendMessage(Component.text(MsgHandler.get("item-already-joined-match"))), 
+                () -> player.sendMessage(Component.text(MsgHandler.get("item-already-joined-other-match"))));
     }
 
     /**
@@ -185,9 +166,11 @@ public class MatchRoomSelectItem extends AbstractItem {
      */
     private void tryJoinMatch(@NotNull Player player, Match match) {
         if (match.join(player, false)) {
-            player.sendMessage(JOIN_MATCH_MESSAGE.apply(getRoomName(this.matchType, roomNumber)));
+            player.sendMessage(
+                    Component.text(MsgHandler.getFormatted("item-joined-match", getRoomName(this.matchType, roomNumber)))
+                            .color(NamedTextColor.WHITE));
         } else {
-            player.sendMessage(JOIN_MATCH_FAILURE_MESSAGE);
+            player.sendMessage(Component.text(MsgHandler.get("item-join-match-failure")).color(NamedTextColor.RED));
         }
 
         getWindows().forEach(Window::close);
@@ -211,6 +194,6 @@ public class MatchRoomSelectItem extends AbstractItem {
      * @return 部屋名
      */
     public static String getRoomName(@NotNull MatchType type, int roomNumber) {
-        return String.format("%sルーム%d", type.getName().toUpperCase(Locale.ROOT), roomNumber);
+        return MsgHandler.getFormatted("item-room-name", type.getName().toUpperCase(Locale.ROOT), roomNumber);
     }
 }

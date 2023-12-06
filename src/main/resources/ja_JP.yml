@@ -74,6 +74,7 @@ cmd-room-match-failed-to-leave: "退出できませんでした"
 cmd-general-player-only: "プレイヤーのみ実行可能です"
 cmd-general-need-player-selector: "プレイヤーセレクタを指定しない場合は、プレイヤーのみ実行可能です"
 
+
 #装備グループ
 equip-id: "ID: "
 equip-name: "名前: "
@@ -89,6 +90,27 @@ equip-loaded: "装備グループの読み込み完了"
 equip-failed-to-auto-save: "装備グループの自動保存に失敗"
 equip-auto-saved: "装備グループの自動保存完了"
 equip-id-already-exists: "登録済みの装備グループIDです"
+
+#アイテム
+item-create-match-and-join: "試合を作成して参加しました"
+item-failed-to-create-match: "試合の作成に失敗しました"
+item-no-map-available: "利用可能なマップがありません"
+item-match-create-1: "が試合("
+item-match-create-2: ")を作成しました"
+item-click-here: "[ここをクリック]"
+item-join-button-1: "参加するには"
+item-join-button-2: "してください"
+
+item-already-joined-other-match: "別の試合に参加しています"
+item-already-joined-match: "既に参加しています"
+item-joined-match: "%sに参加しました"
+item-join-match-failure: "試合に参加できませんでした"
+item-room-full: "満員"
+item-room-has-space: "参加可能"
+item-create-match: "試合を作成"
+item-room-name: "%sルーム%d"
+item-previous-page: "前のページへ"
+item-next-page: "次のページへ"
 
 #汎用エラーメッセージ
 error-unsupported-file-version: "サポートしていない保存ファイルバージョン"

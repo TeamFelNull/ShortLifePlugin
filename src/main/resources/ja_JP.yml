@@ -91,6 +91,7 @@ equip-failed-to-auto-save: "装備グループの自動保存に失敗"
 equip-auto-saved: "装備グループの自動保存完了"
 equip-id-already-exists: "登録済みの装備グループIDです"
 
+
 #アイテム
 item-create-match-and-join: "試合を作成して参加しました"
 item-failed-to-create-match: "試合の作成に失敗しました"
@@ -111,6 +112,15 @@ item-create-match: "試合を作成"
 item-room-name: "%sルーム%d"
 item-previous-page: "前のページへ"
 item-next-page: "次のページへ"
+
+
+#GUI
+gui-other-player-is-editing: "別のプレイヤーが編集中です"
+gui-equip-group-change-title: "%sのアイテム変更"
+gui-equip-group-not-exists: "指定された装備グループ(%s)が存在しません"
+gui-equip-group-item-changed: "装備グループ(%s)のアイテムを変更しました"
+gui-match-select: "試合選択"
+gui-match-creation: "試合作成"
 
 #汎用エラーメッセージ
 error-unsupported-file-version: "サポートしていない保存ファイルバージョン"

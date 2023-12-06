@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.gui;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroup;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
 import net.kyori.adventure.text.Component;
@@ -47,7 +48,7 @@ public class EquipmentGroupModifyItemGui {
      */
     public static void tryOpenGui(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup) {
         if (openItemModifyGui) {
-            player.sendMessage(Component.text("別のプレイヤーが編集中です"));
+            player.sendMessage(Component.text(MsgHandler.get("gui-other-player-is-editing")));
             return;
         }
 
@@ -111,7 +112,7 @@ public class EquipmentGroupModifyItemGui {
     private static Window buildWindow(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup, VirtualInventory virtualInventory, Gui gui) {
         return Window.single()
                 .setViewer(player)
-                .setTitle(String.format("%sのアイテム変更", equipmentGroup.id()))
+                .setTitle(MsgHandler.getFormatted("gui-equip-group-change-title", equipmentGroup.id()))
                 .setGui(gui)
                 .addCloseHandler(() -> {
                     saveItems(player, equipmentGroup, virtualInventory);
@@ -126,7 +127,7 @@ public class EquipmentGroupModifyItemGui {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
 
         if (manager.getGroup(equipmentGroup.id()).isEmpty()) {
-            player.sendRichMessage(String.format("指定された装備グループ(%s)が存在しません", equipmentGroup.id()));
+            player.sendRichMessage(MsgHandler.getFormatted("gui-equip-group-not-exists", equipmentGroup.id()));
             return;
         }
 
@@ -135,7 +136,7 @@ public class EquipmentGroupModifyItemGui {
         manager.removeGroup(equipmentGroup.id());
         EquipmentGroup newEquipmentGroup = new EquipmentGroup(equipmentGroup.id(), equipmentGroup.name(), ImmutableList.copyOf(stacks), equipmentGroup.restriction());
         manager.addGroup(newEquipmentGroup);
-        player.sendRichMessage(String.format("装備グループ(%s)のアイテムを変更しました", equipmentGroup.id()));
+        player.sendRichMessage(MsgHandler.getFormatted("gui-equip-group-item-changed", equipmentGroup.id()));
     }
 
     @NotNull

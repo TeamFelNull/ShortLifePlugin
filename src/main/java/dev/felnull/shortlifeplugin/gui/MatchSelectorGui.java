@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.gui;
 
 import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeIconItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeSelectItem;
@@ -41,19 +42,23 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
      */
     private static final int ROOM_PER_PAGE_COUNT = 9;
 
+    /**
+     * ページ数
+     */
+    private static final int PAGE_COUNT = Math.max(PVP_ROOM_SIZE, PVE_ROOM_SIZE) / ROOM_PER_PAGE_COUNT + 1;
+
     @Override
     public @NotNull Window provide(@NotNull Player player) {
 
         // 試合選択GUIをページごとに作成
         List<Gui> pages = new ArrayList<>();
-        int pageCount = Math.max(PVP_ROOM_SIZE, PVE_ROOM_SIZE) / ROOM_PER_PAGE_COUNT + 1;
-        for (int i = 0; i < pageCount; i++) {
+        for (int i = 0; i < PAGE_COUNT; i++) {
             pages.add(createPage(i));
         }
 
         Gui gui = buildGuiFromPages(pages);
 
-        return buildWindow(player, "試合選択", gui);
+        return buildWindow(player, MsgHandler.get("gui-match-select"), gui);
     }
 
     @NotNull
@@ -144,7 +149,7 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
             gui.setItem(i, new MatchModeSelectItem(modes.get(i), matchId));
         }
 
-        return buildWindow(player, "試合作成", gui);
+        return buildWindow(player, MsgHandler.get("gui-match-creation"), gui);
     }
 
     @NotNull

@@ -81,7 +81,7 @@ public class MatchMapFolderHandler {
 
             SLUtils.getLogger().info(MsgHandler.getFormatted("system-map-loaded", id));
         } catch (IOException | RuntimeException e) {
-            SLUtils.reportError(e, MsgHandler.getFormatted("system-map-load-failed", id));
+            SLUtils.reportError(e, MsgHandler.getFormatted("system-map-load-failed-detailed", id));
         }
     }
 

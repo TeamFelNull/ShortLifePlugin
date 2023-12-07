@@ -8,7 +8,8 @@ system-test-warn-2: "もし本番環境ではない場合は、コンフィグ�
 system-test-mode-1: "ShortLifePluginはテストモードです。"
 system-test-mode-2: "このメッセージを見た場合は運営に報告してください！"
 system-map-loaded: "試合用マップを読み込みました: %s"
-system-map-load-failed: "試合用マップの読み込みに失敗: %s"
+system-map-load-failed-detailed: "試合用マップの読み込みに失敗: %s"
+system-map-load-failed: "試合用マップの読み込みに失敗"
 system-map-folder-deletion-failed: "試合用ワールドフォルダーの削除に失敗"
 system-all-map-load-failed: "全ての試合用マップの読み込みに失敗"
 system-all-map-loaded: "マップの読み込み完了"
@@ -18,6 +19,15 @@ system-unstable-version: "このバージョンはテストモードでのみ起
 system-unsupported-file-version: "サポートしていない保存ファイルバージョン"
 system-no-instance: "インスタンスが未作成"
 system-worldguard-instance-failed: "ワールドガードのリージョンマネージャーを取得できません。"
+system-match-cannot-start: "試合を開始できませんでした。"
+system-match-cannot-finish: "試合を終了できませんでした。"
+system-match-joined: "%sが試合(%s)に参加しました"
+system-match-left: "%sが試合(%s)から退出しました"
+system-match-started: "試合(%s)が開始しました"
+system-player-cannot-spawn: "プレイヤー(%s)をスポーンさせることができませんでした"
+system-world-is-not-ready: "ワールドの用意が出来ていません"
+system-match-ended: "試合(%s)が終了しました"
+system-match-discarded: "試合(%s)が破棄されました"
 
 # コマンド
 cmd-equip-unknown: "Unknown equipment group: "
@@ -144,6 +154,14 @@ match-cancel-unexpected-error-1: "想定外のエラーが発生したため試�
 match-cancel-unexpected-error-2: "この事を運営に報告してください！"
 match-finish-insufficient-player: "参加人数が不足したため試合を終了します"
 match-created: "試合(%s)が作成されました"
+match-mode: "モード: "
+match-players: "参加人数: "
+match-players-count: "%d/%d"
+match-stats: "状態: "
+match-kill: "Kill"
+match-kill-streak: "KillStreak!"
+match-map-info-header: "---- 試合マップ ----"
+match-map-info-footer: "-----------------"
 
 
 #イベント

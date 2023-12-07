@@ -60,7 +60,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         this.equipmentGroupManager = new EquipmentGroupManager();
         this.equipmentGroupManager.init(this);
 
-        getLogger().info(MsgHandler.get("system-started"));
+        getLogger().info(MsgHandler.get("system-plugin-started"));
     }
 
     /**
@@ -134,7 +134,7 @@ public final class ShortLifePlugin extends JavaPlugin {
 
         setUpLogger("system-logger-test", IkisugiLogger.ColorType.CHRISTMAS);
 
-        throw new RuntimeException(MsgHandler.get("error-unstable-version"));
+        throw new RuntimeException(MsgHandler.get("system-unstable-version"));
     }
 
     @Override

@@ -1,4 +1,4 @@
-# システムメッセージ
+# システムメッセージ(コンソールにしか出てこないメッセージ)
 system-logger-start: "very ikisugi\nshort life"
 system-logger-test: "not ikisugi\nshort life"
 system-plugin-started: "ShortLife Pluginが開始しました"
@@ -7,11 +7,17 @@ system-test-warn-1: "本番環境では、このバージョンを起動でき�
 system-test-warn-2: "もし本番環境ではない場合は、コンフィグでテストモードを有効にしてください"
 system-test-mode-1: "ShortLifePluginはテストモードです。"
 system-test-mode-2: "このメッセージを見た場合は運営に報告してください！"
-
-
-# エラーメッセージ
-error-unstable-version: "このバージョンはテストモードでのみ起動可能です"
-
+system-map-loaded: "試合用マップを読み込みました: %s"
+system-map-load-failed: "試合用マップの読み込みに失敗: %s"
+system-map-folder-deletion-failed: "試合用ワールドフォルダーの削除に失敗"
+system-all-map-load-failed: "全ての試合用マップの読み込みに失敗"
+system-all-map-loaded: "マップの読み込み完了"
+system-map-deletion-failed: "試合用ワールドの削除に失敗"
+system-async-executor-stop-failed: "非同期処理用Executorの停止に失敗"
+system-unstable-version: "このバージョンはテストモードでのみ起動可能です"
+system-unsupported-file-version: "サポートしていない保存ファイルバージョン"
+system-no-instance: "インスタンスが未作成"
+system-worldguard-instance-failed: "ワールドガードのリージョンマネージャーを取得できません。"
 
 # コマンド
 cmd-equip-unknown: "Unknown equipment group: "
@@ -136,8 +142,5 @@ event-unexpected-join-in-game-4: "故意で侵入していない場合は、不�
 event-unexpected-join-click-here-1: "[ここをクリック]"
 event-unexpected-join-click-here-2: "参加する場合は"
 event-unexpected-join-click-here-3: "してください。"
-
-
-#汎用エラーメッセージ
-error-unsupported-file-version: "サポートしていない保存ファイルバージョン"
-error-no-instance: "インスタンスが未作成"
+event-restriction-1: "%sは%d個"
+event-restriction-2: "より多くホットバーに存在できません"

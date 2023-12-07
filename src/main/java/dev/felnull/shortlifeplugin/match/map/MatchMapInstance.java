@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.match.map;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
@@ -66,7 +67,7 @@ public class MatchMapInstance {
             // なぜか消せる...?
             FileUtils.deleteDirectory(worldFolder);
         } catch (IOException e) {
-            SLUtils.reportError(e, "試合用ワールドの削除に失敗");
+            SLUtils.reportError(e, MsgHandler.get("system-map-deletion-failed"));
         }
 
         this.strictWorld = null;

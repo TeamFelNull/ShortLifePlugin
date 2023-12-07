@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sk89q.worldedit.math.BlockVector3;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.match.MatchModes;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ public record MatchMap(@NotNull String id, @NotNull String name, @NotNull String
         }
 
         if (version != VERSION) {
-            throw new RuntimeException("サポートしていないバージョンです: " + version);
+            throw new RuntimeException(MsgHandler.get("system-unsupported-file-version") + version);
         }
 
         String name = jsonObject.get("name").getAsString();

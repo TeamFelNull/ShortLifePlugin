@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.codehaus.plexus.util.FileUtils;
@@ -78,9 +79,9 @@ public class MatchMapFolderHandler {
             MatchMap matchMap = MatchMap.of(id, jo);
             maps.put(id, matchMap);
 
-            SLUtils.getLogger().info(String.format("試合用マップを読み込みました: %s", id));
+            SLUtils.getLogger().info(MsgHandler.getFormatted("system-map-loaded", id));
         } catch (IOException | RuntimeException e) {
-            SLUtils.reportError(e, String.format("試合用マップの読み込みに失敗: %s", id));
+            SLUtils.reportError(e, MsgHandler.getFormatted("system-map-load-failed", id));
         }
     }
 
@@ -93,7 +94,7 @@ public class MatchMapFolderHandler {
         try {
             FileUtils.deleteDirectory(matchWorldFolder);
         } catch (IOException e) {
-            SLUtils.reportError(e, "試合用ワールドフォルダーの削除に失敗");
+            SLUtils.reportError(e, MsgHandler.get("system-map-folder-deletion-failed"));
         }
     }
 }

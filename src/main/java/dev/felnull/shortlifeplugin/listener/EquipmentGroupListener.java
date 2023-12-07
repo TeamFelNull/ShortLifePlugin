@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.listener;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroup;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
@@ -139,11 +140,11 @@ public class EquipmentGroupListener implements Listener {
         restrictedGroupComponentBuilder.separator(Component.text(","));
 
         Component[] groupComponents = restrictedEquipmentGroups.stream()
-                .map(equipmentGroup -> Component.text(String.format("%sは%d個", equipmentGroup.name(), equipmentGroup.restriction().maxHotbarExistsCount())))
+                .map(equipmentGroup -> Component.text(MsgHandler.getFormatted("event-restriction-1", equipmentGroup.name(), equipmentGroup.restriction().maxHotbarExistsCount())))
                 .toArray(Component[]::new);
 
         Component restrictedGroupComponent = Component.join(restrictedGroupComponentBuilder, groupComponents)
-                .append(Component.text("より多くホットバーに存在できません"))
+                .append(Component.text(MsgHandler.get("event-restriction-2")))
                 .color(NamedTextColor.RED);
 
 

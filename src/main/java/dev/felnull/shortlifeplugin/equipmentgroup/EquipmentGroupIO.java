@@ -94,7 +94,7 @@ class EquipmentGroupIO {
     private static void verifyVersion(JsonObject savedJson) {
         int version = savedJson.getAsJsonPrimitive("_version").getAsInt();
         if (SAVE_JSON_VERSION != version) {
-            throw new IllegalStateException(MsgHandler.get("error-unsupported-file-version"));
+            throw new IllegalStateException(MsgHandler.get("system-unsupported-file-version"));
         }
     }
 

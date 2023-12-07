@@ -17,6 +17,11 @@ import org.bukkit.event.Listener;
 public class WeaponMechanicsListener implements Listener {
 
     /**
+     * ウェポンメカニクスのプラグイン名
+     */
+    private static final String WEAPON_MECHANICS = "WeaponMechanics";
+
+    /**
      * 初期化
      *
      * @param plugin プラグイン
@@ -33,7 +38,7 @@ public class WeaponMechanicsListener implements Listener {
      */
     @EventHandler
     public void queueSerializers(QueueSerializerEvent e) {
-        if (!e.getSourceName().equals("WeaponMechanics")) {
+        if (!e.getSourceName().equals(WEAPON_MECHANICS)) {
             return;
         }
 

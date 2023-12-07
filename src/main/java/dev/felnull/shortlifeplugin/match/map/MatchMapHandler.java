@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.match.map;
 
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.fnjl.util.FNDataUtil;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchMode;
@@ -58,10 +59,10 @@ public class MatchMapHandler {
         try {
             maps = mapFolderHandler.loadMap();
         } catch (IOException ex) {
-            SLUtils.reportError(ex, "全ての試合用マップの読み込みに失敗");
+            SLUtils.reportError(ex, MsgHandler.get("system-all-map-load-failed"));
         }
 
-        plugin.getLogger().info("マップの読み込み完了");
+        plugin.getLogger().info(MsgHandler.get("system-all-map-loaded"));
     }
 
     /**

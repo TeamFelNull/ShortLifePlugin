@@ -29,6 +29,7 @@ import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.felnull.fnjl.util.FNDataUtil;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -94,7 +95,7 @@ public class MatchMapInstanceLoader {
             if (!this.asyncExecutor.awaitTermination(194, TimeUnit.SECONDS)) {
                 this.asyncExecutor.shutdownNow();
                 if (!this.asyncExecutor.awaitTermination(194, TimeUnit.SECONDS)) {
-                    SLUtils.getLogger().warning("非同期処理用Executorの停止に失敗");
+                    SLUtils.getLogger().warning(MsgHandler.get("system-async-executor-stop-failed"));
                 }
             }
         } catch (InterruptedException e) {
@@ -145,7 +146,7 @@ public class MatchMapInstanceLoader {
         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(matchMapWorld.getWorld()));
 
         if (regionManager == null) {
-            throw new RuntimeException("ワールドガードのリージョンマネージャーを取得できません。");
+            throw new RuntimeException(MsgHandler.get("system-worldguard-instance-failed"));
         }
 
         ProtectedRegion region = getRegionToProtect(regionManager);

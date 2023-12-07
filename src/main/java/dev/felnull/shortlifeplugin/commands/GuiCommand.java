@@ -31,7 +31,9 @@ public class GuiCommand {
     public static Argument<SLGuis.WindowProvider> guiArgument() {
         return new CustomArgument<>(new StringArgument("gui"), 
                 info -> SLGuis.getWindowProvider(info.input())
-                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder(MsgHandler.get("cmd-gui-unknown")).appendArgInput())))
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(
+                                new CustomArgument.MessageBuilder(MsgHandler.get("cmd-gui-unknown")).appendArgInput()
+                        )))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> SLGuis.getAllGuiIds().toArray(String[]::new)));
     }
 

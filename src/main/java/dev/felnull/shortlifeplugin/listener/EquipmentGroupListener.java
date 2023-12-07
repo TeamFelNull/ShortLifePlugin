@@ -140,7 +140,11 @@ public class EquipmentGroupListener implements Listener {
         restrictedGroupComponentBuilder.separator(Component.text(","));
 
         Component[] groupComponents = restrictedEquipmentGroups.stream()
-                .map(equipmentGroup -> Component.text(MsgHandler.getFormatted("event-restriction-1", equipmentGroup.name(), equipmentGroup.restriction().maxHotbarExistsCount())))
+                .map(equipmentGroup -> Component.text(
+                        MsgHandler.getFormatted(
+                                "event-restriction-1", 
+                                equipmentGroup.name(),
+                                equipmentGroup.restriction().maxHotbarExistsCount())))
                 .toArray(Component[]::new);
 
         Component restrictedGroupComponent = Component.join(restrictedGroupComponentBuilder, groupComponents)

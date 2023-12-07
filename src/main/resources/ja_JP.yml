@@ -131,6 +131,21 @@ gui-match-select: "試合選択"
 gui-match-creation: "試合作成"
 
 
+#試合
+match-joined: "試合に参加しました"
+match-left: "試合から退出しました"
+match-other-player-joined: "%sが試合に参加しました"
+match-other-player-left: "%sが試合から退出しました"
+match-start: "試合開始..."
+match-end: "試合終了..."
+match-wait-world-load: "マップの準備が終わるまでお待ちください"
+match-cancel-failed-load-world: "マップの読み込みに失敗したため試合を中止します"
+match-cancel-unexpected-error-1: "想定外のエラーが発生したため試合を中止します"
+match-cancel-unexpected-error-2: "この事を運営に報告してください！"
+match-finish-insufficient-player: "参加人数が不足したため試合を終了します"
+match-created: "試合(%s)が作成されました"
+
+
 #イベント
 event-death-bare-hand: "[素手]"
 event-death-killed: " <-Killed-- "

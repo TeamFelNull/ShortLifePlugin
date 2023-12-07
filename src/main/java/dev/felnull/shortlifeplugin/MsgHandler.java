@@ -21,22 +21,28 @@ public class MsgHandler {
     /**
      * メッセージのマップ
      */
-    private static Map<String, String> msgMap = new HashMap<>();
+    private static final Map<String, String> MSG_MAP = new HashMap<>();
+    
+    /**
+     * 言語ファイルのパス<br>
+     * （他言語に対応予定がないのでrootに置いている）
+     */
+    private static final String FILE_PATH = "ja_JP.yml";
     
     private MsgHandler() {
         throw new AssertionError();
     }
 
     /**
-     * 読み込み
+     * 言語ファイルから読み込み
      *
      * @param plugin プラグイン
      */
     public static void load(Plugin plugin) {
-        Optional.ofNullable(plugin.getResource("ja_JP.yml")).ifPresentOrElse(inputStream -> {
+        Optional.ofNullable(plugin.getResource(FILE_PATH)).ifPresentOrElse(inputStream -> {
             FileConfiguration translations = YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
             translations.getKeys(false)
-                    .forEach(translation -> msgMap.put(translation, translations.getString(translation)));
+                    .forEach(translation -> MSG_MAP.put(translation, translations.getString(translation)));
         }, () -> {
             throw new NullPointerException("言語ファイルが見つかりません。プラグインをシャットダウンします"); //Logger起動前にメッセージを読み込むためLoggerは使えない
         });
@@ -61,7 +67,7 @@ public class MsgHandler {
      */
     @SuppressWarnings("deprecation")
     public static String get(String key) {
-        return Optional.ofNullable(msgMap.get(key))
+        return Optional.ofNullable(MSG_MAP.get(key))
                 .map(s -> ChatColor.translateAlternateColorCodes('&', s)).orElse(key);
     }
 }

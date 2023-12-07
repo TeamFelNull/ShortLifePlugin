@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
@@ -46,15 +47,15 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static dev.felnull.shortlifeplugin.match.MatchMessageComponents.*;
 import static org.bukkit.Sound.*;
 
 /**
  * 試合インスタンスクラス
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public abstract class Match {
 
@@ -92,59 +93,6 @@ public abstract class Match {
      * カウントを開始する残り秒数
      */
     private static final int COUNT_START_REMNANT_SECOND = 10;
-
-    /**
-     * 試合参加時のメッセージ
-     */
-    private static final Component MATCH_JOIN_MESSAGE = Component.text("試合に参加しました").color(NamedTextColor.WHITE);
-
-    /**
-     * 試合退出時のメッセージ
-     */
-    private static final Component MATCH_LEAVE_MESSAGE = Component.text("試合から退出しました").color(NamedTextColor.WHITE);
-
-    /**
-     * 試合参加時、参加者以外に送信するメッセージ
-     */
-    private static final Function<Player, Component> MATCH_JOIN_BROADCAST_MESSAGE =
-            player -> Component.text(String.format("%sが試合に参加しました", player.getName())).color(NamedTextColor.WHITE);
-
-    /**
-     * 試合退出時、参加者以外に送信するメッセージ
-     */
-    private static final Function<Player, Component> MATCH_LEAVE_BROADCAST_MESSAGE =
-            player -> Component.text(String.format("%sが試合から退出しました", player.getName())).color(NamedTextColor.WHITE);
-
-    /**
-     * 試合開始時のメッセージ
-     */
-    private static final Component MATCH_START_MESSAGE = Component.text("試合開始...").color(NamedTextColor.GREEN);
-
-    /**
-     * 試合終了時のメッセージ
-     */
-    private static final Component MATCH_FINISH_MESSAGE = Component.text("試合終了...").color(NamedTextColor.GREEN);
-
-    /**
-     * 開始時のワールド読み込み待ちメッセージ
-     */
-    private static final Component MATCH_WAIT_LOAD_WORLD_MESSAGE = Component.text("マップの準備が終わるまでお待ちください").color(NamedTextColor.BLUE);
-
-    /**
-     * ワールド読み込み失敗で試合を中止する際のメッセージ
-     */
-    private static final Component MATCH_CANCEL_FAILED_LOAD_WORLD_MESSAGE = Component.text("マップの読み込みに失敗したため試合を中止します").color(NamedTextColor.DARK_RED);
-
-    /**
-     * 想定外のエラーが原因で試合を中止する際のメッセージ
-     */
-    private static final Component MATCH_CANCEL_UNEXPECTED_ERROR_MESSAGE = Component.text("想定外のエラーが発生したため試合を中止します").color(NamedTextColor.DARK_RED).appendNewline()
-            .append(Component.text("この事を運営に報告してください！").color(NamedTextColor.GOLD));
-
-    /**
-     * 人不足で試合を終了する際のメッセージ
-     */
-    private static final Component MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE = Component.text("参加人数が不足したため試合を終了します").color(NamedTextColor.RED);
 
     /**
      * 参加しているプレイヤーとプレイヤー情報
@@ -245,7 +193,7 @@ public abstract class Match {
     protected void init() {
         updateCountDownStatus();
         this.matchMapInstance = MatchManager.getInstance().getMapLoader().createMapInstance(this, this.id, this.matchMap);
-        SLUtils.getLogger().info(String.format("試合(%s)が作成されました", getId()));
+        SLUtils.getLogger().info(MsgHandler.getFormatted("match-created", getId()));
     }
 
     /**
@@ -292,7 +240,7 @@ public abstract class Match {
 
         // マップの読み込みに失敗した場合は試合破棄
         if (this.matchMapInstance.isLoadFailed()) {
-            broadcast(MATCH_CANCEL_FAILED_LOAD_WORLD_MESSAGE);
+            broadcast(MATCH_CANCEL_FAILED_LOAD_WORLD_MESSAGE.get());
 
             Optional<Throwable> mapWorldError = this.matchMapInstance.getMapWordLoadError();
 
@@ -325,7 +273,7 @@ public abstract class Match {
             } else if (!waitLoadMapNotified) {
                 // マップの準備が終わっていなければ、1度だけ通知
                 waitLoadMapNotified = true;
-                broadcast(MATCH_WAIT_LOAD_WORLD_MESSAGE);
+                broadcast(MATCH_WAIT_LOAD_WORLD_MESSAGE.get());
             }
         }
 
@@ -347,7 +295,7 @@ public abstract class Match {
 
         if (players.size() < getMatchMode().minPlayerCount()) {
             // 参加プレイヤーの人数が、最低参加人数より少なければ試合を終了
-            broadcast(MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE);
+            broadcast(MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE.get());
             finish = true;
         } else if (this.statusTick >= totalTime) {
             // 試合制限時間を過ぎた場合、試合を終了
@@ -453,13 +401,15 @@ public abstract class Match {
         player.showBossBar(countDownBossbar);
 
         if (sendMessage) {
-            player.sendMessage(MATCH_JOIN_MESSAGE);
+            player.sendMessage(MATCH_JOIN_MESSAGE.get());
         }
         sendMapInfoMessage(player);
 
         player.playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 1.1f));
 
-        broadcast(MATCH_JOIN_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
+        broadcast(
+                Component.text(MsgHandler.getFormatted("match-other-player-joined", player.getName())).color(NamedTextColor.WHITE), 
+                pl -> pl != player);
 
         SLUtils.getLogger().info(String.format("%sが試合(%s)に参加しました", player.getName(), getId()));
 
@@ -528,8 +478,10 @@ public abstract class Match {
         }
 
         if (sendMessage) {
-            player.sendMessage(MATCH_LEAVE_MESSAGE);
-            broadcast(MATCH_LEAVE_BROADCAST_MESSAGE.apply(player), pl -> pl != player);
+            player.sendMessage(MATCH_LEAVE_MESSAGE.get());
+            broadcast(
+                    Component.text(MsgHandler.getFormatted("match-other-player-left", player.getName())).color(NamedTextColor.WHITE),
+                    pl -> pl != player);
         }
 
         player.playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 0.9f));
@@ -581,7 +533,7 @@ public abstract class Match {
         // 参加中のプレイヤーに開始処理
         this.players.keySet().forEach(this::playerStart);
 
-        broadcast(MATCH_START_MESSAGE);
+        broadcast(MATCH_START_MESSAGE.get());
 
         SLUtils.getLogger().info(String.format("試合(%s)が開始しました", getId()));
         return true;
@@ -668,7 +620,7 @@ public abstract class Match {
 
         matchEnd();
 
-        broadcast(MATCH_FINISH_MESSAGE);
+        broadcast(MATCH_FINISH_MESSAGE.get());
 
         SLUtils.getLogger().info(String.format("試合(%s)が終了しました", getId()));
         return true;
@@ -719,7 +671,7 @@ public abstract class Match {
      * 予期せぬエラーが起きた時の処理
      */
     protected void unexpectedError() {
-        broadcast(MATCH_CANCEL_UNEXPECTED_ERROR_MESSAGE);
+        broadcast(MATCH_CANCEL_UNEXPECTED_ERROR_MESSAGE.get());
     }
 
     /**

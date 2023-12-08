@@ -1,9 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
 import com.sk89q.worldedit.math.BlockVector3;
-import dev.felnull.fnjl.util.FNMath;
 import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
@@ -12,7 +10,6 @@ import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -118,7 +115,7 @@ public abstract class Match {
     /**
      * カウントダウン表示用ボスバー
      */
-    private final BossBar countDownBossbar = BossBar.bossBar(Component.empty(), 1f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+    private final MatchCountDownBossBar countDownBossbar = new MatchCountDownBossBar();
 
     /**
      * 状態
@@ -174,7 +171,7 @@ public abstract class Match {
      * 初期化処理
      */
     protected void init() {
-        updateCountDownStatus();
+        countDownBossbar.updateCountDownStatus(status);
         this.matchMapInstance = MatchManager.getInstance().getMapLoader().createMapInstance(this, this.id, this.matchMap);
         SLUtils.getLogger().info(MsgHandler.getFormatted("match-created", getId()));
     }
@@ -380,8 +377,7 @@ public abstract class Match {
             playerStart(player);
         }
 
-        // カウントダウン用ボスバーを表示
-        player.showBossBar(countDownBossbar);
+        countDownBossbar.show(player);
 
         if (sendMessage) {
             player.sendMessage(MATCH_JOIN_MESSAGE.get());
@@ -445,8 +441,7 @@ public abstract class Match {
 
         this.players.remove(player);
 
-        // カウントダウン用ボスバーを非表示化
-        player.hideBossBar(countDownBossbar);
+        countDownBossbar.hide(player);
 
         // ゲームモードを元に戻す
         GameMode preGameMode = playerInfo.getPreGameMode();
@@ -635,12 +630,7 @@ public abstract class Match {
         List<Player> leavePlayers = ImmutableList.copyOf(this.players.keySet());
         leavePlayers.forEach(player -> leave(player, false));
 
-        // カウントダウン用ボスバーの表示を全プレイヤーから消す
-        List<Player> bossbarViewers = Streams.stream(countDownBossbar.viewers())
-                .filter(viewer -> viewer instanceof Player)
-                .map(viewer -> (Player) viewer)
-                .toList();
-        Audience.audience(bossbarViewers).hideBossBar(countDownBossbar);
+        countDownBossbar.hideAll();
 
         // マップ破棄
         if (this.matchMapInstance != null) {
@@ -696,19 +686,11 @@ public abstract class Match {
         this.status = matchStatus;
         this.statusTick = 0;
 
-        updateCountDownStatus();
-    }
-
-    private void updateCountDownStatus() {
-        // カウントダウン用ボスバー更新
-        this.countDownBossbar.color(status.getCountDownBossbarColor());
-        this.countDownBossbar.name(Component.text(status.getShowName()));
+        countDownBossbar.updateCountDownStatus(status);
     }
 
     private void updateCountDownTime(int compTime, int totalTime) {
-        // カウントダウン用ボスバー更新
-        float progress = FNMath.clamp((float) compTime / (float) totalTime, 0, 1);
-        this.countDownBossbar.progress(1f - progress);
+        countDownBossbar.progress(compTime, totalTime);
 
         int remnantTick = getRemnantTick(compTime, totalTime);
         countDownTime.update(remnantTick);
@@ -726,7 +708,7 @@ public abstract class Match {
         }
 
     }
-    
+
     private int getRemnantTick(int compTime, int totalTime) {
         return totalTime - compTime;
     }
@@ -881,7 +863,7 @@ public abstract class Match {
             attackerInfo.setKillStreakCount(attackerInfo.getKillStreakCount() + 1);
             attackerInfo.giveReward();
             attacker.playSound(attacker, BLOCK_ANVIL_PLACE, 0.6f, 0.5f);
-            
+
             Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(1000), Duration.ofMillis(1000));
             Title kill = Title.title(Component.empty(), Component.text("1").color(NamedTextColor.RED)
                     .append(Component.text(MsgHandler.get("match-kill")).color(NamedTextColor.GRAY)), times);

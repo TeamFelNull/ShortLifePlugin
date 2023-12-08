@@ -170,7 +170,9 @@ public class CommonListener implements Listener {
      */
     private void sendDeathMessage(PlayerDeathEvent e, Player killed, Player killer) {
         ItemStack stack = killer.getEquipment().getItemInMainHand();
-        Component weapon = !stack.isEmpty() ? stack.displayName() : Component.text(MsgHandler.get("event-death-bare-hand")).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
+        Component weapon = !stack.isEmpty() 
+                ? stack.displayName() 
+                : Component.text(MsgHandler.get("event-death-bare-hand")).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
         NamedTextColor killedColor = TeamBaseMatch.getTeamColor(killed);
         NamedTextColor killerColor = TeamBaseMatch.getTeamColor(killer);
 

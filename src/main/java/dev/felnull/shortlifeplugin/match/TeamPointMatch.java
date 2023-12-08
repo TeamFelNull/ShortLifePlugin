@@ -222,9 +222,7 @@ public class TeamPointMatch extends TeamBaseMatch {
 
 
         @Override
-        protected void appendSidebarMatchInfo(@NotNull List<Component> sidebarInfos) {
-            super.appendSidebarMatchInfo(sidebarInfos);
-
+        protected void appendSidebarAdditionalInfo(@NotNull List<Component> sidebarInfos) {
             // 得点表示
             List<Component> teamPontTexts = new LinkedList<>();
 

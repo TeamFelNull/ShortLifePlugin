@@ -4,6 +4,7 @@ import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
+import dev.felnull.shortlifeplugin.match.MatchStatus;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -298,7 +299,7 @@ public enum MatchSubCommands {
     private static void matchStart(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
-        if (match.getStatus() != Match.Status.NONE) {
+        if (match.getStatus() != MatchStatus.NONE) {
             sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-not-ready", match.getId()));
         } else {
             if (match.start()) {
@@ -313,7 +314,7 @@ public enum MatchSubCommands {
     private static void matchFinish(CommandSender sender, CommandArguments args) {
         Match match = (Match) Objects.requireNonNull(args.get("match"));
 
-        if (match.getStatus() != Match.Status.STARTED) {
+        if (match.getStatus() != MatchStatus.STARTED) {
             sender.sendRichMessage(MsgHandler.getFormatted("cmd-match-not-able-to-finish", match.getId()));
         } else {
             if (match.finish()) {

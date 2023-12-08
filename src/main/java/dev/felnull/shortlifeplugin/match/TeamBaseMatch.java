@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * チーム試合
@@ -86,7 +87,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     @Override
     protected void tick() {
 
-        if (getStatus() != Status.NONE) {
+        if (getStatus() != MatchStatus.NONE) {
             boolean noParticipantsFlag = teams.stream()
                     .anyMatch(team -> team.getParticipationPlayers().isEmpty());
 
@@ -204,7 +205,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         }
 
         // 試合開始後、どれかしらのチームに所属していない場合は維持不可
-        return getStatus() == Status.NONE || teams.stream()
+        return getStatus() == MatchStatus.NONE || teams.stream()
                 .anyMatch(team -> team.hasParticipation(player));
     }
 
@@ -344,8 +345,8 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         }
 
         @Override
-        protected void updateInfo() {
-            super.updateInfo();
+        protected void updateInfo(Consumer<List<Component>> sideBarMatchInfoAppender) {
+            super.updateInfo(sideBarMatchInfoAppender);
 
             Set<Team> scTeams = getScoreboard().getTeams();
             scTeams.forEach(team -> team.removeEntries(team.getEntries()));

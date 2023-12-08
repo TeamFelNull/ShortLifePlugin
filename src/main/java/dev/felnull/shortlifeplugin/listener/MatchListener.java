@@ -1,8 +1,8 @@
 package dev.felnull.shortlifeplugin.listener;
 
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
-import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
+import dev.felnull.shortlifeplugin.match.MatchStatus;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -51,7 +51,7 @@ public final class MatchListener implements Listener {
     private static void changeRespawnIfInGame(PlayerRespawnEvent e) {
         MatchManager matchManager = MatchManager.getInstance();
         matchManager.getJoinedMatch(e.getPlayer()).ifPresent(match -> {
-            if (match.getStatus() == Match.Status.STARTED) {
+            if (match.getStatus() == MatchStatus.STARTED) {
 
                 // リスポーン処理
                 match.onRespawn(e.getPlayer());

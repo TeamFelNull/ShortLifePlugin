@@ -149,7 +149,7 @@ public abstract class Match {
     /**
      * カウントダウンに表示する時間(ms)
      */
-    private long countDownTime;
+    private MatchCountDownTime countDownTime = new MatchCountDownTime();
 
     /**
      * 情報表示の更新が必要であるフラグ
@@ -710,12 +710,9 @@ public abstract class Match {
         float progress = FNMath.clamp((float) compTime / (float) totalTime, 0, 1);
         this.countDownBossbar.progress(1f - progress);
 
-        int remnantTick = totalTime - compTime;
-        long tmpCountDownTime = this.countDownTime;
-        this.countDownTime = Math.max(remnantTick, 0) * 50L;
-
-        //1秒ごとに更新
-        if (tmpCountDownTime / 1000L != this.countDownTime / 1000L) {
+        int remnantTick = getRemnantTick(compTime, totalTime);
+        countDownTime.update(remnantTick);
+        if (countDownTime.shouldDirtyDisplay()) {
             dirtyAllInfo();
         }
 
@@ -728,6 +725,10 @@ public abstract class Match {
             }
         }
 
+    }
+    
+    private int getRemnantTick(int compTime, int totalTime) {
+        return totalTime - compTime;
     }
 
     /**
@@ -1032,7 +1033,7 @@ public abstract class Match {
 
         // 試合中もしくは、開始前のみ表示
         if (getStatus() == NONE || getStatus() == STARTED) {
-            int remainingTimeSecond = (int) (Match.this.countDownTime / 1000L);
+            int remainingTimeSecond = countDownTime.getSecond();
             TextColor remainingTimeColor;
             // 残り時間テキストの色選定
             if (remainingTimeSecond > 30) {

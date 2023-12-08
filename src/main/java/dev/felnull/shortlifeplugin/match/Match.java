@@ -1126,7 +1126,7 @@ public abstract class Match {
         protected PlayerInfo(@NotNull Player player) {
             this.player = player;
             Objective sidebarObjective = scoreboard.registerNewObjective("sidebar-info", Criteria.DUMMY,
-                    Component.text("試合情報").style(Style.style().color(NamedTextColor.BLUE).decorate(TextDecoration.BOLD).build()));
+                    Component.text(MsgHandler.get("match-sidebar-title")).style(Style.style().color(NamedTextColor.BLUE).decorate(TextDecoration.BOLD).build()));
             sidebarObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
             this.infoSidebarDisplay = new SidebarDisplay(sidebarObjective);
         }
@@ -1195,19 +1195,19 @@ public abstract class Match {
          * @param sidebarInfos サイドバー情報のコンポーネントリスト
          */
         protected void appendSidebarMatchInfo(@NotNull List<Component> sidebarInfos) {
-            sidebarInfos.add(Component.text("モード: ").color(NamedTextColor.AQUA)
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-mode")).color(NamedTextColor.AQUA)
                     .append(Component.text(Match.this.matchMode.name()).color(NamedTextColor.WHITE)));
 
-            sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.AQUA)
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-stats")).color(NamedTextColor.AQUA)
                     .append(Component.text(Match.this.getStatus().getShowName()).color(Match.this.getStatus().getColor())));
 
             String mapText = matchMap.name();
 
             if (!matchMapInstance.isReady()) {
-                mapText += "(読み込み中)";
+                mapText += MsgHandler.get("match-sidebar-loading");
             }
 
-            sidebarInfos.add(Component.text("マップ: ").color(NamedTextColor.AQUA)
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-map")).color(NamedTextColor.AQUA)
                     .append(Component.text(mapText).color(NamedTextColor.WHITE)));
 
             int participantPlayerCount = players.size();
@@ -1222,7 +1222,7 @@ public abstract class Match {
                 participantPlayerColor = NamedTextColor.WHITE;
             }
 
-            sidebarInfos.add(Component.text("参加人数: ").color(NamedTextColor.AQUA)
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-joined-people")).color(NamedTextColor.AQUA)
                     .append(Component.text(participantPlayerCount)
                             .append(Component.text("/"))
                             .append(Component.text(participantPlayerMax))
@@ -1241,7 +1241,7 @@ public abstract class Match {
                     remainingTimeColor = (remainingTimeSecond % 2 == 0) ? NamedTextColor.RED : NamedTextColor.DARK_RED;
                 }
 
-                sidebarInfos.add(Component.text("残り時間: ").color(NamedTextColor.AQUA)
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-time-left")).color(NamedTextColor.AQUA)
                         .append(Component.text(getTimeDisplayText(remainingTimeSecond)).color(remainingTimeColor)));
             }
         }
@@ -1275,7 +1275,7 @@ public abstract class Match {
                 killCountStyle.color(NamedTextColor.WHITE);
             }
 
-            sidebarInfos.add(Component.text("キル数: ").color(NamedTextColor.GREEN)
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-kills")).color(NamedTextColor.GREEN)
                     .append(Component.text(this.killCount).style(killCountStyle.build())));
 
 
@@ -1295,7 +1295,7 @@ public abstract class Match {
                 killStreakCountStyle.color(NamedTextColor.WHITE);
             }
 
-            Component killStreakCountComponent = Component.text("連続キル数: ").color(NamedTextColor.GREEN)
+            Component killStreakCountComponent = Component.text(MsgHandler.get("match-sidebar-kill-streak")).color(NamedTextColor.GREEN)
                     .append(Component.text(this.killStreakCount).style(killStreakCountStyle.build()));
 
             // 最大連続キル数が連続キル数を超えている場合のみ
@@ -1317,9 +1317,9 @@ public abstract class Match {
                     maxKillStreakCountStyle.color(NamedTextColor.WHITE);
                 }
 
-                killStreakCountComponent = killStreakCountComponent.append(Component.text(" (最大").color(NamedTextColor.GREEN)
+                killStreakCountComponent = killStreakCountComponent.append(Component.text(MsgHandler.get("match-sidebar-kill-streak-max-1")).color(NamedTextColor.GREEN)
                         .append(Component.text(this.maxKillStreakCount).style(maxKillStreakCountStyle.build()))
-                        .append(Component.text(")").color(NamedTextColor.GREEN)));
+                        .append(Component.text(MsgHandler.get("match-sidebar-kill-streak-max-2")).color(NamedTextColor.GREEN)));
             }
 
             sidebarInfos.add(killStreakCountComponent);
@@ -1341,24 +1341,23 @@ public abstract class Match {
                 deathCountStyle.color(NamedTextColor.WHITE);
             }
 
-            sidebarInfos.add(Component.text("死亡数: ").color(NamedTextColor.GREEN)
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-deaths")).color(NamedTextColor.GREEN)
                     .append(Component.text(this.deathCount).style(deathCountStyle.build())));
 
             if (bonusFlag) {
-                sidebarInfos.add(Component.text("■■■■■■■■■■■■ ").color(NamedTextColor.AQUA));
-                sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.WHITE)
-                        .append(Component.text("ボーナス！").color(NamedTextColor.AQUA)));
-                sidebarInfos.add(Component.text("■■■■■■■■■■■■").color(NamedTextColor.AQUA));
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-separator-1")).color(NamedTextColor.AQUA));
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-stats")).color(NamedTextColor.WHITE)
+                        .append(Component.text(MsgHandler.get("match-sidebar-bonus")).color(NamedTextColor.AQUA)));
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-separator-1")).color(NamedTextColor.AQUA));
             } else if (chanceFlag) {
-                sidebarInfos.add(Component.text("■■■■■■■■■■■■ ").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED)); //空白を入れることで同じ文字をスコアボードで扱えます
-                sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.WHITE)
-                        .append(Component.text("チャンス！").color(NamedTextColor.GOLD)));
-                sidebarInfos.add(Component.text("■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-separator-1")).color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED)); //空白を入れることで同じ文字をスコアボードで扱えます
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-stats")).color(NamedTextColor.WHITE)
+                        .append(Component.text(MsgHandler.get("match-sidebar-chance")).color(NamedTextColor.GOLD)));
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-separator-1")).color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
             } else {
-                sidebarInfos.add(Component.text("状態: ").color(NamedTextColor.WHITE)
-                        .append(Component.text("通常")).color(NamedTextColor.GRAY));
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-stats")).color(NamedTextColor.WHITE)
+                        .append(Component.text(MsgHandler.get("match-sidebar-common"))).color(NamedTextColor.GRAY));
             }
-
         }
 
         public Scoreboard getPreScoreboard() {
@@ -1484,12 +1483,12 @@ public abstract class Match {
             if (bonusFlag && !chanceFlag && chance) {
                 chanceFlag = true;
                 killChanceCount = getKillCount();
-                player.sendMessage(Component.text("■■■■■■■■■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
-                player.sendMessage(Component.text("  チャンス状態に突入!!").color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
-                player.sendMessage(Component.text("     今から死なずに").color(NamedTextColor.WHITE));
-                player.sendMessage(Component.text("  5キルストリーク達成で").color(NamedTextColor.WHITE));
-                player.sendMessage(Component.text("       特別報酬!!").color(NamedTextColor.WHITE));
-                player.sendMessage(Component.text("■■■■■■■■■■■■■■■■■■■■").color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                player.sendMessage(Component.text(MsgHandler.get("match-sidebar-separator-2")).color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
+                player.sendMessage(Component.text(MsgHandler.get("match-sidebar-chance-phase-1")).color(NamedTextColor.RED).decorate(TextDecoration.BOLD));
+                player.sendMessage(Component.text(MsgHandler.get("match-sidebar-chance-phase-2")).color(NamedTextColor.WHITE));
+                player.sendMessage(Component.text(MsgHandler.get("match-sidebar-chance-phase-3")).color(NamedTextColor.WHITE));
+                player.sendMessage(Component.text(MsgHandler.get("match-sidebar-chance-phase-4")).color(NamedTextColor.WHITE));
+                player.sendMessage(Component.text(MsgHandler.get("match-sidebar-separator-2")).color(NamedTextColor.GOLD).decorate(TextDecoration.OBFUSCATED));
                 player.playSound(player, ENTITY_ENDER_DRAGON_AMBIENT, 0.5f, 0.8f);
             }
 
@@ -1542,7 +1541,7 @@ public abstract class Match {
                 case "special" -> json.get("specialReward").getAsString();
                 case "winner" -> json.get("winnerReward").getAsString();
                 case "streak" -> json.get("streakReward").getAsString();
-                default -> throw new IllegalStateException("Unexpected value: " + functionName);
+                default -> throw new IllegalStateException(MsgHandler.get("system-unexpected-value") + functionName);
             };
         }
 
@@ -1576,7 +1575,7 @@ public abstract class Match {
                         List<String> streakCommandList = Arrays.asList(getRewardCommand("streak").split(","));
                         streakCommandList.forEach(command -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("%player_name%", player.getName())));
                     }
-                    default -> throw new IllegalStateException("Unexpected value: " + functionName);
+                    default -> throw new IllegalStateException(MsgHandler.get("system-unexpected-value") + functionName);
                 }
 
             } catch (IOException e) {
@@ -1591,7 +1590,7 @@ public abstract class Match {
                     case WINNER -> errorFunctionName = "”勝利報酬";
                     default -> errorFunctionName = "";
                 }
-                SLUtils.getLogger().info(errorFunctionName + "のコマンドが設定されていません。");
+                SLUtils.getLogger().info(MsgHandler.getFormatted("system-command-unset", errorFunctionName));
             }
         }
     }
@@ -1606,22 +1605,22 @@ public abstract class Match {
         /**
          * 開始前
          */
-        NONE(Component.text("無し"), "試合開始待ち", NamedTextColor.YELLOW, BossBar.Color.YELLOW),
+        NONE(Component.text(MsgHandler.get("match-status-none")), MsgHandler.get("match-status-display-none"), NamedTextColor.YELLOW, BossBar.Color.YELLOW),
 
         /**
          * 開始
          */
-        STARTED(Component.text("開始"), "試合中", NamedTextColor.GREEN, BossBar.Color.GREEN),
+        STARTED(Component.text(MsgHandler.get("match-status-started")), MsgHandler.get("match-status-display-started"), NamedTextColor.GREEN, BossBar.Color.GREEN),
 
         /**
          * 終了
          */
-        FINISHED(Component.text("終了"), "試合終了", NamedTextColor.BLUE, BossBar.Color.BLUE),
+        FINISHED(Component.text(MsgHandler.get("match-status-finished")), MsgHandler.get("match-status-display-finished"), NamedTextColor.BLUE, BossBar.Color.BLUE),
 
         /**
          * 破棄済み
          */
-        DISCARDED(Component.text("破棄"), "破棄済み", NamedTextColor.RED, BossBar.Color.RED);
+        DISCARDED(Component.text(MsgHandler.get("match-status-discarded")), MsgHandler.get("match-status-display-discarded"), NamedTextColor.RED, BossBar.Color.RED);
 
         /**
          * 状態名

@@ -31,6 +31,11 @@ system-match-discarded: "試合(%s)が破棄されました"
 system-unexpected-value: "不正な値: "
 system-command-unset: "%s のコマンドが設定されていません。"
 system-marker-not-exists: "必要なマーカー地点(%s)が存在しません"
+system-error-log-1: "エラー発生！以下のログを開発者に報告してください。\n"
+system-error-log-2: "--------------------------------------------\n"
+system-no-file-in-folder: "対象のファイルが含まれていないフォルダです"
+system-unsupported-text-color: "未サポートのテキストカラー"
+system-failed-to-delete-temp-folder: "一時フォルダの削除に失敗"
 
 # コマンド
 cmd-equip-unknown: "Unknown equipment group: "

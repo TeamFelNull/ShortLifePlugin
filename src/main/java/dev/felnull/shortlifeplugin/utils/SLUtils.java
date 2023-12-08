@@ -2,6 +2,7 @@ package dev.felnull.shortlifeplugin.utils;
 
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -85,8 +86,8 @@ public final class SLUtils {
      */
     public static void reportError(@NotNull Throwable throwable, @Nullable String message) throws RuntimeException {
         StringBuilder errorMessage = new StringBuilder();
-        errorMessage.append("エラー発生！以下のログを開発者に報告してください。\n");
-        errorMessage.append("--------------------------------------------\n");
+        errorMessage.append(MsgHandler.get("system-error-log-1:"));
+        errorMessage.append(MsgHandler.get("system-error-log-2"));
 
         if (message != null) {
             errorMessage.append(message).append("\n");
@@ -99,7 +100,7 @@ public final class SLUtils {
         printWriter.flush();
 
         errorMessage.append(stringWriter).append("\n");
-        errorMessage.append("--------------------------------------------\n");
+        errorMessage.append(MsgHandler.get("system-error-log-2"));
 
         getLogger().warning(errorMessage.toString());
     }
@@ -118,7 +119,7 @@ public final class SLUtils {
         Path absoluteFolder = folder.toPath().toAbsolutePath();
 
         if (!absoluteTarget.startsWith(absoluteFolder)) {
-            throw new RuntimeException("対象のファイルが含まれていないフォルダです");
+            throw new RuntimeException(MsgHandler.get("system-no-file-in-folder"));
         }
 
         // フォルダに対して相対的な対象ファイルのパス
@@ -189,7 +190,7 @@ public final class SLUtils {
     public static Optional<CharacterAndFormat> getCharacterAndFormatByTextColor(TextColor textColor) {
         if (!(textColor instanceof NamedTextColor namedTextColor)) {
             // 必要であれば、TextColor#nearestColorToを使用して実装してください。
-            throw new RuntimeException("未サポートのテキストカラー");
+            throw new RuntimeException(MsgHandler.get("system-unsupported-text-color"));
         }
 
         return CharacterAndFormat.defaults().stream()
@@ -209,7 +210,7 @@ public final class SLUtils {
         try {
             FileUtils.deleteDirectory(tmpFolder);
         } catch (IOException e) {
-            SLUtils.reportError(e, "一時フォルダの削除に失敗");
+            SLUtils.reportError(e, MsgHandler.get("system-failed-to-delete-temp-folder"));
         }
 
         if (regenerateFolder) {

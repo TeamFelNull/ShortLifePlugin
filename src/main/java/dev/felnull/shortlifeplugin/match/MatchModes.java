@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableMap;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
 import dev.felnull.shortlifeplugin.match.map.MatchMapValidator;
 import org.bukkit.Material;
@@ -22,21 +23,21 @@ public final class MatchModes {
      * テスト用試合モード
      */
     public static final MatchMode TEST =
-            new MatchMode("test", "テスト", Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
+            new MatchMode("test", MsgHandler.get("match-mode-test"), Material.COMMAND_BLOCK, MatchType.PVP, 1000 * 60 * 3,
                     1, 114514, TestMatch::new, mapPointCheck(MapMarkerPoints.SPAWN.get()), true);
 
     /**
      * チームポイント制試合モード
      */
     public static final MatchMode TEAM_POINT =
-            new MatchMode("team_point", "チーム-ポイント制", Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
+            new MatchMode("team_point", MsgHandler.get("match-mode-team-point"), Material.RED_BANNER, MatchType.PVP, 1000 * 60 * 10,
                     2, 30, TeamPointMatch::new, mapPointCheck(MapMarkerPoints.SPAWN_TEAM1.get(), MapMarkerPoints.SPAWN_TEAM2.get()), false);
 
     /**
      * FFA試合モード
      */
     public static final MatchMode FFA =
-            new MatchMode("ffa", "FFA", Material.IRON_SWORD, MatchType.PVP, 1000 * 60 * 10,
+            new MatchMode("ffa", MsgHandler.get("match-mode-FFA"), Material.IRON_SWORD, MatchType.PVP, 1000 * 60 * 10,
                     2, 30, FFAMatch::new, mapPointCheck(MapMarkerPoints.SPAWN.get()), false);
 
     /**
@@ -81,12 +82,12 @@ public final class MatchModes {
         return matchMapWorld -> {
 
             if (matchMapWorld.getMarker(point).isEmpty()) {
-                throw new RuntimeException(String.format("必要なマーカー地点(%s)が存在しません", point.asString()));
+                throw new RuntimeException(String.format(MsgHandler.get("system-marker-not-exists"), point.asString()));
             }
 
             for (NamespacedKey key : points) {
                 if (matchMapWorld.getMarker(key).isEmpty()) {
-                    throw new RuntimeException(String.format("必要なマーカー地点(%s)が存在しません", key.asString()));
+                    throw new RuntimeException(String.format(MsgHandler.get("system-marker-not-exists"), key.asString()));
                 }
             }
         };

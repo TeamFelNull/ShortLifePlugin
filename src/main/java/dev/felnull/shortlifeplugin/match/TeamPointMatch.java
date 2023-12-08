@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.match;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -29,28 +30,28 @@ public class TeamPointMatch extends TeamBaseMatch {
      * 勝利時のテキスト
      */
     private static final MatchEndTextProvider[] WIN_TEXTS = {
-            (myTeam, winners, losers) -> "おめでとう！",
-            (myTeam, winners, losers) -> String.format("%sチームに勝ち目はありません", losers.stream()
+            (myTeam, winners, losers) -> MsgHandler.get("match-team-point-win-1"),
+            (myTeam, winners, losers) -> MsgHandler.getFormatted("match-team-point-win-2", losers.stream()
                     .min(Comparator.comparing(PointMatchTeam::getPoint))
                     .map(MatchTeam::getName)
-                    .orElse("負けた"))
+                    .orElse(MsgHandler.get("match-team-point-win-3")))
     };
 
     /**
      * 敗北時のテキスト
      */
     private static final MatchEndTextProvider[] LOSE_TEXTS = {
-            (myTeam, winners, losers) -> "残念！",
-            (myTeam, winners, losers) -> "次は頑張ろう",
-            (myTeam, winners, losers) -> "何で負けたか、次の試合まで考えといてください",
-            (myTeam, winners, losers) -> "なかなか難しいねんな..."
+            (myTeam, winners, losers) -> MsgHandler.get("match-team-point-lose-1"),
+            (myTeam, winners, losers) -> MsgHandler.get("match-team-point-lose-2"),
+            (myTeam, winners, losers) -> MsgHandler.get("match-team-point-lose-3"),
+            (myTeam, winners, losers) -> MsgHandler.get("match-team-point-lose-4")
     };
 
     /**
      * 引き分け時のテキスト
      */
     private static final MatchEndTextProvider[] DRAW_TEXTS = {
-            (myTeam, winners, losers) -> "こんなんじゃ勝負になんないよ"
+            (myTeam, winners, losers) -> MsgHandler.get("match-team-point-draw")
     };
 
     /**
@@ -143,14 +144,14 @@ public class TeamPointMatch extends TeamBaseMatch {
             boolean win = false;
 
             if (draw) {
-                resultText = Component.text("引き分け").color(NamedTextColor.GRAY);
+                resultText = Component.text(MsgHandler.get("match-team-point-title-draw")).color(NamedTextColor.GRAY);
                 subtitleProvider = DRAW_TEXTS[RANDOM.nextInt(DRAW_TEXTS.length)];
             } else if (mostPointTeams.contains((PointMatchTeam) team)) {
-                resultText = Component.text("勝利").color(NamedTextColor.RED);
+                resultText = Component.text(MsgHandler.get("match-team-point-title-win")).color(NamedTextColor.RED);
                 subtitleProvider = WIN_TEXTS[RANDOM.nextInt(WIN_TEXTS.length)];
                 win = true;
             } else {
-                resultText = Component.text("敗北").color(NamedTextColor.BLUE);
+                resultText = Component.text(MsgHandler.get("match-team-point-title-lose")).color(NamedTextColor.BLUE);
                 subtitleProvider = LOSE_TEXTS[RANDOM.nextInt(LOSE_TEXTS.length)];
             }
 
@@ -235,7 +236,7 @@ public class TeamPointMatch extends TeamBaseMatch {
                 teamPontTexts.add(teamText);
             }
 
-            Component pointText = Component.text("ポイント ").color(NamedTextColor.AQUA)
+            Component pointText = Component.text(MsgHandler.get("match-team-point-point")).color(NamedTextColor.AQUA)
                     .append(Component.join(JoinConfiguration.builder().separator(Component.text(" ")).build(),
                             teamPontTexts.toArray(Component[]::new)));
 

@@ -30,6 +30,7 @@ system-match-ended: "試合(%s)が終了しました"
 system-match-discarded: "試合(%s)が破棄されました"
 system-unexpected-value: "不正な値: "
 system-command-unset: "%s のコマンドが設定されていません。"
+system-marker-not-exists: "必要なマーカー地点(%s)が存在しません"
 
 # コマンド
 cmd-equip-unknown: "Unknown equipment group: "
@@ -155,6 +156,8 @@ match-cancel-failed-load-world: "マップの読み込みに失敗したため�
 match-cancel-unexpected-error-1: "想定外のエラーが発生したため試合を中止します"
 match-cancel-unexpected-error-2: "この事を運営に報告してください！"
 match-finish-insufficient-player: "参加人数が不足したため試合を終了します"
+match-finish-team-no-participants: "チームに参加者が存在しないため試合を終了します"
+
 match-created: "試合(%s)が作成されました"
 match-mode: "モード: "
 match-players: "参加人数: "
@@ -186,6 +189,7 @@ match-sidebar-chance-phase-1: "  チャンス状態に突入!!"
 match-sidebar-chance-phase-2: "     今から死なずに"
 match-sidebar-chance-phase-3: "  5キルストリーク達成で"
 match-sidebar-chance-phase-4: "       特別報酬!!"
+match-sidebar-team: "チーム: "
 
 match-status-display-none: "試合開始待ち"
 match-status-display-started: "試合中"
@@ -195,6 +199,29 @@ match-status-none: "無し"
 match-status-started: "開始"
 match-status-finished: "終了"
 match-status-discarded: "破棄"
+
+match-mode-test: "テスト"
+match-mode-team-point: "チーム-ポイント制"
+match-mode-FFA: "FFA"
+
+match-type-pvp: "pvp"
+match-type-pve: "pve"
+
+match-team-red: "赤"
+match-team-blue: "青"
+
+match-team-point-win-1: "おめでとう！"
+match-team-point-win-2: "%sチームに勝ち目はありません"
+match-team-point-win-3: "負けた"
+match-team-point-lose-1: "残念！"
+match-team-point-lose-2: "次は頑張ろう"
+match-team-point-lose-3: "何で負けたか、次の試合まで考えといてください"
+match-team-point-lose-4: "なかなか難しいねんな..."
+match-team-point-draw: "こんなんじゃ勝負になんないよ"
+match-team-point-title-draw: "引き分け"
+match-team-point-title-win: "勝利"
+match-team-point-title-lose: "敗北"
+match-team-point-point: "ポイント "
 
 
 #イベント

@@ -25,7 +25,9 @@ public enum MatchMessageComponents {
     MATCH_CANCEL_UNEXPECTED_ERROR_MESSAGE(Component.text(MsgHandler.get("match-cancel-unexpected-error-1")).color(NamedTextColor.DARK_RED).appendNewline()
             .append(Component.text(MsgHandler.get("match-cancel-unexpected-error-2")).color(NamedTextColor.GOLD))),
     
-    MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE(Component.text(MsgHandler.get("match-finish-insufficient-player")).color(NamedTextColor.RED));
+    MATCH_FINISH_INSUFFICIENT_PLAYER_MESSAGE(Component.text(MsgHandler.get("match-finish-insufficient-player")).color(NamedTextColor.RED)),
+
+    MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE(Component.text(MsgHandler.get("match-finish-team-no-participants")).color(NamedTextColor.RED));
 
     /**
      * コンポーネント本体

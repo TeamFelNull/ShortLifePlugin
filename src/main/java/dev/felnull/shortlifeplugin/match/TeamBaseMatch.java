@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.integration.TABIntegration;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
@@ -18,17 +19,14 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.*;
 import java.util.function.Consumer;
 
+import static dev.felnull.shortlifeplugin.match.MatchMessageComponents.MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE;
+
 /**
  * チーム試合
  *
  * @author MORIMORI0317, nin8995
  */
 public abstract class TeamBaseMatch extends PVPBaseMatch {
-
-    /**
-     * チームの参加者が存在しない場合のメッセージ
-     */
-    private static final Component MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE = Component.text("チームに参加者が存在しないため試合を終了します").color(NamedTextColor.RED);
 
     /**
      * チームのリスト
@@ -67,8 +65,8 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         super.init();
 
         // チーム初期化
-        teams.add(createMatchTeam("赤", NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1.get()));
-        teams.add(createMatchTeam("青", NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2.get()));
+        teams.add(createMatchTeam(MsgHandler.get("match-team-red"), NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1.get()));
+        teams.add(createMatchTeam(MsgHandler.get("match-team-blue"), NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2.get()));
     }
 
     /**
@@ -93,7 +91,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
 
             // チームに参加者が居なければ試合終了
             if (noParticipantsFlag) {
-                broadcast(MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE);
+                broadcast(MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE.get());
                 destroy();
                 return;
             }
@@ -378,7 +376,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
             getTeamByPlayer(getPlayer()).ifPresent(team -> {
                 Component teamComponent = Component.text(team.getName()).color(team.getColor());
 
-                sidebarInfos.add(Component.text("チーム: ").color(NamedTextColor.GREEN)
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-team")).color(NamedTextColor.GREEN)
                         .append(teamComponent));
             });
         }

@@ -1,10 +1,11 @@
 package dev.felnull.shortlifeplugin.commands;
 
-import dev.felnull.shortlifeplugin.SLPermissions;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.*;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
+import dev.jorel.commandapi.arguments.CustomArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import xyz.xenondevs.invui.window.Window;
@@ -14,35 +15,36 @@ import java.util.Objects;
 /**
  * GUIコマンド
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
-public class GuiCommand implements SLCommand {
+public class GuiCommand {
 
-    @Override
-    public CommandAPICommand create() {
-        return new CommandAPICommand("gui")
-                .withAliases("slg")
-                .withPermission(SLPermissions.COMMANDS_GUI.get())
-                .withSubcommands(new CommandAPICommand("open")
-                        .withArguments(guiArgument("gui"))
-                        .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("player"))
-                        .executes(this::guiOpen));
+    private GuiCommand() {
+        throw new AssertionError();
     }
-
-    @Override
-    public void unregister() {
-        CommandAPI.unregister("gui");
-    }
-
-    private Argument<SLGuis.WindowProvider> guiArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), 
+    
+    /**
+     * guiの引数
+     *
+     * @return guiの引数
+     */
+    public static Argument<SLGuis.WindowProvider> guiArgument() {
+        return new CustomArgument<>(new StringArgument("gui"), 
                 info -> SLGuis.getWindowProvider(info.input())
-                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder("不明なGUIです: ").appendArgInput())))
+                        .orElseThrow(() -> CustomArgument.CustomArgumentException.fromMessageBuilder(
+                                new CustomArgument.MessageBuilder(MsgHandler.get("cmd-gui-unknown")).appendArgInput()
+                        )))
                 .replaceSuggestions(ArgumentSuggestions.strings(info -> SLGuis.getAllGuiIds().toArray(String[]::new)));
     }
 
-    private void guiOpen(CommandSender sender, CommandArguments args) {
-        getSenderOrSelectedPlayers(sender, args).ifPresent(players -> players.forEach(player -> {
+    /**
+     * guiを開く
+     *
+     * @param sender コマンド送信者
+     * @param args 引数
+     */
+    public static void guiOpen(CommandSender sender, CommandArguments args) {
+        SLCommands.getSenderOrSelectedPlayers(sender, args).ifPresent(players -> players.forEach(player -> {
             Window window = ((SLGuis.WindowProvider) Objects.requireNonNull(args.get("gui"))).provide(player);
             window.open();
         }));

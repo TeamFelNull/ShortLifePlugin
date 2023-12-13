@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.match.map;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
@@ -49,28 +50,27 @@ public class MatchMapInstance {
     public void dispose() {
 
         // マップワールドを破棄
-        if (this.strictWorld != null) {
-            List<Player> players = this.strictWorld.getPlayers();
-
-            // ワールドに残るプレイヤーを強制退去
-            for (Player player : players) {
-                MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld));
-            }
-
-            File worldFolder = this.strictWorld.getWorldFolder();
-            Bukkit.unloadWorld(this.strictWorld, false);
-
-            try {
-                // https://www.riblab.net/blog/2023/09/10/devnote_2/
-                // なぜか消せる...?
-                FileUtils.deleteDirectory(worldFolder);
-            } catch (IOException e) {
-                SLUtils.reportError(e, "試合用ワールドの削除に失敗");
-            }
-
-            this.strictWorld = null;
+        if (this.strictWorld == null) {
+            return;
         }
 
+        List<Player> players = this.strictWorld.getPlayers();
+
+        // ワールドに残るプレイヤーを強制退去
+        players.forEach(player -> MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld)));
+
+        File worldFolder = this.strictWorld.getWorldFolder();
+        Bukkit.unloadWorld(this.strictWorld, false);
+
+        try {
+            // https://www.riblab.net/blog/2023/09/10/devnote_2/
+            // なぜか消せる...?
+            FileUtils.deleteDirectory(worldFolder);
+        } catch (IOException e) {
+            SLUtils.reportError(e, MsgHandler.get("system-map-deletion-failed"));
+        }
+
+        this.strictWorld = null;
     }
 
     protected void setMapWorld(CompletableFuture<MatchMapWorld> mapWorld) {

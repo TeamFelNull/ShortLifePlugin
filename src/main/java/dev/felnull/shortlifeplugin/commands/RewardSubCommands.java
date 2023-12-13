@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * 報酬サブコマンドのデータ
  *
- * @author Quarri6343
+ * @author MORIMORI0317, Quarri6343
  */
 public enum RewardSubCommands {
     /**

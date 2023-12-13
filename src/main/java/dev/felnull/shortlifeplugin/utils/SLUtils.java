@@ -1,6 +1,8 @@
 package dev.felnull.shortlifeplugin.utils;
 
+import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.fnjl.util.FNStringUtil;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -10,10 +12,12 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
+import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
@@ -82,8 +86,8 @@ public final class SLUtils {
      */
     public static void reportError(@NotNull Throwable throwable, @Nullable String message) throws RuntimeException {
         StringBuilder errorMessage = new StringBuilder();
-        errorMessage.append("エラー発生！以下のログを開発者に報告してください。\n");
-        errorMessage.append("--------------------------------------------\n");
+        errorMessage.append(MsgHandler.get("system-error-log-1:"));
+        errorMessage.append(MsgHandler.get("system-error-log-2"));
 
         if (message != null) {
             errorMessage.append(message).append("\n");
@@ -96,7 +100,7 @@ public final class SLUtils {
         printWriter.flush();
 
         errorMessage.append(stringWriter).append("\n");
-        errorMessage.append("--------------------------------------------\n");
+        errorMessage.append(MsgHandler.get("system-error-log-2"));
 
         getLogger().warning(errorMessage.toString());
     }
@@ -115,7 +119,7 @@ public final class SLUtils {
         Path absoluteFolder = folder.toPath().toAbsolutePath();
 
         if (!absoluteTarget.startsWith(absoluteFolder)) {
-            throw new RuntimeException("対象のファイルが含まれていないフォルダです");
+            throw new RuntimeException(MsgHandler.get("system-no-file-in-folder"));
         }
 
         // フォルダに対して相対的な対象ファイルのパス
@@ -178,7 +182,7 @@ public final class SLUtils {
     }
 
     /**
-     * テキストカラーを#CharacterAndFormatへ変換ｎ\
+     * テキストカラーを#CharacterAndFormatへ変換
      *
      * @param textColor テキストカラー
      * @return 文字とフォーマット
@@ -186,12 +190,31 @@ public final class SLUtils {
     public static Optional<CharacterAndFormat> getCharacterAndFormatByTextColor(TextColor textColor) {
         if (!(textColor instanceof NamedTextColor namedTextColor)) {
             // 必要であれば、TextColor#nearestColorToを使用して実装してください。
-            throw new RuntimeException("未サポートのテキストカラー");
+            throw new RuntimeException(MsgHandler.get("system-unsupported-text-color"));
         }
 
         return CharacterAndFormat.defaults().stream()
                 .filter(it -> it.format() == namedTextColor)
                 .limit(1)
                 .findFirst();
+    }
+
+    /**
+     * 一時フォルダを削除
+     *
+     * @param regenerateFolder 空のTMPフォルダを再生成するかどうか
+     */
+    public static void clearTmpFolder(boolean regenerateFolder) {
+        File tmpFolder = SLFiles.tmpFolder();
+
+        try {
+            FileUtils.deleteDirectory(tmpFolder);
+        } catch (IOException e) {
+            SLUtils.reportError(e, MsgHandler.get("system-failed-to-delete-temp-folder"));
+        }
+
+        if (regenerateFolder) {
+            FNDataUtil.wishMkdir(tmpFolder);
+        }
     }
 }

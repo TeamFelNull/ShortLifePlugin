@@ -1,11 +1,15 @@
 package dev.felnull.shortlifeplugin.gui;
 
 import dev.felnull.fnjl.util.FNMath;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.SLConfig;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeIconItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchModeSelectItem;
 import dev.felnull.shortlifeplugin.gui.item.MatchRoomSelectItem;
-import dev.felnull.shortlifeplugin.match.*;
+import dev.felnull.shortlifeplugin.match.MatchManager;
+import dev.felnull.shortlifeplugin.match.MatchMode;
+import dev.felnull.shortlifeplugin.match.MatchModes;
+import dev.felnull.shortlifeplugin.match.MatchType;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xyz.xenondevs.invui.gui.Gui;
@@ -19,7 +23,7 @@ import java.util.List;
 /**
  * 試合選択GUI
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchSelectorGui implements SLGuis.WindowProvider {
 
@@ -38,17 +42,28 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
      */
     private static final int ROOM_PER_PAGE_COUNT = 9;
 
+    /**
+     * ページ数
+     */
+    private static final int PAGE_COUNT = Math.max(PVP_ROOM_SIZE, PVE_ROOM_SIZE) / ROOM_PER_PAGE_COUNT + 1;
+
     @Override
     public @NotNull Window provide(@NotNull Player player) {
 
         // 試合選択GUIをページごとに作成
         List<Gui> pages = new ArrayList<>();
-        int pageCount = Math.max(PVP_ROOM_SIZE, PVE_ROOM_SIZE) / ROOM_PER_PAGE_COUNT + 1;
-        for (int i = 0; i < pageCount; i++) {
+        for (int i = 0; i < PAGE_COUNT; i++) {
             pages.add(createPage(i));
         }
 
-        Gui gui = PagedGui.guis()
+        Gui gui = buildGuiFromPages(pages);
+
+        return buildWindow(player, MsgHandler.get("gui-match-select"), gui);
+    }
+
+    @NotNull
+    private static Gui buildGuiFromPages(List<Gui> pages) {
+        return PagedGui.guis()
                 .setStructure(
                         "xxxxxxxxx",
                         "xxxxxxxxx",
@@ -59,10 +74,13 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
                 .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
                 .setContent(pages)
                 .build();
+    }
 
+    @NotNull
+    private static Window buildWindow(@NotNull Player player, String title, Gui gui) {
         return Window.single()
                 .setViewer(player)
-                .setTitle("試合選択")
+                .setTitle(title)
                 .setGui(gui)
                 .build();
     }
@@ -83,23 +101,30 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
 
         MatchManager matchManager = MatchManager.getInstance();
 
+        listPVPRoom(gui, firstRoomNum, pvpRoomCount, matchManager);
+        listPVERoom(gui, firstRoomNum, pveRoomCount, matchManager);
+
+        return gui;
+    }
+
+    private static void listPVPRoom(Gui gui, int firstRoomNum, int pvpRoomCount, MatchManager matchManager) {
         for (int i = 0; i < pvpRoomCount; i++) {
             gui.setItem(i, 0, new MatchRoomSelectItem(MatchType.PVP, firstRoomNum + i));
 
             int finalI = i;
-            matchManager.getMatch(getRoomMatchId(MatchType.PVP, firstRoomNum + i)).ifPresent(match -> 
+            matchManager.getMatch(getRoomMatchId(MatchType.PVP, firstRoomNum + i)).ifPresent(match ->
                     gui.setItem(finalI, 1, new MatchModeIconItem(match.getMatchMode())));
         }
+    }
 
+    private static void listPVERoom(Gui gui, int firstRoomNum, int pveRoomCount, MatchManager matchManager) {
         for (int i = 0; i < pveRoomCount; i++) {
             gui.setItem(i, 3, new MatchRoomSelectItem(MatchType.PVE, firstRoomNum + i));
 
             int finalI = i;
-            matchManager.getMatch(getRoomMatchId(MatchType.PVE, firstRoomNum + i)).ifPresent(match -> 
+            matchManager.getMatch(getRoomMatchId(MatchType.PVE, firstRoomNum + i)).ifPresent(match ->
                     gui.setItem(finalI, 4, new MatchModeIconItem(match.getMatchMode())));
         }
-
-        return gui;
     }
 
     /**
@@ -118,21 +143,22 @@ public class MatchSelectorGui implements SLGuis.WindowProvider {
                         "#########")
                 .build();
 
-        List<MatchMode> modes = MatchModes.getAllModes().values().stream()
-                .filter(mode -> mode.matchType() == matchType)
-                .filter(mode -> SLConfig.isTestMode() || !mode.testOnly()) // テスト時のみテストモードを表示
-                .limit(gui.getSize())
-                .toList();
+        List<MatchMode> modes = getAllMatchModes(matchType, gui);
 
         for (int i = 0; i < modes.size(); i++) {
             gui.setItem(i, new MatchModeSelectItem(modes.get(i), matchId));
         }
 
-        return Window.single()
-                .setViewer(player)
-                .setTitle("試合作成")
-                .setGui(gui)
-                .build();
+        return buildWindow(player, MsgHandler.get("gui-match-creation"), gui);
+    }
+
+    @NotNull
+    private static List<MatchMode> getAllMatchModes(@NotNull MatchType matchType, Gui gui) {
+        return MatchModes.getAllModes().values().stream()
+                .filter(mode -> mode.matchType() == matchType)
+                .filter(mode -> SLConfig.isTestMode() || !mode.testOnly()) // テスト時のみテストモードを表示
+                .limit(gui.getSize())
+                .toList();
     }
 
     /**

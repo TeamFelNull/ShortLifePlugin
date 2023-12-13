@@ -4,7 +4,7 @@ package dev.felnull.shortlifeplugin;
  * このプラグインで使用するパーミッション<br/>
  * パーミッションの定義はplugin.ymlで行ってください。
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public enum SLPermissions {
     /**

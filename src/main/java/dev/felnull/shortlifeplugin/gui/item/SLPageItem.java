@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.gui.item;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.gui.SLGuis;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -19,12 +20,12 @@ public class SLPageItem extends PageItem {
     /**
      * ページを戻す場合のテキスト
      */
-    private static final Component BACK_PAGE_TEXT = Component.text("前のページへ").color(NamedTextColor.GRAY);
+    private static final Component BACK_PAGE_TEXT = Component.text(MsgHandler.get("item-previous-page")).color(NamedTextColor.GRAY);
 
     /**
      * ページを送る場合のテキスト
      */
-    private static final Component NEXT_PAGE_TEXT = Component.text("次のページへ").color(NamedTextColor.GRAY);
+    private static final Component NEXT_PAGE_TEXT = Component.text(MsgHandler.get("item-next-page")).color(NamedTextColor.GRAY);
 
     /**
      * ページ送りかどうか

@@ -1,5 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
+
 /**
  * 試合の種類
  *
@@ -9,12 +11,12 @@ public enum MatchType {
     /**
      * Player VS Player
      */
-    PVP("pvp"),
+    PVP(MsgHandler.get("match-type-pvp")),
 
     /**
      * Player VS Environment
      */
-    PVE("pve");
+    PVE(MsgHandler.get("match-type-pve"));
 
     /**
      * 名前

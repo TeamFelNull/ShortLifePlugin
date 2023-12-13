@@ -3,13 +3,10 @@ package dev.felnull.shortlifeplugin.match.map;
 import com.google.common.base.Suppliers;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
@@ -32,9 +29,7 @@ import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.felnull.fnjl.util.FNDataUtil;
-import dev.felnull.fnjl.util.FNStringUtil;
-import dev.felnull.shortlifeplugin.ShortLifePlugin;
-import dev.felnull.shortlifeplugin.match.Match;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -44,38 +39,25 @@ import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
+
+import static dev.felnull.shortlifeplugin.match.map.MatchMapHandler.WORLD_NAME_PREFIX;
 
 /**
- * 試合用マップの読み込み関係
+ * 試合用マップインスタンスをロードする
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
-public class MatchMapLoader {
-
-    /**
-     * GSON
-     */
-    private static final Gson GSON = new Gson();
-
-    /**
-     * ランダム
-     */
-    private static final Random RANDOM = new Random();
-
-    /**
-     * ワールド名の接頭辞
-     */
-    private static final String WORLD_NAME_PREFIX = "world_match/";
-
+public class MatchMapInstanceLoader {
+    
     /**
      * ワールドガードのグローバルリージョンID
      */
@@ -85,17 +67,6 @@ public class MatchMapLoader {
      * Tickに同期して処理を行うExecutor
      */
     private final Executor tickExecutor = Bukkit.getScheduler().getMainThreadExecutor(SLUtils.getSLPlugin());
-
-    /**
-     * 非同期で処理を行うExecutor
-     */
-    private final ExecutorService asyncExecutor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 1),
-            new BasicThreadFactory.Builder().namingPattern("map-loader-worker-%d").daemon(true).build());
-
-    /**
-     * 読み込まれた全てのマップ
-     */
-    private final Map<String, MatchMap> maps = new HashMap<>();
 
     /**
      * 試合用ワールド情報のキャッシュ
@@ -110,195 +81,127 @@ public class MatchMapLoader {
             .build();
 
     /**
-     * 初期化処理
-     *
-     * @param plugin プラグイン
+     * 非同期で処理を行うExecutor
      */
-    public void init(ShortLifePlugin plugin) {
-        clearMatchWorldFolder();
-
-        FNDataUtil.wishMkdir(SLFiles.schematicFolder());
-
-        try {
-            loadMap();
-        } catch (IOException ex) {
-            SLUtils.reportError(ex, "全ての試合用マップの読み込みに失敗");
-        }
-
-        plugin.getLogger().info("マップの読み込み完了");
-    }
-
-
-    private void loadMap() throws IOException {
-        File mapFolder = SLFiles.mapFolder();
-        FNDataUtil.wishMkdir(mapFolder);
-
-        // マップフォルダの全てのファイルから、マップを読み込み
-        try (Stream<Path> paths = Files.walk(mapFolder.toPath())) {
-            Stream<File> mapFiles = paths.map(Path::toFile) // ファイルへ変換
-                    .filter(it -> !it.isDirectory()) // ディレクトリを除外
-                    .filter(it -> "json".equalsIgnoreCase(FNStringUtil.getExtension(it.getName()))); // 拡張子がJsonのファイルでフィルタリング
-
-            mapFiles.forEach(file -> {
-                String id = SLUtils.getIdFromPath(file, mapFolder);
-
-                // Jsonから試合用マップ情報を読み込む
-                try (InputStream stream = new FileInputStream(file); Reader reader = new BufferedReader(new InputStreamReader(stream))) {
-                    JsonObject jo = GSON.fromJson(reader, JsonObject.class);
-                    MatchMap matchMap = MatchMap.of(id, jo);
-                    maps.put(id, matchMap);
-
-                    SLUtils.getLogger().info(String.format("試合用マップを読み込みました: %s", id));
-                } catch (IOException | RuntimeException e) {
-                    SLUtils.reportError(e, String.format("試合用マップの読み込みに失敗: %s", id));
-                }
-
-            });
-        }
-    }
+    private final ExecutorService asyncExecutor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 1),
+            new BasicThreadFactory.Builder().namingPattern("map-loader-worker-%d").daemon(true).build());
 
     /**
-     * マップインスタンスを作成
-     *
-     * @param match         試合
-     * @param mapInstanceId マップインスタンスID
-     * @param matchMap      試合用マップ
-     * @return マップインスタンス
+     * 非同期処理用Executorを停止
      */
-    public MatchMapInstance createMapInstance(@NotNull Match match, @NotNull String mapInstanceId, @NotNull MatchMap matchMap) {
-        MatchMapInstance matchMapInstance = new MatchMapInstance();
-        matchMapInstance.setMapWorld(load(match.getMatchMode(), matchMapInstance, mapInstanceId, matchMap));
-        return matchMapInstance;
-    }
-
-    /**
-     * 破棄処理
-     */
-    public void dispose() {
-
-        // 非同期処理用Executorを停止
+    public void stopAsyncExecutor() {
         this.asyncExecutor.shutdown();
         try {
             if (!this.asyncExecutor.awaitTermination(194, TimeUnit.SECONDS)) {
                 this.asyncExecutor.shutdownNow();
                 if (!this.asyncExecutor.awaitTermination(194, TimeUnit.SECONDS)) {
-                    SLUtils.getLogger().warning("非同期処理用Executorの停止に失敗");
+                    SLUtils.getLogger().warning(MsgHandler.get("system-async-executor-stop-failed"));
                 }
             }
         } catch (InterruptedException e) {
             this.asyncExecutor.shutdownNow();
             Thread.currentThread().interrupt();
         }
-
-        clearMatchWorldFolder();
     }
 
     /**
-     * 読み込み済みのマップを取得
-     *
-     * @param mapId マップID
-     * @return 試合用マップ
-     */
-    public Optional<MatchMap> getMap(@NotNull String mapId) {
-        return Optional.ofNullable(this.maps.get(mapId));
-    }
-
-    @Unmodifiable
-    @NotNull
-    public Map<String, MatchMap> getAllMap() {
-        return ImmutableMap.copyOf(this.maps);
-    }
-
-    /**
-     * 指定した試合モードが利用可能なマップをランダムで取得
+     * 試合用マップをロードする
      *
      * @param matchMode 試合モード
-     * @return 試合マップ
+     * @param matchMapInstance マップインスタンス(ワールドは空)
+     * @param mapInstanceID マップインスタンスのID
+     * @param matchMap 試合マップの種類別情報レコード
+     * @return 完成した試合用マップ
      */
-    public Optional<MatchMap> getRandomMap(@NotNull MatchMode matchMode) {
-        List<MatchMap> availableMaps = this.maps.values().stream()
-                .filter(map -> map.availableMatchModes().contains(matchMode))
-                .toList();
-
-        if (availableMaps.isEmpty()) {
-            return Optional.empty();
-        } else if (availableMaps.size() == 1) {
-            return Optional.of(availableMaps.get(0));
-        } else {
-            return Optional.of(availableMaps.get(RANDOM.nextInt(availableMaps.size())));
-        }
-    }
-
-    private void clearMatchWorldFolder() {
-        File matchWorldFolder = new File("./" + WORLD_NAME_PREFIX);
-
-        try {
-            FileUtils.deleteDirectory(matchWorldFolder);
-        } catch (IOException e) {
-            SLUtils.reportError(e, "試合用ワールドフォルダーの削除に失敗");
-        }
-    }
-
-    private CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance,
-                                                  @NotNull String worldId, @NotNull MatchMap matchMap) {
-        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(worldId, matchMap);
-        CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance, worldId);
+    public CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance,
+                                                  @NotNull String mapInstanceID, @NotNull MatchMap matchMap) {
+        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(mapInstanceID, matchMap);
+        CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance, mapInstanceID);
 
         return worldCompletableFuture
-                .thenCombineAsync(schemCompletableFuture, (world, clipboardMapMarkerSetPair) -> {
-                    /* Tick同期でワールドにスケマティック構造物を生成 */
-
-
-                    com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
-
-                    try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {
-                        Operation operation = new ClipboardHolder(clipboardMapMarkerSetPair.getLeft())
-                                .createPaste(editSession)
-                                .to(matchMap.offset())
-                                .copyEntities(true)
-                                .copyBiomes(true)
-                                .build();
-                        Operations.complete(operation);
-                    } catch (WorldEditException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)の準備完了", worldId));
-
-                    return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
-                }, tickExecutor).thenApplyAsync(matchMapWorld -> {
-                    /* Tick同期でマップ保護 */
-
-                    // https://worldguard.enginehub.org/en/latest/developer/regions/managers/
-                    // https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/
-                    // https://worldguard.enginehub.org/en/latest/regions/global-region/
-
-                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(matchMapWorld.getWorld()));
-
-                    if (regionManager == null) {
-                        throw new RuntimeException("ワールドガードのリージョンマネージャーを取得できません。");
-                    }
-
-                    // 保護対象のリージョンを取得
-                    ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
-                    if (region == null) {
-                        // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
-                        region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
-                        regionManager.addRegion(region);
-                    }
-
-                    // 保護フラグ指定
-                    setWorldGuardRegionFlag(region);
-
-                    return matchMapWorld;
-                }, tickExecutor).thenApplyAsync(matchMapWorld -> {
+                .thenCombineAsync(schemCompletableFuture,
+                        (world, clipboardMapMarkerSetPair) -> generateSchematicStructure(mapInstanceID, matchMap, world, clipboardMapMarkerSetPair), tickExecutor)
+                .thenApplyAsync(this::protectWorld, tickExecutor)
+                .thenApplyAsync(matchMapWorld -> {
                     /* Tick同期でマップ検証 */
 
                     matchMode.mapValidator().validate(matchMapWorld);
 
                     return matchMapWorld;
                 }, tickExecutor);
+    }
+
+    /**
+     * Tick同期でマップ保護
+     *
+     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/managers/">参考</a>
+     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/">参考</a>
+     * @see <a href="https://worldguard.enginehub.org/en/latest/regions/global-region/">参考</a>
+     *
+     * @param matchMapWorld 試合ワールドデータ
+     * @return 試合ワールドデータ
+     */
+    private @NotNull MatchMapWorld protectWorld(@NotNull MatchMapWorld matchMapWorld) {
+        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(matchMapWorld.getWorld()));
+
+        if (regionManager == null) {
+            throw new RuntimeException(MsgHandler.get("system-worldguard-instance-failed"));
+        }
+
+        ProtectedRegion region = getRegionToProtect(regionManager);
+
+        setWorldGuardRegionFlag(region);
+
+        return matchMapWorld;
+    }
+
+    /**
+     * 保護対象のリージョンを取得
+     *
+     * @param regionManager リージョンマネージャ
+     * @return 保護対象のリージョン
+     */
+    @NotNull
+    private static ProtectedRegion getRegionToProtect(RegionManager regionManager) {
+        ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
+        if (region == null) {
+            // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
+            region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
+            regionManager.addRegion(region);
+        }
+        return region;
+    }
+
+    /**
+     * Tick同期でワールドにスケマティック構造物を生成
+     *
+     * @param worldId ワールドID
+     * @param matchMap 試合マップ
+     * @param world ワールド
+     * @param clipboardMapMarkerSetPair クリップボードとマップマーカーのペア
+     * @return 試合ワールドデータ
+     */
+    @NotNull
+    private static MatchMapWorld generateSchematicStructure(@NotNull String worldId, @NotNull MatchMap matchMap,
+                                                            World world, Pair<Clipboard, MapMarkerSet> clipboardMapMarkerSetPair) {
+        com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
+
+        try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {
+            Operation operation = new ClipboardHolder(clipboardMapMarkerSetPair.getLeft())
+                    .createPaste(editSession)
+                    .to(matchMap.offset())
+                    .copyEntities(true)
+                    .copyBiomes(true)
+                    .build();
+            Operations.complete(operation);
+        } catch (WorldEditException e) {
+            throw new RuntimeException(e);
+        }
+
+        SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)の準備完了", worldId));
+
+        return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
     }
 
     /**
@@ -408,9 +311,8 @@ public class MatchMapLoader {
 
                     if (blockData.getMaterial() == Material.JIGSAW) {
                         BaseBlock baseBlock = clipboard.getFullBlock(pos);
-                        JigsawMapMarker.of(pos.subtract(clipboard.getOrigin()), baseBlock, blockData).ifPresent(jigsawMapMarker -> {
-                            mapMarksersBuilder.put(jigsawMapMarker.pointName(), jigsawMapMarker);
-                        });
+                        JigsawMapMarker.of(pos.subtract(clipboard.getOrigin()), baseBlock, blockData)
+                                .ifPresent(jigsawMapMarker -> mapMarksersBuilder.put(jigsawMapMarker.pointName(), jigsawMapMarker));
                     }
                 }
             }

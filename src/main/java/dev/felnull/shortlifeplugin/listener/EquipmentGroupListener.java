@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.listener;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroup;
 import dev.felnull.shortlifeplugin.equipmentgroup.EquipmentGroupManager;
@@ -32,7 +33,7 @@ import java.util.List;
 /**
  * 装備グループ用イベントリスナー
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class EquipmentGroupListener implements Listener {
 
@@ -95,19 +96,20 @@ public class EquipmentGroupListener implements Listener {
         }
     }
 
-    private boolean hotbarRestriction(@NotNull Player player, @Nullable ItemStack itemStack, boolean skipWeaponMessage) {
+    /**
+     * ホットバーのあるアイテムに使用制限がかかっているかどうか
+     *
+     * @param player     プレイヤー
+     * @param itemStack  アイテム
+     * @param skipNotify 使用制限演出を省略するかどうか
+     * @return 使用制限がかかっているかどうか
+     */
+    private boolean hotbarRestriction(@NotNull Player player, @Nullable ItemStack itemStack, boolean skipNotify) {
         EquipmentGroupManager manager = EquipmentGroupManager.getInstance();
         List<EquipmentGroup> equipmentGroups = manager.getBelongsGroups(itemStack);
         Inventory inventory = player.getInventory();
 
-        List<ItemStack> hotbarStacks = new LinkedList<>();
-        // 0~8のスロットがホットバー
-        for (int i = 0; i < 9; i++) {
-            ItemStack hotbarStack = inventory.getItem(i);
-            if (hotbarStack != null && !hotbarStack.isEmpty()) {
-                hotbarStacks.add(hotbarStack);
-            }
-        }
+        List<ItemStack> hotbarStacks = getHotbarStacks(inventory);
 
         // 制限されるグループリスト
         List<EquipmentGroup> restrictedEquipmentGroups = equipmentGroups.stream()
@@ -117,30 +119,62 @@ public class EquipmentGroupListener implements Listener {
         // 制限されるグループが存在する場合
         if (!restrictedEquipmentGroups.isEmpty()) {
 
-            if (!(itemStack != null && WeaponMechanicsAPI.getWeaponTitle(itemStack) != null && !skipWeaponMessage)) {
-                JoinConfiguration.Builder restrictedGroupComponentBuilder = JoinConfiguration.builder();
-                restrictedGroupComponentBuilder.separator(Component.text(","));
-
-                Component[] groupComponents = restrictedEquipmentGroups.stream()
-                        .map(equipmentGroup -> Component.text(String.format("%sは%d個", equipmentGroup.name(), equipmentGroup.restriction().maxHotbarExistsCount())))
-                        .toArray(Component[]::new);
-
-                Component restrictedGroupComponent = Component.join(restrictedGroupComponentBuilder, groupComponents)
-                        .append(Component.text("より多くホットバーに存在できません"))
-                        .color(NamedTextColor.RED);
-
-
-                Audience audience = Audience.audience(player);
-                audience.sendMessage(restrictedGroupComponent);
-                audience.playSound((Sound.sound(org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_RESONATE.key(), Sound.Source.MASTER, 1, 1.5f)));
-
-                player.spawnParticle(Particle.REDSTONE, player.getLocation().clone().add(0, 1, 0),
-                        25, 0.3f, 0.3f, 0.3f, new Particle.DustOptions(Color.fromRGB(50, 50, 50), 1));
+            if (!(itemStack != null && WeaponMechanicsAPI.getWeaponTitle(itemStack) != null && !skipNotify)) {
+                notifyPlayerRestriction(player, restrictedEquipmentGroups);
             }
 
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * プレイヤーに所持制限を通知
+     *
+     * @param player                    プレイヤー
+     * @param restrictedEquipmentGroups 所持制限対象の装備グループ
+     */
+    private static void notifyPlayerRestriction(@NotNull Player player, List<EquipmentGroup> restrictedEquipmentGroups) {
+        JoinConfiguration.Builder restrictedGroupComponentBuilder = JoinConfiguration.builder();
+        restrictedGroupComponentBuilder.separator(Component.text(","));
+
+        Component[] groupComponents = restrictedEquipmentGroups.stream()
+                .map(equipmentGroup -> Component.text(
+                        MsgHandler.getFormatted(
+                                "event-restriction-1", 
+                                equipmentGroup.name(),
+                                equipmentGroup.restriction().maxHotbarExistsCount())))
+                .toArray(Component[]::new);
+
+        Component restrictedGroupComponent = Component.join(restrictedGroupComponentBuilder, groupComponents)
+                .append(Component.text(MsgHandler.get("event-restriction-2")))
+                .color(NamedTextColor.RED);
+
+
+        Audience audience = Audience.audience(player);
+        audience.sendMessage(restrictedGroupComponent);
+        audience.playSound((Sound.sound(org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_RESONATE.key(), Sound.Source.MASTER, 1, 1.5f)));
+
+        player.spawnParticle(Particle.REDSTONE, player.getLocation().clone().add(0, 1, 0),
+                25, 0.3f, 0.3f, 0.3f, new Particle.DustOptions(Color.fromRGB(50, 50, 50), 1));
+    }
+
+    /**
+     * インベントリの0~8のスロット(ホットバー)のアイテムを取得
+     *
+     * @param inventory インベントリ
+     * @return ホットバー
+     */
+    @NotNull
+    private static List<ItemStack> getHotbarStacks(Inventory inventory) {
+        List<ItemStack> hotbarStacks = new LinkedList<>();
+        for (int i = 0; i < 9; i++) {
+            ItemStack hotbarStack = inventory.getItem(i);
+            if (hotbarStack != null && !hotbarStack.isEmpty()) {
+                hotbarStacks.add(hotbarStack);
+            }
+        }
+        return hotbarStacks;
     }
 }

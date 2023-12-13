@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * FFA試合
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class FFAMatch extends PVPBaseMatch {
 
@@ -37,29 +37,47 @@ public class FFAMatch extends PVPBaseMatch {
 
     @Override
     protected void matchEnd() {
+        List<List<Player>> playerRankGroups = getPlayerRankGroups();
+
+        for (int i = 0; i < playerRankGroups.size(); i++) {
+            sendRankMessage(i, playerRankGroups.get(i));
+        }
+    }
+
+    /**
+     * プレイヤーをキル数ごとに分ける
+     *
+     * @return キル数ごとに分けられたプレイヤー
+     */
+    @NotNull
+    private List<List<Player>> getPlayerRankGroups() {
         Map<Integer, List<Map.Entry<Player, PlayerInfo>>> playerKillCountGroups = this.players.entrySet().stream()
                 .collect(Collectors.groupingBy(entry -> entry.getValue().getKillCount()));
 
-        List<List<Player>> playerRankGroups = playerKillCountGroups.entrySet().stream()
+        return playerKillCountGroups.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey()) // kill数でソート
                 .map(Map.Entry::getValue)// エントリのみを抽出
                 .map(it -> it.stream()
                         .map(Map.Entry::getKey).toList()) // プレイヤーのみを抽出
-                .toList(); // リスト化
-
-
-        for (int i = 0; i < playerRankGroups.size(); i++) {
-            List<Player> rankPlayers = playerRankGroups.get(i);
-            Audience audience = Audience.audience(rankPlayers);
-
-            Title.Times times = Title.Times.times(Ticks.duration(10), Duration.ofMillis(FINISH_WAIT_FOR_TELEPORT - (FINISH_WAIT_FOR_TELEPORT / 4)), Ticks.duration(20));
-            Title title = Title.title(Component.text(String.format("%s位", i + 1)), Component.empty(), times);
-            audience.showTitle(title);
-        }
+                .toList();
     }
+
+    /**
+     * プレイヤーに順位メッセージを表示する
+     *
+     * @param rank 順位
+     * @param rankPlayers 同じ順位の全プレイヤー
+     */
+    private static void sendRankMessage(int rank, List<Player> rankPlayers) {
+        Audience audience = Audience.audience(rankPlayers);
+        Title.Times times = Title.Times.times(Ticks.duration(10), Duration.ofMillis(FINISH_WAIT_FOR_TELEPORT - (FINISH_WAIT_FOR_TELEPORT / 4)), Ticks.duration(20));
+        Title title = Title.title(Component.text(String.format("%s位", rank + 1)), Component.empty(), times);
+        audience.showTitle(title);
+    }
+
 
     @Override
     protected Optional<MapMarker> getSpawnMaker(@NotNull MatchMapWorld matchMapWorld, @NotNull Player player) {
-        return matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN);
+        return matchMapWorld.getMakerRandom(MapMarkerPoints.SPAWN.get());
     }
 }

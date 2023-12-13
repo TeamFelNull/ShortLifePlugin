@@ -36,24 +36,26 @@ public class TABIntegration {
      */
     public static void setPlayerTabListColor(@NotNull Player player, @Nullable TextColor color) {
         TabListFormatManager tabListFormatManager = getAPI().getTabListFormatManager();
+        if (tabListFormatManager == null) {
+            return;
+        }
 
-        if (tabListFormatManager != null) {
-            TabPlayer tabPlayer = getAPI().getPlayer(player.getUniqueId());
+        TabPlayer tabPlayer = getAPI().getPlayer(player.getUniqueId());
+        if (tabPlayer == null) {
+            return;
+        }
 
-            if (tabPlayer != null) {
-                if (color != null) {
-                    SLUtils.getCharacterAndFormatByTextColor(color)
-                            // とりあえず、非対応文字カラーの場合は白に設定する
-                            .or(() -> Optional.of(CharacterAndFormat.WHITE))
-                            .ifPresent(characterAndFormat -> {
-                                tabListFormatManager.setPrefix(tabPlayer, String.valueOf(LegacyComponentSerializer.SECTION_CHAR) + characterAndFormat.character());
-                                tabListFormatManager.setSuffix(tabPlayer, RESET_TEXT);
-                            });
-                } else {
-                    tabListFormatManager.setPrefix(tabPlayer, null);
-                    tabListFormatManager.setSuffix(tabPlayer, null);
-                }
-            }
+        if (color != null) {
+            SLUtils.getCharacterAndFormatByTextColor(color)
+                    // とりあえず、非対応文字カラーの場合は白に設定する
+                    .or(() -> Optional.of(CharacterAndFormat.WHITE))
+                    .ifPresent(characterAndFormat -> {
+                        tabListFormatManager.setPrefix(tabPlayer, String.valueOf(LegacyComponentSerializer.SECTION_CHAR) + characterAndFormat.character());
+                        tabListFormatManager.setSuffix(tabPlayer, RESET_TEXT);
+                    });
+        } else {
+            tabListFormatManager.setPrefix(tabPlayer, null);
+            tabListFormatManager.setSuffix(tabPlayer, null);
         }
     }
 

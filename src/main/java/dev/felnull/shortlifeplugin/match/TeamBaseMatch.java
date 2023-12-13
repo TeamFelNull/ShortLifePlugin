@@ -1,6 +1,7 @@
 package dev.felnull.shortlifeplugin.match;
 
 import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.integration.TABIntegration;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
@@ -16,6 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
+import java.util.function.Consumer;
+
+import static dev.felnull.shortlifeplugin.match.MatchMessageComponents.MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE;
 
 /**
  * チーム試合
@@ -23,11 +27,6 @@ import java.util.*;
  * @author MORIMORI0317, nin8995
  */
 public abstract class TeamBaseMatch extends PVPBaseMatch {
-
-    /**
-     * チームの参加者が存在しない場合のメッセージ
-     */
-    private static final Component MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE = Component.text("チームに参加者が存在しないため試合を終了します").color(NamedTextColor.RED);
 
     /**
      * チームのリスト
@@ -66,8 +65,8 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         super.init();
 
         // チーム初期化
-        teams.add(createMatchTeam("赤", NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1));
-        teams.add(createMatchTeam("青", NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2));
+        teams.add(createMatchTeam(MsgHandler.get("match-team-red"), NamedTextColor.RED, MapMarkerPoints.SPAWN_TEAM1.get()));
+        teams.add(createMatchTeam(MsgHandler.get("match-team-blue"), NamedTextColor.BLUE, MapMarkerPoints.SPAWN_TEAM2.get()));
     }
 
     /**
@@ -86,19 +85,13 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     @Override
     protected void tick() {
 
-        if (getStatus() != Status.NONE) {
-            boolean noParticipantsFlag = false;
-
-            for (MatchTeam team : teams) {
-                if (team.getParticipationPlayers().isEmpty()) {
-                    noParticipantsFlag = true;
-                    break;
-                }
-            }
+        if (getStatus() != MatchStatus.NONE) {
+            boolean noParticipantsFlag = teams.stream()
+                    .anyMatch(team -> team.getParticipationPlayers().isEmpty());
 
             // チームに参加者が居なければ試合終了
             if (noParticipantsFlag) {
-                broadcast(MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE);
+                broadcast(MATCH_FINISH_TEAM_NO_PARTICIPANTS_MESSAGE.get());
                 destroy();
                 return;
             }
@@ -159,9 +152,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     public boolean leave(@NotNull Player player, boolean sendMessage) {
 
         // チームから退出
-        for (MatchTeam team : teams) {
-            team.removePlayer(player);
-        }
+        teams.forEach(matchTeam -> matchTeam.removePlayer(player));
 
         // プレイヤーリスト表記色リセット
         TABIntegration.setPlayerTabListColor(player, null);
@@ -212,7 +203,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         }
 
         // 試合開始後、どれかしらのチームに所属していない場合は維持不可
-        return getStatus() == Status.NONE || teams.stream()
+        return getStatus() == MatchStatus.NONE || teams.stream()
                 .anyMatch(team -> team.hasParticipation(player));
     }
 
@@ -352,13 +343,11 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
         }
 
         @Override
-        protected void updateInfo() {
-            super.updateInfo();
+        protected void updateInfo(Consumer<List<Component>> sideBarMatchInfoAppender) {
+            super.updateInfo(sideBarMatchInfoAppender);
 
             Set<Team> scTeams = getScoreboard().getTeams();
-            for (Team scTeam : scTeams) {
-                scTeam.removeEntries(scTeam.getEntries());
-            }
+            scTeams.forEach(team -> team.removeEntries(team.getEntries()));
 
             for (int i = 0; i < TeamBaseMatch.this.teams.size(); i++) {
                 MatchTeam matchTeam = TeamBaseMatch.this.teams.get(i);
@@ -366,9 +355,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
 
                 if (sbTeam != null) {
                     List<Player> teamPlayers = matchTeam.getParticipationPlayers();
-                    for (Player teamPlayer : teamPlayers) {
-                        sbTeam.addPlayer(teamPlayer);
-                    }
+                    teamPlayers.forEach(sbTeam::addPlayer);
                 }
             }
 
@@ -389,7 +376,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
             getTeamByPlayer(getPlayer()).ifPresent(team -> {
                 Component teamComponent = Component.text(team.getName()).color(team.getColor());
 
-                sidebarInfos.add(Component.text("チーム: ").color(NamedTextColor.GREEN)
+                sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-team")).color(NamedTextColor.GREEN)
                         .append(teamComponent));
             });
         }

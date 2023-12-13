@@ -1,36 +1,34 @@
 package dev.felnull.shortlifeplugin.commands;
 
-import java.util.LinkedList;
+import com.google.common.collect.ImmutableList;
+import dev.felnull.shortlifeplugin.MsgHandler;
+import dev.jorel.commandapi.executors.CommandArguments;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
 import java.util.List;
+import java.util.Optional;
 
 /**
  * このプラグインのコマンド登録処理など
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
-public final class SLCommands {
-
-    /**
-     * 登録されたすべてのコマンド
-     */
-    private static final List<SLCommand> COMMAND_PROVIDERS = new LinkedList<>();
+public class SLCommands {
 
     private SLCommands() {
+        throw new AssertionError();
     }
-
+    
     /**
      * コマンドの登録
      *
      * @see <a href="https://commandapi.jorel.dev/9.0.3/commandregistration.html">参考</a>
      */
     public static void register() {
-        COMMAND_PROVIDERS.add(new MatchCommand());
-        COMMAND_PROVIDERS.add(new GuiCommand());
-        COMMAND_PROVIDERS.add(new EquipmentGroupCommand());
-        COMMAND_PROVIDERS.add(new RoomCommand());
-        COMMAND_PROVIDERS.add(new RewardCommand());
-
-        COMMAND_PROVIDERS.forEach(commandProvider -> commandProvider.create().register());
+        for (SLCommandsList command : SLCommandsList.values()) {
+            command.create().register();
+        }
     }
 
     /**
@@ -38,7 +36,33 @@ public final class SLCommands {
      *
      * @see <a href="https://commandapi.jorel.dev/9.1.0/commandunregistration.html">参考</a>
      */
-    public static void unregister() {
-        COMMAND_PROVIDERS.forEach(SLCommand::unregister);
+    public static void unregisterAll() {
+        for (SLCommandsList command : SLCommandsList.values()) {
+            command.unregister();
+        }
+    }
+
+    /**
+     * 実行者もしくは引数でプレイヤーセレクタで指定されたプレイヤーを取得
+     *
+     * @param sender CommandSender
+     * @param args   CommandArguments
+     * @return オプショナルなプレイヤーリスト
+     */
+    static Optional<List<Player>> getSenderOrSelectedPlayers(CommandSender sender, CommandArguments args) {
+        @SuppressWarnings("unchecked")
+        Optional<List<Player>> players = args.getOptional("player")
+                .map(it -> (List<Player>) it);
+
+        if (players.isEmpty()) {
+            if (!(sender instanceof Player player)) {
+                sender.sendRichMessage(MsgHandler.get("cmd-general-need-player-selector"));
+                return Optional.empty();
+            }
+
+            return Optional.of(ImmutableList.of(player));
+        }
+
+        return players;
     }
 }

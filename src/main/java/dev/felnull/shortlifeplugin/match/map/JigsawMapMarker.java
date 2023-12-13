@@ -20,7 +20,7 @@ import java.util.Optional;
  * @param replaceBlockId 置き換え先のブロックID
  * @param position       地点
  * @param direction      方向
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKey pointName,
                               @NotNull NamespacedKey replaceBlockId, @NotNull BlockVector3 position,
@@ -71,7 +71,14 @@ public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKe
         NamespacedKey pointName = Objects.requireNonNull(NamespacedKey.fromString(tag.getString("pool")));
         NamespacedKey replaceBlockId = Objects.requireNonNull(NamespacedKey.fromString(tag.getString("final_state")));
 
-        BlockFace blockFace = switch (jigsaw.getOrientation()) {
+        BlockFace blockFace = orientationToBlockFace(jigsaw.getOrientation());
+
+        return Optional.of(new JigsawMapMarker(name, pointName, replaceBlockId, position, blockFace));
+    }
+
+    @NotNull
+    private static BlockFace orientationToBlockFace(Jigsaw.Orientation orientation) {
+        return switch (orientation) {
             case DOWN_EAST, DOWN_NORTH, DOWN_SOUTH, DOWN_WEST -> BlockFace.DOWN;
             case UP_EAST, UP_NORTH, UP_SOUTH, UP_WEST -> BlockFace.UP;
             case WEST_UP -> BlockFace.WEST;
@@ -79,7 +86,5 @@ public record JigsawMapMarker(@NotNull NamespacedKey name, @NotNull NamespacedKe
             case NORTH_UP -> BlockFace.NORTH;
             case SOUTH_UP -> BlockFace.SOUTH;
         };
-
-        return Optional.of(new JigsawMapMarker(name, pointName, replaceBlockId, position, blockFace));
     }
 }

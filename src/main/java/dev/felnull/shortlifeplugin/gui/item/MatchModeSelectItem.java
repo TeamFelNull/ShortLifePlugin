@@ -1,8 +1,10 @@
 package dev.felnull.shortlifeplugin.gui.item;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
+import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -19,34 +21,12 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.window.Window;
 
-import java.util.Random;
-
 /**
  * 試合モード選択GUIアイテム
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public class MatchModeSelectItem extends AbstractItem {
-
-    /**
-     * ランダム
-     */
-    private static final Random RANDOM = new Random();
-
-    /**
-     * 試合を作成して参加する際のメッセージ
-     */
-    private static final Component CREATE_AND_JOIN_MATCH_MESSAGE = Component.text("試合を作成して参加しました").color(NamedTextColor.WHITE);
-
-    /**
-     * 試合の作成に失敗した際のメッセージ
-     */
-    private static final Component CREATE_MATCH_FAILURE_MESSAGE = Component.text("試合の作成に失敗しました").color(NamedTextColor.RED);
-
-    /**
-     * 利用可能なマップがない場合のメッセージ
-     */
-    private static final Component NO_MAP_AVAILABLE_MESSAGE = Component.text("利用可能なマップがありません").color(NamedTextColor.YELLOW);
 
     /**
      * 試合モード
@@ -82,57 +62,118 @@ public class MatchModeSelectItem extends AbstractItem {
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
 
-        MatchManager.getInstance().getMapLoader().getRandomMap(matchMode).ifPresentOrElse(matchMap -> {
-            boolean failure = matchManager.addMatch(matchId, matchMode, matchMap).map(match -> {
-                if (match.join(player, false)) {
-                    player.sendMessage(CREATE_AND_JOIN_MATCH_MESSAGE);
-                    broadcastCreateMatch(player, match);
-                    return false;
-                } else {
-                    return true;
-                }
-            }).orElse(true);
-
-            if (failure) {
-                player.sendMessage(CREATE_MATCH_FAILURE_MESSAGE);
-            }
-        },
-                () -> player.sendMessage(NO_MAP_AVAILABLE_MESSAGE));
+        MatchManager.getInstance().getMapLoader().getRandomMap(matchMode).ifPresentOrElse(
+                matchMap -> addMatch(player, matchManager, matchMap),
+                () -> player.sendMessage(Component.text("item-no-map-available").color(NamedTextColor.YELLOW)));
 
         getWindows().forEach(Window::close);
     }
 
-    private void broadcastCreateMatch(@NotNull Player player, @NotNull Match match) {
-        MatchManager matchManager = MatchManager.getInstance();
+    /**
+     * MatchManagerに試合を追加する
+     *
+     * @param player メッセージ送信対象
+     * @param matchManager マッチマネージャー
+     * @param matchMap マップ
+     */
+    private void addMatch(@NotNull Player player, MatchManager matchManager, MatchMap matchMap) {
+        boolean failure = matchManager.addMatch(matchId, matchMode, matchMap).map(match -> {
+            if (match.join(player, false)) {
+                player.sendMessage(Component.text(MsgHandler.get("item-create-match-and-join")).color(NamedTextColor.WHITE));
+                broadcastMatch(player, match);
+                return false;
+            } else {
+                return true;
+            }
+        }).orElse(true);
 
-        Audience sendAaudience = Audience.audience(Bukkit.getOnlinePlayers().stream()
+        if (failure) {
+            player.sendMessage(Component.text(MsgHandler.get("item-failed-to-create-match")).color(NamedTextColor.RED));
+        }
+    }
+
+    /**
+     * 誰かが試合を作成したとき、一連のメッセージを試合に参加していない人に告知する
+     *
+     * @param player 試合作成者
+     * @param match 試合
+     */
+    private void broadcastMatch(@NotNull Player player, @NotNull Match match) {
+        MatchManager matchManager = MatchManager.getInstance();
+        Audience sendTarget = getEveryPlayerNotInMatch(player, matchManager);
+
+        broadcastMatchCreated(player, match, sendTarget);
+        broadcastJoinMatchButton(match, sendTarget);
+    }
+
+    /**
+     * 誰かが試合を作成した情報を試合に参加していない人に告知する
+     *
+     * @param player 試合作成者
+     * @param match 試合
+     * @param sendTarget 試合に参加していない人
+     */
+    private static void broadcastMatchCreated(@NotNull Player player, @NotNull Match match, Audience sendTarget) {
+        Component notifierMessage = getMatchCreatedMessage(player, match);
+        sendTarget.sendMessage(notifierMessage);
+    }
+
+    /**
+     * 試合作成の告知メッセージを取得
+     *
+     * @param player プレイヤー
+     * @param match 試合
+     * @return 告知メッセージ
+     */
+    @NotNull
+    private static Component getMatchCreatedMessage(@NotNull Player player, @NotNull Match match) {
+        return Component.text(player.getName())
+                .append(Component.text(MsgHandler.get("item-match-create-1")))
+                .append(Component.text(match.getMatchMode().name()))
+                .append(Component.text(MsgHandler.get("item-match-create-2")))
+                .color(NamedTextColor.GREEN);
+    }
+
+    /**
+     * 試合に参加するボタンを試合に参加していない人に告知する
+     *
+     * @param match 試合
+     * @param sendTarget 試合に参加していない人
+     */
+    private static void broadcastJoinMatchButton(@NotNull Match match, Audience sendTarget) {
+        Component joinHereMessage = getJoinHereMessage(match);
+        sendTarget.sendMessage(joinHereMessage);
+    }
+
+    /**
+     * 試合に参加するボタンを取得
+     *
+     * @param match 試合
+     * @return テキスト
+     */
+    @NotNull
+    private static Component getJoinHereMessage(@NotNull Match match) {
+        Component clickHere = Component.text(MsgHandler.get("item-click-here"))
+                .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/room join " + match.getId())).build());
+
+        return Component.text(MsgHandler.get("item-join-button-1"))
+                .append(clickHere)
+                .append(Component.text(MsgHandler.get("item-join-button-2")))
+                .color(NamedTextColor.LIGHT_PURPLE);
+    }
+
+    /**
+     * 試合に参加していない全てのプレイヤーを取得
+     *
+     * @param player 試合作成者
+     * @param matchManager マッチマネージャ
+     * @return 全てのプレイヤー
+     */
+    @NotNull
+    private static Audience getEveryPlayerNotInMatch(@NotNull Player player, MatchManager matchManager) {
+        return Audience.audience(Bukkit.getOnlinePlayers().stream()
                 .filter(pl -> pl != player)
                 .filter(pl -> matchManager.getJoinedMatch(pl).isEmpty())
                 .toList());
-
-        Component notifierMessage = Component.text(player.getName())
-                .append(Component.text("が試合("))
-                .append(Component.text(match.getMatchMode().name()))
-                .append(Component.text(")を作成しました"))
-                .color(NamedTextColor.GREEN);
-
-        sendAaudience.sendMessage(notifierMessage);
-
-        String clickHereText;
-        if (RANDOM.nextInt(810) == 0) {
-            clickHereText = "[こ↑こ↓をクリック]";
-        } else {
-            clickHereText = "[ここをクリック]";
-        }
-
-        Component clickHere = Component.text(clickHereText)
-                .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/room join " + match.getId())).build());
-
-        Component joinHereMessage = Component.text("参加するには")
-                .append(clickHere)
-                .append(Component.text("してください"))
-                .color(NamedTextColor.LIGHT_PURPLE);
-
-        sendAaudience.sendMessage(joinHereMessage);
     }
 }

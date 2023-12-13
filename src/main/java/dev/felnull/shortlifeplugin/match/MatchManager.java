@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
-import dev.felnull.shortlifeplugin.match.map.MatchMapLoader;
+import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -24,7 +24,7 @@ public final class MatchManager {
     /**
      * 試合用マップの読み込み管理
      */
-    private final MatchMapLoader mapLoader = new MatchMapLoader();
+    private final MatchMapHandler mapLoader = new MatchMapHandler();
 
     /**
      * 管理されている試合のIDとインスタンスのマップ
@@ -145,10 +145,8 @@ public final class MatchManager {
 
         // 全試合を破棄
         List<String> allMatchId = ImmutableList.copyOf(this.matches.keySet());
-
-        for (String matchId : allMatchId) {
-            removeMatch(matchId);
-        }
+        
+        allMatchId.forEach(this::removeMatch);
 
         this.matches.clear();
 
@@ -203,7 +201,7 @@ public final class MatchManager {
                 .orElse(null));
     }
 
-    public MatchMapLoader getMapLoader() {
+    public MatchMapHandler getMapLoader() {
         return mapLoader;
     }
 }

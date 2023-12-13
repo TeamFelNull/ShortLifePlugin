@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.equipmentgroup;
 
+import dev.felnull.shortlifeplugin.MsgHandler;
 import me.deecaad.weaponmechanics.WeaponMechanicsAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -16,7 +17,7 @@ import java.util.List;
  * @param name        名前
  * @param itemStacks  アイテムスタックのリスト
  * @param restriction 制限
- * @author MORIMORI0317
+ * @author MORIMORI0317, Quarri6343
  */
 public record EquipmentGroup(@NotNull String id, @NotNull String name,
                              @NotNull @Unmodifiable List<ItemStack> itemStacks,
@@ -28,9 +29,20 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      * @param componentList 情報説明コンポーネントのリスト
      */
     public void appendInfoDesc(@NotNull List<Component> componentList) {
-        componentList.add(Component.text("ID: ").append(Component.text(this.id)));
-        componentList.add(Component.text("名前: ").append(Component.text(this.name)));
+        componentList.add(Component.text(MsgHandler.get("equip-id")).append(Component.text(this.id)));
+        componentList.add(Component.text(MsgHandler.get("equip-name")).append(Component.text(this.name)));
 
+        addItemListDesc(componentList);
+
+        addRestrictionDesc(componentList);
+    }
+
+    /**
+     * リストにアイテムリストの追加を行う
+     *
+     * @param componentList 情報説明コンポーネントのリスト
+     */
+    private void addItemListDesc(@NotNull List<Component> componentList) {
         Component[] itemComponents = this.itemStacks.stream()
                 .map(ItemStack::displayName)
                 .toArray(Component[]::new);
@@ -40,20 +52,26 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
 
         Component itemsComponent = Component.join(builder, itemComponents);
 
-        componentList.add(Component.text("アイテム一覧: ").append(itemsComponent));
+        componentList.add(Component.text(MsgHandler.get("equip-item-list")).append(itemsComponent));
+    }
 
-        componentList.add(Component.text(" - 装備制限 - "));
+    /**
+     * リストに装備制限説明の追加を行う
+     *
+     * @param componentList 情報説明コンポーネントのリスト
+     */
+    private void addRestrictionDesc(@NotNull List<Component> componentList) {
+        componentList.add(Component.text(MsgHandler.get("equip-restriction")));
 
         Component maxHotbarExistsCountText;
 
         if (this.restriction.maxHotbarExistsCount() >= 0) {
-            maxHotbarExistsCountText = Component.text(this.restriction.maxHotbarExistsCount()).append(Component.text("個"));
+            maxHotbarExistsCountText = Component.text(this.restriction.maxHotbarExistsCount()).append(Component.text(MsgHandler.get("equip-number")));
         } else {
-            maxHotbarExistsCountText = Component.text("制限なし");
+            maxHotbarExistsCountText = Component.text(MsgHandler.get("equip-no-restriction"));
         }
-        componentList.add(Component.text("ホットバーに存在できる最大数: ").append(maxHotbarExistsCountText));
+        componentList.add(Component.text(MsgHandler.get("equip-max-hotbar-number")).append(maxHotbarExistsCountText));
     }
-
 
     /**
      * 指定したアイテムスタックが所属しているかどうか
@@ -62,18 +80,17 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      * @return 所属していればtrue、してなければfalse
      */
     public boolean isBelongs(@NotNull ItemStack stack) {
-
-        // スタック全比較
-        for (ItemStack itemStack : itemStacks) {
-            if (isMatch(itemStack, stack)) {
-                return true;
-            }
-        }
-
-        return false;
+        return itemStacks.stream().anyMatch(itemStack -> isMatch(itemStack, stack));
     }
 
 
+    /**
+     * 指定したアイテムスタック2つが同じ種類かどうか
+     *
+     * @param stack1 アイテムスタック1
+     * @param stack2 アイテムスタック2
+     * @return 同じ種類かどうか
+     */
     private boolean isMatch(@NotNull ItemStack stack1, @NotNull ItemStack stack2) {
 
         // 完全に同じかどうか比較
@@ -104,15 +121,11 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
 
         if (restriction().maxHotbarExistsCount() >= 0) {
             // ホットバーのアイテム数確認
-            int hotbarCount = 0;
-            for (ItemStack hotbarStack : hotbarStacks) {
-                if (isBelongs(hotbarStack)) {
-                    hotbarCount++;
-                    if (hotbarCount > restriction().maxHotbarExistsCount()) {
-                        return true;
-                    }
-                }
-            }
+            int hotbarCount = (int) hotbarStacks.stream()
+                    .filter(this::isBelongs)
+                    .count();
+
+            return hotbarCount > restriction().maxHotbarExistsCount();
         }
 
         return false;

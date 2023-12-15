@@ -45,7 +45,7 @@ class EquipmentGroupIO {
     public static Optional<Map<String, EquipmentGroup>> load() throws IOException {
         File savedJsonFile = SLFiles.equipmentGroupJson();
 
-        if (isFileExists(savedJsonFile)) {
+        if (!isFileExists(savedJsonFile)) {
             return Optional.empty();
         }
 

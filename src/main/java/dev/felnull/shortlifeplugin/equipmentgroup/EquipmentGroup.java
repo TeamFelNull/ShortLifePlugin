@@ -118,14 +118,16 @@ public record EquipmentGroup(@NotNull String id, @NotNull String name,
      * @return 制限がかかるかどうか
      */
     public boolean isRestricted(@NotNull @Unmodifiable List<ItemStack> hotbarStacks) {
+        int maxHotbarCount = restriction().maxHotbarExistsCount();
 
-        if (restriction().maxHotbarExistsCount() >= 0) {
+        if (maxHotbarCount >= 0) {
             // ホットバーのアイテム数確認
             int hotbarCount = (int) hotbarStacks.stream()
                     .filter(this::isBelongs)
+                    .limit(maxHotbarCount + 1) // 最大数以上は確認不要
                     .count();
 
-            return hotbarCount > restriction().maxHotbarExistsCount();
+            return hotbarCount > maxHotbarCount;
         }
 
         return false;

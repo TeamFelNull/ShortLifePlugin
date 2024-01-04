@@ -66,6 +66,13 @@ public class MatchMapHandler {
     }
 
     /**
+     * Tick処理
+     */
+    public void tick() {
+        this.mapInstanceLoader.tick();
+    }
+
+    /**
      * マップインスタンスを作成
      *
      * @param match         試合

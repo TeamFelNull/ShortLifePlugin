@@ -97,6 +97,8 @@ public final class MatchManager {
 
         // 破棄されるべき試合を削除
         removeMatches.forEach(this::removeMatch);
+
+        this.mapHandler.tick();
     }
 
     /**
@@ -145,7 +147,7 @@ public final class MatchManager {
 
         // 全試合を破棄
         List<String> allMatchId = ImmutableList.copyOf(this.matches.keySet());
-        
+
         allMatchId.forEach(this::removeMatch);
 
         this.matches.clear();

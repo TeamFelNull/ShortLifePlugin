@@ -24,7 +24,7 @@ public final class MatchManager {
     /**
      * 試合用マップの読み込み管理
      */
-    private final MatchMapHandler mapLoader = new MatchMapHandler();
+    private final MatchMapHandler mapHandler = new MatchMapHandler();
 
     /**
      * 管理されている試合のIDとインスタンスのマップ
@@ -53,7 +53,7 @@ public final class MatchManager {
      * @param plugin プラグイン
      */
     public void init(ShortLifePlugin plugin) {
-        this.mapLoader.init(plugin);
+        this.mapHandler.init(plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, task -> this.tick(), 1, 1);
     }
 
@@ -150,7 +150,7 @@ public final class MatchManager {
 
         this.matches.clear();
 
-        this.mapLoader.dispose();
+        this.mapHandler.dispose();
     }
 
     /**
@@ -201,7 +201,7 @@ public final class MatchManager {
                 .orElse(null));
     }
 
-    public MatchMapHandler getMapLoader() {
-        return mapLoader;
+    public MatchMapHandler getMapHandler() {
+        return mapHandler;
     }
 }

@@ -57,7 +57,7 @@ import static dev.felnull.shortlifeplugin.match.map.MatchMapHandler.WORLD_NAME_P
  * @author MORIMORI0317, Quarri6343
  */
 public class MatchMapInstanceLoader {
-    
+
     /**
      * ワールドガードのグローバルリージョンID
      */
@@ -107,78 +107,37 @@ public class MatchMapInstanceLoader {
     /**
      * 試合用マップをロードする
      *
-     * @param matchMode 試合モード
+     * @param matchMode        試合モード
      * @param matchMapInstance マップインスタンス(ワールドは空)
-     * @param mapInstanceID マップインスタンスのID
-     * @param matchMap 試合マップの種類別情報レコード
+     * @param mapInstanceID    マップインスタンスのID
+     * @param matchMap         試合マップの種類別情報レコード
      * @return 完成した試合用マップ
      */
     public CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance,
-                                                  @NotNull String mapInstanceID, @NotNull MatchMap matchMap) {
-        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(mapInstanceID, matchMap);
+                                                 @NotNull String mapInstanceID, @NotNull MatchMap matchMap) {
+        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(matchMapInstance, mapInstanceID, matchMap);
         CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance, mapInstanceID);
 
         return worldCompletableFuture
                 .thenCombineAsync(schemCompletableFuture,
-                        (world, clipboardMapMarkerSetPair) -> generateSchematicStructure(mapInstanceID, matchMap, world, clipboardMapMarkerSetPair), tickExecutor)
-                .thenApplyAsync(this::protectWorld, tickExecutor)
+                        (world, clipboardMapMarkerSetPair) -> {
+                            assertNoDestroyedInstance(matchMapInstance);
+                            return generateSchematicStructure(mapInstanceID, matchMap, world, clipboardMapMarkerSetPair);
+                        }, tickExecutor)
                 .thenApplyAsync(matchMapWorld -> {
                     /* Tick同期でマップ検証 */
-
+                    assertNoDestroyedInstance(matchMapInstance);
                     matchMode.mapValidator().validate(matchMapWorld);
-
                     return matchMapWorld;
                 }, tickExecutor);
     }
 
     /**
-     * Tick同期でマップ保護
-     *
-     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/managers/">参考</a>
-     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/">参考</a>
-     * @see <a href="https://worldguard.enginehub.org/en/latest/regions/global-region/">参考</a>
-     *
-     * @param matchMapWorld 試合ワールドデータ
-     * @return 試合ワールドデータ
-     */
-    private @NotNull MatchMapWorld protectWorld(@NotNull MatchMapWorld matchMapWorld) {
-        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(matchMapWorld.getWorld()));
-
-        if (regionManager == null) {
-            throw new RuntimeException(MsgHandler.get("system-worldguard-instance-failed"));
-        }
-
-        ProtectedRegion region = getRegionToProtect(regionManager);
-
-        setWorldGuardRegionFlag(region);
-
-        return matchMapWorld;
-    }
-
-    /**
-     * 保護対象のリージョンを取得
-     *
-     * @param regionManager リージョンマネージャ
-     * @return 保護対象のリージョン
-     */
-    @NotNull
-    private static ProtectedRegion getRegionToProtect(RegionManager regionManager) {
-        ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
-        if (region == null) {
-            // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
-            region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
-            regionManager.addRegion(region);
-        }
-        return region;
-    }
-
-    /**
      * Tick同期でワールドにスケマティック構造物を生成
      *
-     * @param worldId ワールドID
-     * @param matchMap 試合マップ
-     * @param world ワールド
+     * @param worldId                   ワールドID
+     * @param matchMap                  試合マップ
+     * @param world                     ワールド
      * @param clipboardMapMarkerSetPair クリップボードとマップマーカーのペア
      * @return 試合ワールドデータ
      */
@@ -204,26 +163,11 @@ public class MatchMapInstanceLoader {
         return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
     }
 
-    /**
-     * ワールドガードのリージョンフラグ指定
-     *
-     * @param region リージョン
-     */
-    private void setWorldGuardRegionFlag(ProtectedRegion region) {
-        region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
-        region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
-        region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
-        region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
-        region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
-        region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
-        region.setFlag(Flags.BUILD, StateFlag.State.DENY);
-        region.setFlag(Flags.ITEM_DROP, StateFlag.State.DENY);
-        region.setFlag(Flags.ITEM_PICKUP, StateFlag.State.DENY);
-    }
-
-    private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {
+    private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull MatchMapInstance matchMapInstance, @NotNull String worldId, @NotNull MatchMap matchMap) {
         return CompletableFuture.supplyAsync(() -> {
             /* 非同期でスケマティックファイルを読み込む */
+
+            assertNoDestroyedInstance(matchMapInstance);
 
             // スケマティックファイルをクリップボードへ読み込む
             File schemFile = new File(SLFiles.schematicFolder(), matchMap.schematic() + ".schem");
@@ -253,6 +197,9 @@ public class MatchMapInstanceLoader {
             return Pair.of(clipboard, hashCode);
         }, asyncExecutor).thenApplyAsync(clipboardAndHashCode -> {
             /* 非同期でマーカーの集まりを取得する */
+
+            assertNoDestroyedInstance(matchMapInstance);
+
             Clipboard clipboard = clipboardAndHashCode.getLeft();
             MapMarkerSet markerSet;
 
@@ -327,23 +274,31 @@ public class MatchMapInstanceLoader {
         return this.worldCache.get().thenApplyAsync(worldCacheFile -> {
             /* 非同期でキャッシュワールドファイルをコピー */
 
+            assertNoDestroyedInstance(matchMapInstance);
+
             File worldFolder = new File(worldName);
 
-            // 被り確認
-            if (worldFolder.exists()) {
-                throw new RuntimeException("既に同じ名前のワールドフォルダーが存在しています");
-            }
+            synchronized (matchMapInstance.getWorldFileLock()) {
+                assertNoDestroyedInstance(matchMapInstance);
 
-            // フォルダーのコピー
-            try {
-                FileUtils.copyDirectoryStructure(worldCacheFile, worldFolder);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                // 被り確認
+                if (worldFolder.exists()) {
+                    throw new RuntimeException("既に同じ名前のワールドフォルダーが存在しています");
+                }
+
+                // フォルダーのコピー
+                try {
+                    FileUtils.copyDirectoryStructure(worldCacheFile, worldFolder);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             return worldFolder;
         }, asyncExecutor).thenApplyAsync(worldFolder -> {
             /* Tick同期でワールドを生成 */
+
+            assertNoDestroyedInstance(matchMapInstance);
 
             // ワールドフォルダー確認
             if (!worldFolder.exists()) {
@@ -365,26 +320,92 @@ public class MatchMapInstanceLoader {
 
             matchMapInstance.setStrictWorld(world);
 
-            world.setAutoSave(false);
-
-            // ゲームルール変更
-            // https://minecraft.fandom.com/ja/wiki/%E3%82%B2%E3%83%BC%E3%83%A0%E3%83%AB%E3%83%BC%E3%83%AB
-            world.setGameRule(GameRule.DISABLE_RAIDS, true);
-            world.setGameRule(GameRule.DO_FIRE_TICK, false);
-            world.setGameRule(GameRule.DO_INSOMNIA, false);
-            world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
-            world.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
-            world.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
-            world.setGameRule(GameRule.DO_WARDEN_SPAWNING, false);
-            world.setGameRule(GameRule.MOB_GRIEFING, false);
-            world.setGameRule(GameRule.KEEP_INVENTORY, true);
-            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
-            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+            worldSetting(world);
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のワールド生成完了", worldId));
-
             return world;
         }, tickExecutor);
+    }
+
+    /**
+     * ワールド設定適用
+     *
+     * @param world ワールド
+     */
+    private void worldSetting(World world) {
+        world.setAutoSave(false);
+        world.setDifficulty(Difficulty.NORMAL);
+
+        // ゲームルール変更
+        // https://minecraft.fandom.com/ja/wiki/%E3%82%B2%E3%83%BC%E3%83%A0%E3%83%AB%E3%83%BC%E3%83%AB
+        world.setGameRule(GameRule.DISABLE_RAIDS, true);
+        world.setGameRule(GameRule.DO_FIRE_TICK, false);
+        world.setGameRule(GameRule.DO_INSOMNIA, false);
+        world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        world.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
+        world.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
+        world.setGameRule(GameRule.DO_WARDEN_SPAWNING, false);
+        world.setGameRule(GameRule.MOB_GRIEFING, false);
+        world.setGameRule(GameRule.KEEP_INVENTORY, true);
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+        world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+
+        protectWorld(world);
+    }
+
+    /**
+     * Tick同期でマップ保護
+     *
+     * @param world ワールド
+     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/managers/">参考</a>
+     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/">参考</a>
+     * @see <a href="https://worldguard.enginehub.org/en/latest/regions/global-region/">参考</a>
+     */
+    private void protectWorld(@NotNull World world) {
+        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
+
+        if (regionManager == null) {
+            throw new RuntimeException(MsgHandler.get("system-worldguard-instance-failed"));
+        }
+
+        ProtectedRegion region = getRegionToProtect(regionManager);
+
+        setWorldGuardRegionFlag(region);
+    }
+
+    /**
+     * 保護対象のリージョンを取得
+     *
+     * @param regionManager リージョンマネージャ
+     * @return 保護対象のリージョン
+     */
+    @NotNull
+    private static ProtectedRegion getRegionToProtect(RegionManager regionManager) {
+        ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
+        if (region == null) {
+            // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
+            region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
+            regionManager.addRegion(region);
+        }
+        return region;
+    }
+
+    /**
+     * ワールドガードのリージョンフラグ指定
+     *
+     * @param region リージョン
+     */
+    private void setWorldGuardRegionFlag(ProtectedRegion region) {
+        region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
+        region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
+        region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
+        region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+        region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
+        region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
+        region.setFlag(Flags.BUILD, StateFlag.State.DENY);
+        region.setFlag(Flags.ITEM_DROP, StateFlag.State.DENY);
+        region.setFlag(Flags.ITEM_PICKUP, StateFlag.State.DENY);
     }
 
     /**
@@ -441,5 +462,17 @@ public class MatchMapInstanceLoader {
         worldCreator.generator(new MatchChunkGenerator());
         worldCreator.environment(World.Environment.NORMAL);
         return worldCreator;
+    }
+
+    /**
+     * 試合マップインスタンスが破棄されていないか確認<br/>
+     * 破棄済みの場合は、例外を投げる
+     *
+     * @param matchMapInstance 試合マップインスタンス
+     */
+    private void assertNoDestroyedInstance(MatchMapInstance matchMapInstance) {
+        if (matchMapInstance.isDestroyed()) {
+            throw new RuntimeException("試合マップインスタンスが破棄されています");
+        }
     }
 }

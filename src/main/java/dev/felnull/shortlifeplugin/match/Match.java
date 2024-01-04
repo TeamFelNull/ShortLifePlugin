@@ -172,7 +172,7 @@ public abstract class Match {
      */
     protected void init() {
         countDownBossbar.updateCountDownStatus(status);
-        this.matchMapInstance = MatchManager.getInstance().getMapLoader().createMapInstance(this, this.id, this.matchMap);
+        this.matchMapInstance = MatchManager.getInstance().getMapHandler().createMapInstance(this, this.id, this.matchMap);
         SLUtils.getLogger().info(MsgHandler.getFormatted("match-created", getId()));
     }
 

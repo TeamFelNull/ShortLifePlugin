@@ -74,7 +74,7 @@ public class MatchMapHandler {
      * @return マップインスタンス
      */
     public MatchMapInstance createMapInstance(@NotNull Match match, @NotNull String mapInstanceId, @NotNull MatchMap matchMap) {
-        MatchMapInstance matchMapInstance = new MatchMapInstance();
+        MatchMapInstance matchMapInstance = new MatchMapInstance(mapInstanceId);
         matchMapInstance.setMapWorld(mapInstanceLoader.load(match.getMatchMode(), matchMapInstance, mapInstanceId, matchMap));
         return matchMapInstance;
     }

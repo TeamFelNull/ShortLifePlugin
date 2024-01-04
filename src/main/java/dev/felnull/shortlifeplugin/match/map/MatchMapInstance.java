@@ -18,6 +18,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+
 /**
  * 試合用マップインスタンス用クラス<br/>
  * 使用後は必ず {@link #dispose()}を呼んでください
@@ -25,6 +26,7 @@ import java.util.concurrent.ExecutionException;
  * @author MORIMORI0317
  */
 public class MatchMapInstance {
+
     /**
      * 厳密なワールド<br/>
      * {@link #mapWorld}のワールドと同じだが、こちらは構造物生成など準備が終わる前に利用可能<br/>
@@ -34,43 +36,71 @@ public class MatchMapInstance {
     protected World strictWorld;
 
     /**
+     * この試合マップインスタンスが破棄済みかどうか
+     */
+    private volatile boolean destroyed = false;
+
+    /**
+     * ワールドファイルの操作用ロック
+     */
+    private final Object worldFileLock = new Object();
+
+    /**
      * 非同期読み込みされるマップワールド
      */
     private CompletableFuture<MatchMapWorld> mapWorld;
 
     /**
-     * コンストラクタ
+     * マップID
      */
-    protected MatchMapInstance() {
+    @NotNull
+    private final String id;
+
+    /**
+     * コンストラクタ
+     *
+     * @param id ID
+     */
+    protected MatchMapInstance(@NotNull String id) {
+        this.id = id;
     }
 
     /**
      * 破棄処理
      */
     public void dispose() {
+        this.destroyed = true;
+        File worldFolder = null;
 
         // マップワールドを破棄
-        if (this.strictWorld == null) {
-            return;
+        if (this.strictWorld != null) {
+            List<Player> players = this.strictWorld.getPlayers();
+
+            // ワールドに残るプレイヤーを強制退去
+            players.forEach(player -> MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld)));
+
+            worldFolder = this.strictWorld.getWorldFolder();
+            Bukkit.unloadWorld(this.strictWorld, false);
+
+            this.strictWorld = null;
         }
 
-        List<Player> players = this.strictWorld.getPlayers();
-
-        // ワールドに残るプレイヤーを強制退去
-        players.forEach(player -> MatchUtils.teleportToLeave(player, Optional.ofNullable(this.strictWorld)));
-
-        File worldFolder = this.strictWorld.getWorldFolder();
-        Bukkit.unloadWorld(this.strictWorld, false);
-
-        try {
-            // https://www.riblab.net/blog/2023/09/10/devnote_2/
-            // なぜか消せる...?
-            FileUtils.deleteDirectory(worldFolder);
-        } catch (IOException e) {
-            SLUtils.reportError(e, MsgHandler.get("system-map-deletion-failed"));
+        // ワールドが未作成の場合は、IDからワールドフォルダを取得する
+        if (worldFolder == null) {
+            worldFolder = new File(MatchMapHandler.WORLD_NAME_PREFIX + id);
         }
 
-        this.strictWorld = null;
+
+        // 重たい場合は別スレッドで削除するように変更してください。
+        synchronized (this.worldFileLock) {
+            try {
+                // https://www.riblab.net/blog/2023/09/10/devnote_2/
+                // なぜか消せる...?
+                FileUtils.deleteDirectory(worldFolder);
+            } catch (IOException e) {
+                SLUtils.reportError(e, MsgHandler.get("system-map-deletion-failed"));
+            }
+        }
     }
 
     protected void setMapWorld(CompletableFuture<MatchMapWorld> mapWorld) {
@@ -134,8 +164,20 @@ public class MatchMapInstance {
     public boolean isStrictWorldMatch(@NotNull World world) {
         return this.strictWorld != null && this.strictWorld == world;
     }
-    
+
     public Optional<World> getStrictWorld() {
         return Optional.ofNullable(strictWorld);
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
+    public Object getWorldFileLock() {
+        return worldFileLock;
+    }
+
+    public String getId() {
+        return id;
     }
 }

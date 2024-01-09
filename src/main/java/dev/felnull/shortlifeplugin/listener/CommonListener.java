@@ -77,7 +77,7 @@ public class CommonListener implements Listener {
      */
     private static void sendTestMessage(Player player) {
         Component message = Component.text(MsgHandler.get("system-test-mode-1"));
-        message = message.appendNewline().append(Component.text("system-test-mode-2"));
+        message = message.appendNewline().append(Component.text(MsgHandler.get("system-test-mode-2")));
         message = message.color(NamedTextColor.GREEN);
         player.sendMessage(message);
     }

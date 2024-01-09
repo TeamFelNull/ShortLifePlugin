@@ -64,7 +64,7 @@ public class MatchModeSelectItem extends AbstractItem {
 
         MatchManager.getInstance().getMapHandler().getRandomMap(matchMode).ifPresentOrElse(
                 matchMap -> addMatch(player, matchManager, matchMap),
-                () -> player.sendMessage(Component.text("item-no-map-available").color(NamedTextColor.YELLOW)));
+                () -> player.sendMessage(Component.text(MsgHandler.get("item-no-map-available")).color(NamedTextColor.YELLOW)));
 
         getWindows().forEach(Window::close);
     }

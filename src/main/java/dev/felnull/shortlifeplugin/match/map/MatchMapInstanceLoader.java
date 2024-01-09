@@ -15,10 +15,15 @@ import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import com.sk89q.worldedit.function.operation.Operation;
+import com.sk89q.worldedit.extent.transform.BlockTransformExtent;
+import com.sk89q.worldedit.function.mask.Masks;
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.session.ClipboardHolder;
+import com.sk89q.worldedit.math.transform.Identity;
+import com.sk89q.worldedit.math.transform.Transform;
+import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldguard.WorldGuard;
@@ -28,6 +33,8 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import dev.felnull.fnjl.concurrent.IkisugiExecutors;
+import dev.felnull.fnjl.concurrent.InvokeExecutor;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.MatchMode;
@@ -57,16 +64,27 @@ import static dev.felnull.shortlifeplugin.match.map.MatchMapHandler.WORLD_NAME_P
  * @author MORIMORI0317, Quarri6343
  */
 public class MatchMapInstanceLoader {
-    
+
     /**
      * ワールドガードのグローバルリージョンID
      */
     private static final String GLOBAL_REGION_ID = "__global__";
 
     /**
+     * 地形生成を分割する際のサイズ
+     */
+    private static final int SCHEM_GENERATE_SPLIT_SIZE = 16;
+
+    /**
      * Tickに同期して処理を行うExecutor
      */
     private final Executor tickExecutor = Bukkit.getScheduler().getMainThreadExecutor(SLUtils.getSLPlugin());
+
+    /**
+     * 構造物生成用のTickに同期して処理を行うExecutor<br/>
+     * 1Tickに1回のみ処理が行われる
+     */
+    private final InvokeExecutor generateTickExecutor = IkisugiExecutors.newInvokeExecutor();
 
     /**
      * 試合用ワールド情報のキャッシュ
@@ -85,6 +103,7 @@ public class MatchMapInstanceLoader {
      */
     private final ExecutorService asyncExecutor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 1),
             new BasicThreadFactory.Builder().namingPattern("map-loader-worker-%d").daemon(true).build());
+
 
     /**
      * 非同期処理用Executorを停止
@@ -105,125 +124,138 @@ public class MatchMapInstanceLoader {
     }
 
     /**
+     * Tick処理
+     */
+    protected void tick() {
+        this.generateTickExecutor.runTasks(1);
+    }
+
+    /**
      * 試合用マップをロードする
      *
-     * @param matchMode 試合モード
+     * @param matchMode        試合モード
      * @param matchMapInstance マップインスタンス(ワールドは空)
-     * @param mapInstanceID マップインスタンスのID
-     * @param matchMap 試合マップの種類別情報レコード
+     * @param mapInstanceID    マップインスタンスのID
+     * @param matchMap         試合マップの種類別情報レコード
      * @return 完成した試合用マップ
      */
     public CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance,
-                                                  @NotNull String mapInstanceID, @NotNull MatchMap matchMap) {
-        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(mapInstanceID, matchMap);
+                                                 @NotNull String mapInstanceID, @NotNull MatchMap matchMap) {
+        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(matchMapInstance, mapInstanceID, matchMap);
         CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance, mapInstanceID);
 
-        return worldCompletableFuture
+        CompletableFuture<Void> schemGenerateCompletableFuture = worldCompletableFuture
                 .thenCombineAsync(schemCompletableFuture,
-                        (world, clipboardMapMarkerSetPair) -> generateSchematicStructure(mapInstanceID, matchMap, world, clipboardMapMarkerSetPair), tickExecutor)
-                .thenApplyAsync(this::protectWorld, tickExecutor)
+                        (world, clipboardMapMarkerSetPair) -> {
+                            /* Tick同期でワールドと生成物のクリップボードを合体 */
+                            assertNoDestroyedInstance(matchMapInstance);
+                            return Pair.of(world, clipboardMapMarkerSetPair.getLeft());
+                        }, this.tickExecutor)
+                .thenComposeAsync(worldClipboardMapMarkerSetTriple -> {
+                    /* Tick同期で構造物生成コンプリータブルフューチャーを作成 */
+                    assertNoDestroyedInstance(matchMapInstance);
+                    return generateSchematicStructure(matchMapInstance, matchMap,
+                            worldClipboardMapMarkerSetTriple.getRight(), worldClipboardMapMarkerSetTriple.getLeft());
+                }, this.tickExecutor);
+
+        return schemCompletableFuture.thenCombineAsync(worldCompletableFuture, (clipboardMapMarkerSetPair, world) -> {
+                    /* Tick同期でワールドとマーカの集まりを合体 */
+                    assertNoDestroyedInstance(matchMapInstance);
+                    return Pair.of(world, clipboardMapMarkerSetPair.getRight());
+                }, this.tickExecutor)
+                .thenCombineAsync(schemGenerateCompletableFuture, (worldMapMarkerSetPair, unused) -> {
+                    /* Tick同期で試合マップワールドを作成 */
+                    assertNoDestroyedInstance(matchMapInstance);
+                    return new MatchMapWorld(matchMap, worldMapMarkerSetPair.getKey(), worldMapMarkerSetPair.getRight());
+                }, this.tickExecutor)
                 .thenApplyAsync(matchMapWorld -> {
                     /* Tick同期でマップ検証 */
-
+                    assertNoDestroyedInstance(matchMapInstance);
                     matchMode.mapValidator().validate(matchMapWorld);
-
                     return matchMapWorld;
-                }, tickExecutor);
+                }, this.tickExecutor);
     }
 
     /**
-     * Tick同期でマップ保護
+     * 構造物の生成をTick同期で行うコンプリータブルフューチャーを作成する
      *
-     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/managers/">参考</a>
-     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/">参考</a>
-     * @see <a href="https://worldguard.enginehub.org/en/latest/regions/global-region/">参考</a>
-     *
-     * @param matchMapWorld 試合ワールドデータ
-     * @return 試合ワールドデータ
+     * @param matchMapInstance 試合マップインスタンス
+     * @param matchMap         試合マップ
+     * @param clipboard        スケマティックのクリップボード
+     * @param world            ワールド
+     * @return コンプリータブルフューチャー
      */
-    private @NotNull MatchMapWorld protectWorld(@NotNull MatchMapWorld matchMapWorld) {
-        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(matchMapWorld.getWorld()));
+    private CompletableFuture<Void> generateSchematicStructure(MatchMapInstance matchMapInstance, MatchMap matchMap, Clipboard clipboard, World world) {
 
-        if (regionManager == null) {
-            throw new RuntimeException(MsgHandler.get("system-worldguard-instance-failed"));
+        // サイズを取得
+        BlockVector3 sizeMin = clipboard.getMinimumPoint();
+        BlockVector3 sizeMax = clipboard.getMaximumPoint();
+
+        int minX = sizeMin.getX();
+        int minZ = sizeMin.getZ();
+        int maxX = sizeMax.getX();
+        int maxZ = sizeMax.getZ();
+
+        int sizeX = sizeMax.getX() - minX;
+        int sizeZ = sizeMax.getZ() - minZ;
+
+        // 分割数を求める
+        int splitX = (int) Math.ceil((double) sizeX / SCHEM_GENERATE_SPLIT_SIZE);
+        int splitZ = (int) Math.ceil((double) sizeZ / SCHEM_GENERATE_SPLIT_SIZE);
+
+        // 分割された塊ごとにCompletableFutureを作成してつなげる
+        // allOfを使用すると途中でキャンセルされた際に無駄なタスクが走るため、thenRunAsyncでつなげる
+        CompletableFuture<Void> cf = null;
+        for (int schemX = 0; schemX < splitX; schemX++) {
+            for (int schemZ = 0; schemZ < splitZ; schemZ++) {
+
+                int schemOffsetX = minX + schemX * SCHEM_GENERATE_SPLIT_SIZE;
+                int schemOffsetZ = minZ + schemZ * SCHEM_GENERATE_SPLIT_SIZE;
+                int schemSizeX = Math.min(maxX, schemOffsetX + SCHEM_GENERATE_SPLIT_SIZE);
+                int schemSizeZ = Math.min(maxZ, schemOffsetZ + SCHEM_GENERATE_SPLIT_SIZE);
+
+                Region region = new CuboidRegion(BlockVector3.at(schemOffsetX, sizeMin.getY(), schemOffsetZ), BlockVector3.at(schemSizeX, sizeMax.getY(), schemSizeZ));
+
+                if (cf == null) {
+                    cf = CompletableFuture.runAsync(() -> generateSplitSchematicOnTick(region, matchMap.offset(), matchMapInstance, clipboard, world),
+                            this.generateTickExecutor);
+                } else {
+                    cf = cf.thenRunAsync(() -> generateSplitSchematicOnTick(region, matchMap.offset(), matchMapInstance, clipboard, world), this.generateTickExecutor);
+                }
+            }
         }
 
-        ProtectedRegion region = getRegionToProtect(regionManager);
-
-        setWorldGuardRegionFlag(region);
-
-        return matchMapWorld;
-    }
-
-    /**
-     * 保護対象のリージョンを取得
-     *
-     * @param regionManager リージョンマネージャ
-     * @return 保護対象のリージョン
-     */
-    @NotNull
-    private static ProtectedRegion getRegionToProtect(RegionManager regionManager) {
-        ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
-        if (region == null) {
-            // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
-            region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
-            regionManager.addRegion(region);
+        if (cf == null) {
+            cf = CompletableFuture.completedFuture(null);
         }
-        return region;
+
+        return cf;
     }
 
-    /**
-     * Tick同期でワールドにスケマティック構造物を生成
-     *
-     * @param worldId ワールドID
-     * @param matchMap 試合マップ
-     * @param world ワールド
-     * @param clipboardMapMarkerSetPair クリップボードとマップマーカーのペア
-     * @return 試合ワールドデータ
-     */
-    @NotNull
-    private static MatchMapWorld generateSchematicStructure(@NotNull String worldId, @NotNull MatchMap matchMap,
-                                                            World world, Pair<Clipboard, MapMarkerSet> clipboardMapMarkerSetPair) {
+    private void generateSplitSchematicOnTick(Region region, BlockVector3 offset, MatchMapInstance matchMapInstance, Clipboard clipboard, World world) {
+        assertNoDestroyedInstance(matchMapInstance);
         com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
 
         try (EditSession editSession = WorldEdit.getInstance().newEditSession(weWorld)) {
-            Operation operation = new ClipboardHolder(clipboardMapMarkerSetPair.getLeft())
-                    .createPaste(editSession)
-                    .to(matchMap.offset())
-                    .copyEntities(true)
-                    .copyBiomes(true)
-                    .build();
-            Operations.complete(operation);
+            Transform transform = new Identity();
+            BlockTransformExtent extent = new BlockTransformExtent(clipboard, transform);
+            ForwardExtentCopy copy = new ForwardExtentCopy(extent, region, clipboard.getOrigin(), editSession, offset);
+            copy.setTransform(transform);
+            copy.setSourceMask(Masks.alwaysTrue());
+            copy.setCopyingEntities(true);
+            copy.setCopyingBiomes(clipboard.hasBiomes());
+            Operations.complete(copy);
         } catch (WorldEditException e) {
             throw new RuntimeException(e);
         }
-
-        SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)の準備完了", worldId));
-
-        return new MatchMapWorld(matchMap, world, clipboardMapMarkerSetPair.getRight());
     }
 
-    /**
-     * ワールドガードのリージョンフラグ指定
-     *
-     * @param region リージョン
-     */
-    private void setWorldGuardRegionFlag(ProtectedRegion region) {
-        region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
-        region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
-        region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
-        region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
-        region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
-        region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
-        region.setFlag(Flags.BUILD, StateFlag.State.DENY);
-        region.setFlag(Flags.ITEM_DROP, StateFlag.State.DENY);
-        region.setFlag(Flags.ITEM_PICKUP, StateFlag.State.DENY);
-    }
-
-    private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull String worldId, @NotNull MatchMap matchMap) {
+    private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull MatchMapInstance matchMapInstance, @NotNull String worldId,
+                                                                           @NotNull MatchMap matchMap) {
         return CompletableFuture.supplyAsync(() -> {
             /* 非同期でスケマティックファイルを読み込む */
+
+            assertNoDestroyedInstance(matchMapInstance);
 
             // スケマティックファイルをクリップボードへ読み込む
             File schemFile = new File(SLFiles.schematicFolder(), matchMap.schematic() + ".schem");
@@ -253,6 +285,9 @@ public class MatchMapInstanceLoader {
             return Pair.of(clipboard, hashCode);
         }, asyncExecutor).thenApplyAsync(clipboardAndHashCode -> {
             /* 非同期でマーカーの集まりを取得する */
+
+            assertNoDestroyedInstance(matchMapInstance);
+
             Clipboard clipboard = clipboardAndHashCode.getLeft();
             MapMarkerSet markerSet;
 
@@ -327,23 +362,31 @@ public class MatchMapInstanceLoader {
         return this.worldCache.get().thenApplyAsync(worldCacheFile -> {
             /* 非同期でキャッシュワールドファイルをコピー */
 
+            assertNoDestroyedInstance(matchMapInstance);
+
             File worldFolder = new File(worldName);
 
-            // 被り確認
-            if (worldFolder.exists()) {
-                throw new RuntimeException("既に同じ名前のワールドフォルダーが存在しています");
-            }
+            synchronized (matchMapInstance.getWorldFileLock()) {
+                assertNoDestroyedInstance(matchMapInstance);
 
-            // フォルダーのコピー
-            try {
-                FileUtils.copyDirectoryStructure(worldCacheFile, worldFolder);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                // 被り確認
+                if (worldFolder.exists()) {
+                    throw new RuntimeException("既に同じ名前のワールドフォルダーが存在しています");
+                }
+
+                // フォルダーのコピー
+                try {
+                    FileUtils.copyDirectoryStructure(worldCacheFile, worldFolder);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             return worldFolder;
         }, asyncExecutor).thenApplyAsync(worldFolder -> {
             /* Tick同期でワールドを生成 */
+
+            assertNoDestroyedInstance(matchMapInstance);
 
             // ワールドフォルダー確認
             if (!worldFolder.exists()) {
@@ -365,26 +408,92 @@ public class MatchMapInstanceLoader {
 
             matchMapInstance.setStrictWorld(world);
 
-            world.setAutoSave(false);
-
-            // ゲームルール変更
-            // https://minecraft.fandom.com/ja/wiki/%E3%82%B2%E3%83%BC%E3%83%A0%E3%83%AB%E3%83%BC%E3%83%AB
-            world.setGameRule(GameRule.DISABLE_RAIDS, true);
-            world.setGameRule(GameRule.DO_FIRE_TICK, false);
-            world.setGameRule(GameRule.DO_INSOMNIA, false);
-            world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
-            world.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
-            world.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
-            world.setGameRule(GameRule.DO_WARDEN_SPAWNING, false);
-            world.setGameRule(GameRule.MOB_GRIEFING, false);
-            world.setGameRule(GameRule.KEEP_INVENTORY, true);
-            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
-            world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+            worldSetting(world);
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のワールド生成完了", worldId));
-
             return world;
         }, tickExecutor);
+    }
+
+    /**
+     * ワールド設定適用
+     *
+     * @param world ワールド
+     */
+    private void worldSetting(World world) {
+        world.setAutoSave(false);
+        world.setDifficulty(Difficulty.NORMAL);
+
+        // ゲームルール変更
+        // https://minecraft.fandom.com/ja/wiki/%E3%82%B2%E3%83%BC%E3%83%A0%E3%83%AB%E3%83%BC%E3%83%AB
+        world.setGameRule(GameRule.DISABLE_RAIDS, true);
+        world.setGameRule(GameRule.DO_FIRE_TICK, false);
+        world.setGameRule(GameRule.DO_INSOMNIA, false);
+        world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        world.setGameRule(GameRule.DO_PATROL_SPAWNING, false);
+        world.setGameRule(GameRule.DO_TRADER_SPAWNING, false);
+        world.setGameRule(GameRule.DO_WARDEN_SPAWNING, false);
+        world.setGameRule(GameRule.MOB_GRIEFING, false);
+        world.setGameRule(GameRule.KEEP_INVENTORY, true);
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+        world.setGameRule(GameRule.REDUCED_DEBUG_INFO, true);
+
+        protectWorld(world);
+    }
+
+    /**
+     * Tick同期でマップ保護
+     *
+     * @param world ワールド
+     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/managers/">参考</a>
+     * @see <a href="https://worldguard.enginehub.org/en/latest/developer/regions/protected-region/">参考</a>
+     * @see <a href="https://worldguard.enginehub.org/en/latest/regions/global-region/">参考</a>
+     */
+    private void protectWorld(@NotNull World world) {
+        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(world));
+
+        if (regionManager == null) {
+            throw new RuntimeException(MsgHandler.get("system-worldguard-instance-failed"));
+        }
+
+        ProtectedRegion region = getRegionToProtect(regionManager);
+
+        setWorldGuardRegionFlag(region);
+    }
+
+    /**
+     * 保護対象のリージョンを取得
+     *
+     * @param regionManager リージョンマネージャ
+     * @return 保護対象のリージョン
+     */
+    @NotNull
+    private static ProtectedRegion getRegionToProtect(RegionManager regionManager) {
+        ProtectedRegion region = regionManager.getRegion(GLOBAL_REGION_ID);
+        if (region == null) {
+            // __global__を使用しているが、APIから作成することを想定してなさそうなので、不具合が出る可能性が微レ存
+            region = new GlobalProtectedRegion(GLOBAL_REGION_ID, true);
+            regionManager.addRegion(region);
+        }
+        return region;
+    }
+
+    /**
+     * ワールドガードのリージョンフラグ指定
+     *
+     * @param region リージョン
+     */
+    private void setWorldGuardRegionFlag(ProtectedRegion region) {
+        region.setFlag(Flags.PVP, StateFlag.State.ALLOW);
+        region.setFlag(Flags.BLOCK_BREAK, StateFlag.State.DENY);
+        region.setFlag(Flags.BLOCK_PLACE, StateFlag.State.DENY);
+        region.setFlag(Flags.INTERACT, StateFlag.State.DENY);
+        region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
+        region.setFlag(Flags.SCULK_GROWTH, StateFlag.State.DENY);
+        region.setFlag(Flags.BUILD, StateFlag.State.DENY);
+        region.setFlag(Flags.ITEM_DROP, StateFlag.State.DENY);
+        region.setFlag(Flags.ITEM_PICKUP, StateFlag.State.DENY);
     }
 
     /**
@@ -441,5 +550,17 @@ public class MatchMapInstanceLoader {
         worldCreator.generator(new MatchChunkGenerator());
         worldCreator.environment(World.Environment.NORMAL);
         return worldCreator;
+    }
+
+    /**
+     * 試合マップインスタンスが破棄されていないか確認<br/>
+     * 破棄済みの場合は、例外を投げる
+     *
+     * @param matchMapInstance 試合マップインスタンス
+     */
+    private void assertNoDestroyedInstance(MatchMapInstance matchMapInstance) {
+        if (matchMapInstance.isDestroyed()) {
+            throw new RuntimeException("試合マップインスタンスが破棄されています");
+        }
     }
 }

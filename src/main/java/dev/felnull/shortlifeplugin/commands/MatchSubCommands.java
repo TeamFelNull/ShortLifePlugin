@@ -126,10 +126,10 @@ public enum MatchSubCommands {
      */
     private static Argument<MatchMap> mapArgument() {
         return new CustomArgument<>(new StringArgument("map"),
-                info -> MatchManager.getInstance().getMapLoader().getMap(info.input())
+                info -> MatchManager.getInstance().getMapHandler().getMap(info.input())
                         .orElseThrow(() -> CustomArgument.CustomArgumentException
                                 .fromMessageBuilder(new CustomArgument.MessageBuilder(MsgHandler.get("cmd-match-map-unknown")).appendArgInput())))
-                .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapLoader().getAllMap().keySet().toArray(String[]::new)));
+                .replaceSuggestions(ArgumentSuggestions.strings(info -> MatchManager.getInstance().getMapHandler().getAllMap().keySet().toArray(String[]::new)));
     }
 
     /**
@@ -333,7 +333,7 @@ public enum MatchSubCommands {
 
     private static void mapList(CommandSender sender) {
         MatchManager matchManager = MatchManager.getInstance();
-        MatchMapHandler mapLoader = matchManager.getMapLoader();
+        MatchMapHandler mapLoader = matchManager.getMapHandler();
         Map<String, MatchMap> maps = mapLoader.getAllMap();
 
         if (maps.isEmpty()) {

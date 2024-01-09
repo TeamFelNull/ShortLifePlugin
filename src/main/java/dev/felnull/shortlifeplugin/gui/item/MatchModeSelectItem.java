@@ -62,7 +62,7 @@ public class MatchModeSelectItem extends AbstractItem {
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
 
-        MatchManager.getInstance().getMapLoader().getRandomMap(matchMode).ifPresentOrElse(
+        MatchManager.getInstance().getMapHandler().getRandomMap(matchMode).ifPresentOrElse(
                 matchMap -> addMatch(player, matchManager, matchMap),
                 () -> player.sendMessage(Component.text("item-no-map-available").color(NamedTextColor.YELLOW)));
 

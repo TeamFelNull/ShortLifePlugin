@@ -199,24 +199,20 @@ public class PlayerInfo {
             spawnProtectTime = -1;
         }
 
-        if (dirtyAllInfo) {
-            updateCheckAndInfo(sideBarMatchInfoAppender);
-        }
+        updateCheckAndInfo(sideBarMatchInfoAppender, dirtyAllInfo);
     }
 
     /**
      * サイドバー情報の確認と更新
      *
      * @param sideBarMatchInfoAppender サイドバーの試合情報追加関数
+     * @param dirtyAllInfo 全体側のdirtyAllInfo
      */
-    public void updateCheckAndInfo(Consumer<List<Component>> sideBarMatchInfoAppender) {
-        // 表示更新フラグの確認とリセット
-        if (!(this.dirtyInfo)) {
-            return;
+    public void updateCheckAndInfo(Consumer<List<Component>> sideBarMatchInfoAppender, boolean dirtyAllInfo) {
+        if (this.dirtyInfo || dirtyAllInfo) {
+            updateInfo(sideBarMatchInfoAppender);
         }
         this.dirtyInfo = false;
-
-        updateInfo(sideBarMatchInfoAppender);
     }
 
     /**

@@ -40,6 +40,8 @@ import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.*;
@@ -76,6 +78,11 @@ public class MatchMapInstanceLoader {
     private static final int SCHEM_GENERATE_SPLIT_SIZE = 16;
 
     /**
+     * ワールドのキャッシュ生成時に送信する注意喚起メッセージ
+     */
+    private static final Component WORLD_CACHE_ATTENTION_MESSAGE = MsgHandler.getComponent("match-map-cache-attention").color(NamedTextColor.GOLD);
+
+    /**
      * Tickに同期して処理を行うExecutor
      */
     private final Executor tickExecutor = Bukkit.getScheduler().getMainThreadExecutor(SLUtils.getSLPlugin());
@@ -103,7 +110,6 @@ public class MatchMapInstanceLoader {
      */
     private final ExecutorService asyncExecutor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 1),
             new BasicThreadFactory.Builder().namingPattern("map-loader-worker-%d").daemon(true).build());
-
 
     /**
      * 非同期処理用Executorを停止
@@ -504,6 +510,9 @@ public class MatchMapInstanceLoader {
     private CompletableFuture<File> createWorldCache() {
         return CompletableFuture.supplyAsync(() -> {
             /* Tick同期でキャッシュ用ワールドのフォルダーを生成 */
+
+            // 注意喚起
+            Bukkit.broadcast(WORLD_CACHE_ATTENTION_MESSAGE);
 
             // ワールドのTick処理中確認
             if (Bukkit.isTickingWorlds()) {

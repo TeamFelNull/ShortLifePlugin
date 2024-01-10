@@ -1,9 +1,11 @@
 package dev.felnull.shortlifeplugin;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -22,13 +24,13 @@ public class MsgHandler {
      * メッセージのマップ
      */
     private static final Map<String, String> MSG_MAP = new HashMap<>();
-    
+
     /**
      * 言語ファイルのパス<br>
      * （他言語に対応予定がないのでrootに置いている）
      */
     private static final String FILE_PATH = "ja_JP.yml";
-    
+
     private MsgHandler() {
         throw new AssertionError();
     }
@@ -51,7 +53,7 @@ public class MsgHandler {
     /**
      * フォーマットされたメッセージ取得 (MsgHandler#getとString#Formatの短縮形)
      *
-     * @param key キー
+     * @param key  キー
      * @param args フォーマット用オブジェクト
      * @return フォーマットされたメッセージ
      */
@@ -69,5 +71,16 @@ public class MsgHandler {
     public static String get(String key) {
         return Optional.ofNullable(MSG_MAP.get(key))
                 .map(s -> ChatColor.translateAlternateColorCodes('&', s)).orElse(key);
+    }
+
+    /**
+     * メッセージのコンポーネントを取得
+     *
+     * @param key キー
+     * @return 対応したメッセージのコンポーネント
+     */
+    @NotNull
+    public static Component getComponent(String key) {
+        return Component.text(get(key));
     }
 }

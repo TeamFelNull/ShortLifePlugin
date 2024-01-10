@@ -228,6 +228,8 @@ match-team-point-title-win: "勝利"
 match-team-point-title-lose: "敗北"
 match-team-point-point: "ポイント "
 
+match-map-cache-attention: "試合用マップの初期生成をしています..."
+
 
 #イベント
 event-death-bare-hand: "[素手]"

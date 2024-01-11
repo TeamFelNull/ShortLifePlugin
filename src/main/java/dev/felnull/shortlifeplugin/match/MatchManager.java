@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
+import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -53,8 +54,22 @@ public final class MatchManager {
      * @param plugin プラグイン
      */
     public void init(ShortLifePlugin plugin) {
+        this.reloadPlayerCheck();
         this.mapHandler.init(plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, task -> this.tick(), 1, 1);
+    }
+
+    private void reloadPlayerCheck() {
+        Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+
+        // リロード前の試合マップに取り残されたプレイヤーをテレポート
+        players.forEach(player -> {
+            World world = player.getWorld();
+            String worldName = world.getName();
+            if (worldName.startsWith(MatchMapHandler.WORLD_NAME_PREFIX)) {
+                MatchUtils.teleportToLeave(player, Optional.of(world));
+            }
+        });
     }
 
     /**

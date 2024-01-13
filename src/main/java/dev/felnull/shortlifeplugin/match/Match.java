@@ -80,6 +80,11 @@ public abstract class Match {
     private static final int COUNT_START_REMNANT_SECOND = 10;
 
     /**
+     * 無効な時刻表示テキスト
+     */
+    private static final String TIME_DISPLAY_NONE_TEXT = "--:--";
+
+    /**
      * 参加しているプレイヤーとプレイヤー情報
      */
     protected final Map<Player, PlayerInfo> players = new HashMap<>();
@@ -153,6 +158,10 @@ public abstract class Match {
      */
     private boolean dirtyAllInfo;
 
+    /**
+     * 試合が開始してからTick処理を行ったフラグ
+     */
+    private boolean ticked;
 
     /**
      * コンストラクタ
@@ -180,6 +189,8 @@ public abstract class Match {
      * 1Tickごとの処理
      */
     protected void tick() {
+
+        this.ticked = true;
 
         // 参加を維持できないプレイヤーを退出させる
         List<Player> leavePlayers = players.keySet().stream()
@@ -389,6 +400,8 @@ public abstract class Match {
         broadcast(
                 Component.text(MsgHandler.getFormatted("match-other-player-joined", player.getName())).color(NamedTextColor.WHITE),
                 pl -> pl != player);
+
+        playerInfo.updateInfo(this::appendSidebarMatchInfo);
 
         SLUtils.getLogger().info(MsgHandler.getFormatted("system-match-joined", player.getName(), getId()));
 
@@ -1015,10 +1028,10 @@ public abstract class Match {
 
         // 試合中もしくは、開始前のみ表示
         if (getStatus() == NONE || getStatus() == STARTED) {
-            int remainingTimeSecond = countDownTime.getSecond();
+            int remainingTimeSecond = this.ticked ? countDownTime.getSecond() : -1;
             TextColor remainingTimeColor;
             // 残り時間テキストの色選定
-            if (remainingTimeSecond > 30) {
+            if (remainingTimeSecond < 0 || remainingTimeSecond > 30) {
                 remainingTimeColor = NamedTextColor.WHITE;
             } else if (remainingTimeSecond > 10) {
                 remainingTimeColor = NamedTextColor.GOLD;
@@ -1032,8 +1045,14 @@ public abstract class Match {
     }
 
     private String getTimeDisplayText(int second) {
-        /* xx:xxのような時間表記を実装予定 */
-        // TODO 春巻きが実装
-        return second + "s";
+
+        if (second < 0) {
+            return TIME_DISPLAY_NONE_TEXT;
+        }
+
+        int minTime = second / 60;
+        int secTime = second % 60;
+
+        return String.format("%02d:%02d", minTime, secTime);
     }
 }

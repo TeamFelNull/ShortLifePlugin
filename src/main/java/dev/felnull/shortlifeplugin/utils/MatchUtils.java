@@ -58,7 +58,7 @@ public final class MatchUtils {
      * @param player     プレイヤー
      * @param leaveWorld 退出したいワールド
      */
-    public static void teleportToLeave(@NotNull Player player, Optional<World> leaveWorld) {
+    public static void teleportToLeave(@NotNull Player player, Optional<World> leaveWorld) { // <- #Optionalは返し値のみにするべき？
         boolean needForceTeleport = false;
 
         // 死亡している場合は強制リスポーン

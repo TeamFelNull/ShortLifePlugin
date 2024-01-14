@@ -1,7 +1,6 @@
 package dev.felnull.shortlifeplugin.match;
 
 import dev.felnull.shortlifeplugin.MsgHandler;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -64,10 +63,9 @@ public class TeamPointMatch extends TeamBaseMatch {
      *
      * @param id        試合ID
      * @param matchMode 試合モード
-     * @param matchMap  試合用マップ
      */
-    protected TeamPointMatch(@NotNull String id, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
-        super(id, matchMode, matchMap);
+    protected TeamPointMatch(@NotNull String id, @NotNull MatchMode matchMode) {
+        super(id, matchMode);
     }
 
     @Override
@@ -97,7 +95,7 @@ public class TeamPointMatch extends TeamBaseMatch {
 
         Optional<PointMatchTeam> targetMatchTeam = getTeamByPlayer(target).map(matchTeam -> (PointMatchTeam) matchTeam);
         Optional<PointMatchTeam> attackerMatchTeam = getTeamByPlayer(attacker).map(matchTeam -> (PointMatchTeam) matchTeam);
-        
+
         // ポイントを付与
         if (targetMatchTeam.isPresent() && attackerMatchTeam.isPresent() && !targetMatchTeam.equals(attackerMatchTeam)) {
             attackerMatchTeam.ifPresent(pointMatchTeam -> pointMatchTeam.setPoint(pointMatchTeam.getPoint() + 1));

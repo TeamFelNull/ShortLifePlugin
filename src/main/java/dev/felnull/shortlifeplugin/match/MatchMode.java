@@ -1,6 +1,5 @@
 package dev.felnull.shortlifeplugin.match;
 
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapValidator;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
@@ -39,9 +38,8 @@ public record MatchMode(@NotNull String id, @NotNull String name, @NotNull Mater
          *
          * @param id        試合ID
          * @param matchMode 試合モード
-         * @param matchMap  試合マップ
          * @return 試合
          */
-        Match provide(String id, MatchMode matchMode, MatchMap matchMap);
+        Match provide(String id, MatchMode matchMode);
     }
 }

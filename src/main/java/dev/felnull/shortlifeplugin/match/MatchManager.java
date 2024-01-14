@@ -3,7 +3,6 @@ package dev.felnull.shortlifeplugin.match;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -121,15 +120,14 @@ public final class MatchManager {
      *
      * @param matchId   試合ID
      * @param matchMode 試合モード
-     * @param matchMap  試合マップ
      * @return 追加された試合
      */
-    public Optional<Match> addMatch(@NotNull String matchId, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
+    public Optional<Match> addMatch(@NotNull String matchId, @NotNull MatchMode matchMode) {
         if (this.matches.containsKey(matchId)) {
             return Optional.empty();
         }
 
-        Match match = matchMode.matchProvider().provide(matchId, matchMode, matchMap);
+        Match match = matchMode.matchProvider().provide(matchId, matchMode);
         this.matches.put(matchId, match);
         match.init();
         return Optional.of(match);

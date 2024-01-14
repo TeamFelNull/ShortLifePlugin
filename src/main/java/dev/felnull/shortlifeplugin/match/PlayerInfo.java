@@ -96,6 +96,11 @@ public class PlayerInfo {
     private final SidebarDisplay infoSidebarDisplay;
 
     /**
+     * マップ選択情報
+     */
+    private final MapSelector.MapSelectorInfo mapSelectorInfo = new MapSelector.MapSelectorInfo();
+
+    /**
      * 試合用スコアボードにセットされる前のスコアボード
      */
     private Scoreboard preScoreboard;
@@ -177,8 +182,8 @@ public class PlayerInfo {
     /**
      * tick処理
      *
-     * @param status マッチの状態
-     * @param dirtyAllInfo 全てのサイドバー情報更新フラグ
+     * @param status                   マッチの状態
+     * @param dirtyAllInfo             全てのサイドバー情報更新フラグ
      * @param sideBarMatchInfoAppender サイドバーの試合情報追加関数
      */
     protected void tick(MatchStatus status, boolean dirtyAllInfo, Consumer<List<Component>> sideBarMatchInfoAppender) {
@@ -206,7 +211,7 @@ public class PlayerInfo {
      * サイドバー情報の確認と更新
      *
      * @param sideBarMatchInfoAppender サイドバーの試合情報追加関数
-     * @param dirtyAllInfo 全体側のdirtyAllInfo
+     * @param dirtyAllInfo             全体側のdirtyAllInfo
      */
     public void updateCheckAndInfo(Consumer<List<Component>> sideBarMatchInfoAppender, boolean dirtyAllInfo) {
         if (this.dirtyInfo || dirtyAllInfo) {
@@ -227,7 +232,7 @@ public class PlayerInfo {
         sidebarInfo.add(Component.text(""));
         appendSidebarPlayerInfo(sidebarInfo);
         appendSidebarAdditionalInfo(sidebarInfo);
-        
+
         this.infoSidebarDisplay.update(sidebarInfo);
     }
 
@@ -237,7 +242,7 @@ public class PlayerInfo {
      * @param sidebarInfos 情報追加用リスト
      */
     protected void appendSidebarAdditionalInfo(@NotNull List<Component> sidebarInfos) {
-        
+
     }
 
     /**
@@ -581,5 +586,10 @@ public class PlayerInfo {
             }
             SLUtils.getLogger().info(MsgHandler.getFormatted("system-command-unset", errorFunctionName));
         }
+    }
+
+    @NotNull
+    public MapSelector.MapSelectorInfo getMapSelectorInfo() {
+        return mapSelectorInfo;
     }
 }

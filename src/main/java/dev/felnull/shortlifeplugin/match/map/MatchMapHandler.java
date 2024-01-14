@@ -81,8 +81,8 @@ public class MatchMapHandler {
      * @return マップインスタンス
      */
     public MatchMapInstance createMapInstance(@NotNull Match match, @NotNull String mapInstanceId, @NotNull MatchMap matchMap) {
-        MatchMapInstance matchMapInstance = new MatchMapInstance(mapInstanceId);
-        matchMapInstance.setMapWorld(mapInstanceLoader.load(match.getMatchMode(), matchMapInstance, mapInstanceId, matchMap));
+        MatchMapInstance matchMapInstance = new MatchMapInstance(mapInstanceId, matchMap);
+        matchMapInstance.setMapWorld(mapInstanceLoader.load(match.getMatchMode(), matchMapInstance));
         return matchMapInstance;
     }
 
@@ -111,22 +111,27 @@ public class MatchMapHandler {
     }
 
     /**
-     * 指定した試合モードが利用可能なマップをランダムで取得
+     * 指定した試合モードで利用可能なマップが存在するか確認
      *
      * @param matchMode 試合モード
-     * @return 試合マップ
+     * @return 利用可能なマップが存在すればtrue、しなければfalse
      */
-    public Optional<MatchMap> getRandomMap(@NotNull MatchMode matchMode) {
-        List<MatchMap> availableMaps = this.maps.values().stream()
-                .filter(map -> map.availableMatchModes().contains(matchMode))
-                .toList();
+    public boolean isAvailableMapExists(@NotNull MatchMode matchMode) {
+        return this.maps.values().stream()
+                .anyMatch(map -> map.availableMatchModes().contains(matchMode));
+    }
 
-        if (availableMaps.isEmpty()) {
-            return Optional.empty();
-        } else if (availableMaps.size() == 1) {
-            return Optional.of(availableMaps.get(0));
-        } else {
-            return Optional.of(availableMaps.get(RANDOM.nextInt(availableMaps.size())));
-        }
+    /**
+     * 指定したゲームモードで利用可能なマップリストを取得する
+     *
+     * @param matchMode 試合モード
+     * @return 利用可能なマップのリスト
+     */
+    @Unmodifiable
+    @NotNull
+    public List<MatchMap> getAvailableMaps(@NotNull MatchMode matchMode) {
+        return getAllMap().values().stream()
+                .filter(it -> it.availableMatchModes().contains(matchMode))
+                .toList();
     }
 }

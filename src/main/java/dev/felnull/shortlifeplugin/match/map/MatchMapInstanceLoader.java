@@ -141,14 +141,11 @@ public class MatchMapInstanceLoader {
      *
      * @param matchMode        試合モード
      * @param matchMapInstance マップインスタンス(ワールドは空)
-     * @param mapInstanceID    マップインスタンスのID
-     * @param matchMap         試合マップの種類別情報レコード
      * @return 完成した試合用マップ
      */
-    public CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance,
-                                                 @NotNull String mapInstanceID, @NotNull MatchMap matchMap) {
-        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(matchMapInstance, mapInstanceID, matchMap);
-        CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance, mapInstanceID);
+    public CompletableFuture<MatchMapWorld> load(@NotNull MatchMode matchMode, @NotNull MatchMapInstance matchMapInstance) {
+        CompletableFuture<Pair<Clipboard, MapMarkerSet>> schemCompletableFuture = loadSchematic(matchMapInstance);
+        CompletableFuture<World> worldCompletableFuture = loadWorld(matchMapInstance);
 
         CompletableFuture<Void> schemGenerateCompletableFuture = worldCompletableFuture
                 .thenCombineAsync(schemCompletableFuture,
@@ -160,8 +157,7 @@ public class MatchMapInstanceLoader {
                 .thenComposeAsync(worldClipboardMapMarkerSetTriple -> {
                     /* Tick同期で構造物生成コンプリータブルフューチャーを作成 */
                     assertNoDestroyedInstance(matchMapInstance);
-                    return generateSchematicStructure(matchMapInstance, matchMap,
-                            worldClipboardMapMarkerSetTriple.getRight(), worldClipboardMapMarkerSetTriple.getLeft());
+                    return generateSchematicStructure(matchMapInstance, worldClipboardMapMarkerSetTriple.getRight(), worldClipboardMapMarkerSetTriple.getLeft());
                 }, this.tickExecutor);
 
         return schemCompletableFuture.thenCombineAsync(worldCompletableFuture, (clipboardMapMarkerSetPair, world) -> {
@@ -172,7 +168,7 @@ public class MatchMapInstanceLoader {
                 .thenCombineAsync(schemGenerateCompletableFuture, (worldMapMarkerSetPair, unused) -> {
                     /* Tick同期で試合マップワールドを作成 */
                     assertNoDestroyedInstance(matchMapInstance);
-                    return new MatchMapWorld(matchMap, worldMapMarkerSetPair.getKey(), worldMapMarkerSetPair.getRight());
+                    return new MatchMapWorld(matchMapInstance.getMatchMap(), worldMapMarkerSetPair.getKey(), worldMapMarkerSetPair.getRight());
                 }, this.tickExecutor)
                 .thenApplyAsync(matchMapWorld -> {
                     /* Tick同期でマップ検証 */
@@ -186,12 +182,13 @@ public class MatchMapInstanceLoader {
      * 構造物の生成をTick同期で行うコンプリータブルフューチャーを作成する
      *
      * @param matchMapInstance 試合マップインスタンス
-     * @param matchMap         試合マップ
      * @param clipboard        スケマティックのクリップボード
      * @param world            ワールド
      * @return コンプリータブルフューチャー
      */
-    private CompletableFuture<Void> generateSchematicStructure(MatchMapInstance matchMapInstance, MatchMap matchMap, Clipboard clipboard, World world) {
+    private CompletableFuture<Void> generateSchematicStructure(MatchMapInstance matchMapInstance, Clipboard clipboard, World world) {
+
+        MatchMap matchMap = matchMapInstance.getMatchMap();
 
         // サイズを取得
         BlockVector3 sizeMin = clipboard.getMinimumPoint();
@@ -256,15 +253,16 @@ public class MatchMapInstanceLoader {
         }
     }
 
-    private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull MatchMapInstance matchMapInstance, @NotNull String worldId,
-                                                                           @NotNull MatchMap matchMap) {
+    private CompletableFuture<Pair<Clipboard, MapMarkerSet>> loadSchematic(@NotNull MatchMapInstance matchMapInstance) {
+        String worldId = matchMapInstance.getId();
+
         return CompletableFuture.supplyAsync(() -> {
             /* 非同期でスケマティックファイルを読み込む */
 
             assertNoDestroyedInstance(matchMapInstance);
 
             // スケマティックファイルをクリップボードへ読み込む
-            File schemFile = new File(SLFiles.schematicFolder(), matchMap.schematic() + ".schem");
+            File schemFile = new File(SLFiles.schematicFolder(), matchMapInstance.getMatchMap().schematic() + ".schem");
 
             if (!schemFile.exists()) {
                 throw new RuntimeException(String.format("%sは存在しません", schemFile.getName()));
@@ -362,7 +360,8 @@ public class MatchMapInstanceLoader {
         return new MapMarkerSet(mapMarksersBuilder.build());
     }
 
-    private CompletableFuture<World> loadWorld(@NotNull MatchMapInstance matchMapInstance, @NotNull String worldId) {
+    private CompletableFuture<World> loadWorld(@NotNull MatchMapInstance matchMapInstance) {
+        String worldId = matchMapInstance.getId();
         String worldName = WORLD_NAME_PREFIX + worldId;
 
         return this.worldCache.get().thenApplyAsync(worldCacheFile -> {

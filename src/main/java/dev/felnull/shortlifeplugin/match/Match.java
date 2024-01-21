@@ -65,7 +65,7 @@ public abstract class Match {
     /**
      * 試合が開始するまでの時間(ms)
      */
-    private static final long START_WAIT_TIME = 1000 * 30;
+    private static final long START_WAIT_TIME = 1000 * 10;
 
     /**
      * 試合終了から破棄されるまでの時間(ms)
@@ -163,6 +163,12 @@ public abstract class Match {
     private boolean ticked;
 
     /**
+     * 試合開始までの残り時間<br/>
+     * カウントダウンを行っていない時は-1
+     */
+    private int startRemainingTick = -1;
+
+    /**
      * コンストラクタ
      *
      * @param id        試合ID
@@ -256,10 +262,8 @@ public abstract class Match {
             return;
         }
 
-        boolean startFlag = false;
-
-        int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
-        updateCountDownTime(this.statusTick, totalTime);
+        // カウントダウン処理
+        updateCountDownTime(this.statusTick, SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME));
 
         // マップの読み込みが終わった場合
         if (!loadMapCompletion && this.matchMapInstance != null && this.matchMapInstance.isReady()) {
@@ -267,7 +271,40 @@ public abstract class Match {
             dirtyAllInfo();
         }
 
-        if (this.statusTick >= totalTime) {
+        // 試合開始カウントダウン処理
+        int preStartRemainingTick = this.startRemainingTick;
+
+        if (this.matchMapInstance != null && this.players.size() >= this.getMatchMode().minPlayerCount()) {
+            /* マップが決定済みで、最低参加人数を超えていれば */
+            if (this.startRemainingTick == -1) {
+                this.startRemainingTick = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
+            } else {
+                this.startRemainingTick--;
+            }
+        } else {
+            this.startRemainingTick = -1;
+        }
+
+        boolean sidebarDirty = false;
+
+        if (this.startRemainingTick != preStartRemainingTick) {
+            if (this.startRemainingTick <= -1) {
+                sidebarDirty = preStartRemainingTick > -1;
+            } else if (preStartRemainingTick <= -1) {
+                sidebarDirty = true;
+            } else if (this.startRemainingTick / 20 != preStartRemainingTick / 20) {
+                sidebarDirty = true;
+            }
+        }
+
+        if (sidebarDirty) {
+            this.dirtyAllInfo();
+        }
+
+        // 試合開始処理
+        boolean startFlag = false;
+
+        if (this.startRemainingTick == 0) {
             // 開始待機時間が過ぎた場合の処理
             if (this.matchMapInstance != null && this.matchMapInstance.isReady()) {
                 // マップの準備が終わっていれば試合開始
@@ -1082,8 +1119,31 @@ public abstract class Match {
                         .append(Component.text(participantPlayerMax))
                         .color(participantPlayerColor)));
 
-        // 試合中もしくは、開始前のみ表示
-        if (getStatus() == NONE || getStatus() == STARTED) {
+        getSidebarTimeText().ifPresent(sidebarInfos::add);
+    }
+
+    private Optional<Component> getSidebarTimeText() {
+
+        if (getStatus() == NONE) {
+            /* 試合前 */
+            if (this.matchMapInstance != null) {
+                /* マップ決定後 */
+                if (this.startRemainingTick >= 0) {
+                    return Optional.of(Component.text(MsgHandler.get("match-sidebar-time-start")).color(NamedTextColor.AQUA)
+                            .append(Component.text(getTimeDisplayText(this.startRemainingTick / 20)).color(NamedTextColor.WHITE)));
+                }
+            } else {
+                /* マップ決定前 */
+                int deadlineTime = this.mapSelector.getDeadlineTime();
+
+                // 締め切りカウントダウンが開始していれば表示
+                if (deadlineTime >= 0) {
+                    return Optional.of(Component.text(MsgHandler.get("match-sidebar-time-vote")).color(NamedTextColor.AQUA)
+                            .append(Component.text(getTimeDisplayText(deadlineTime / 20)).color(NamedTextColor.WHITE)));
+                }
+            }
+        } else if (getStatus() == STARTED) {
+            /* 試合中 */
             int remainingTimeSecond = this.ticked ? countDownTime.getSecond() : -1;
             TextColor remainingTimeColor;
             // 残り時間テキストの色選定
@@ -1095,9 +1155,11 @@ public abstract class Match {
                 remainingTimeColor = (remainingTimeSecond % 2 == 0) ? NamedTextColor.RED : NamedTextColor.DARK_RED;
             }
 
-            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-time-left")).color(NamedTextColor.AQUA)
+            return Optional.of(Component.text(MsgHandler.get("match-sidebar-time-left")).color(NamedTextColor.AQUA)
                     .append(Component.text(getTimeDisplayText(remainingTimeSecond)).color(remainingTimeColor)));
         }
+
+        return Optional.empty();
     }
 
     private String getTimeDisplayText(int second) {

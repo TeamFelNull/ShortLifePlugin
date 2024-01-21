@@ -70,6 +70,9 @@ public class MapSelector {
             return;
         }
 
+        int preDeadlineTime = this.deadlineTime;
+
+        // 投票カウントダウン処理
         if (this.match.players.size() >= this.match.getMatchMode().minPlayerCount()) {
             /* 最低参加人数を満たしていれば */
 
@@ -80,10 +83,10 @@ public class MapSelector {
             }
         } else {
             /* 最低参加人数を下回っているならば */
-
             this.deadlineTime = -1;
         }
 
+        // マップ決定処理
         if (this.deadlineTime == 0) {
             MatchMap lottedMatchMap = lotteryMatchMap();
 
@@ -93,6 +96,23 @@ public class MapSelector {
 
             // マップ決定
             this.selectedMatchMap = lottedMatchMap;
+        }
+
+        // スコアボード更新処理
+        boolean sidebarDirty = false;
+
+        if (this.deadlineTime != preDeadlineTime) {
+            if (this.deadlineTime <= -1) {
+                sidebarDirty = preDeadlineTime > -1;
+            } else if (preDeadlineTime <= -1) {
+                sidebarDirty = true;
+            } else if (this.deadlineTime / 20 != preDeadlineTime / 20) {
+                sidebarDirty = true;
+            }
+        }
+
+        if (sidebarDirty) {
+            this.match.dirtyAllInfo();
         }
     }
 
@@ -144,6 +164,9 @@ public class MapSelector {
         }
     }
 
+    public int getDeadlineTime() {
+        return deadlineTime;
+    }
 
     @Nullable
     public MatchMap getSelectedMatchMap() {

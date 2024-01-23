@@ -7,6 +7,7 @@ import dev.felnull.shortlifeplugin.match.map.*;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -81,6 +82,11 @@ public abstract class Match {
      * 無効な時刻表示テキスト
      */
     private static final String TIME_DISPLAY_NONE_TEXT = "--:--";
+
+    /**
+     * マップ投票中の状態テキスト
+     */
+    private static final String MAP_VOTE_STATUS_TEXT = MsgHandler.get("match-status-display-map-vote");
 
     /**
      * 参加しているプレイヤーとプレイヤー情報
@@ -183,8 +189,7 @@ public abstract class Match {
      * 初期化処理
      */
     protected void init() {
-        countDownBossbar.updateCountDownStatus(status);
-
+        updateBossbar();
         SLUtils.getLogger().info(MsgHandler.getFormatted("match-created", getId()));
     }
 
@@ -244,6 +249,9 @@ public abstract class Match {
             this.matchMapInstance = mapHandler.createMapInstance(this, this.id, selectedMatchMap);
 
             this.players.keySet().forEach(this::sendMapInfoMessage);
+
+            this.countDownBossbar.progress(0, 1);
+            updateBossbar();
         }
 
         // マップの読み込みに失敗した場合は試合破棄
@@ -263,7 +271,27 @@ public abstract class Match {
         }
 
         // カウントダウン処理
-        updateCountDownTime(this.statusTick, SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME));
+        updateCountDownTime(this.statusTick, SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME), false);
+
+        int startWaitTick = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
+
+        // ボスバー処理
+        if (this.matchMapInstance == null) {
+            /* マップ決定前 */
+            int deadlineTime = this.mapSelector.getDeadlineTime();
+
+            if (deadlineTime >= 0) {
+                int deadlineTotalTick = SLUtils.toTick(TimeUnit.MILLISECONDS, MapSelector.SELECTED_DEADLINE_TIME);
+                this.countDownBossbar.progress(deadlineTotalTick - deadlineTime, deadlineTotalTick);
+            } else {
+                this.countDownBossbar.progress(0, 1);
+            }
+        } else {
+            /* マップ決定後 */
+            if (this.startRemainingTick >= 0) {
+                this.countDownBossbar.progress(startWaitTick - this.startRemainingTick, startWaitTick);
+            }
+        }
 
         // マップの読み込みが終わった場合
         if (!loadMapCompletion && this.matchMapInstance != null && this.matchMapInstance.isReady()) {
@@ -277,7 +305,7 @@ public abstract class Match {
         if (this.matchMapInstance != null && this.players.size() >= this.getMatchMode().minPlayerCount()) {
             /* マップが決定済みで、最低参加人数を超えていれば */
             if (this.startRemainingTick == -1) {
-                this.startRemainingTick = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
+                this.startRemainingTick = startWaitTick;
             } else {
                 this.startRemainingTick--;
             }
@@ -330,7 +358,7 @@ public abstract class Match {
         boolean finishFlag = false;
 
         int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, getMatchMode().limitTime());
-        updateCountDownTime(this.statusTick, totalTime);
+        updateCountDownTime(this.statusTick, totalTime, true);
 
         if (players.size() < getMatchMode().minPlayerCount()) {
             // 参加プレイヤーの人数が、最低参加人数より少なければ試合を終了
@@ -353,7 +381,7 @@ public abstract class Match {
     protected void afterFinishTick() {
 
         int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, FINISH_WAIT_FOR_TELEPORT);
-        updateCountDownTime(this.statusTick, totalTime);
+        updateCountDownTime(this.statusTick, totalTime, true);
 
         // 終了後のテレポート
         if (!finishTeleport && this.statusTick >= totalTime) {
@@ -783,11 +811,23 @@ public abstract class Match {
         this.status = matchStatus;
         this.statusTick = 0;
 
-        countDownBossbar.updateCountDownStatus(status);
+        updateBossbar();
     }
 
-    private void updateCountDownTime(int compTime, int totalTime) {
-        countDownBossbar.progress(compTime, totalTime);
+    private void updateBossbar() {
+        if (this.status == NONE && this.matchMapInstance == null) {
+            /* マップ選択期間 */
+            this.countDownBossbar.updateTextAndColor(BossBar.Color.WHITE, MAP_VOTE_STATUS_TEXT);
+        } else {
+            this.countDownBossbar.updateCountDownStatus(this.status);
+        }
+    }
+
+    private void updateCountDownTime(int compTime, int totalTime, boolean updateBossbar) {
+
+        if (updateBossbar) {
+            this.countDownBossbar.progress(compTime, totalTime);
+        }
 
         int remnantTick = getRemnantTick(compTime, totalTime);
         countDownTime.update(remnantTick);

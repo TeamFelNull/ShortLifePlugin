@@ -25,7 +25,7 @@ public class MapSelector {
     /**
      * マップ決定までの時間 (ms)
      */
-    private static final long SELECTED_DEADLINE_TIME = 1000 * 15;
+    protected static final long SELECTED_DEADLINE_TIME = 1000 * 15;
 
     /**
      * ランダム

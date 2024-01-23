@@ -56,15 +56,25 @@ public class MatchCountDownBossBar {
      * @param status 試合状況
      */
     public void updateCountDownStatus(MatchStatus status) {
-        countDownBossbar.color(status.getCountDownBossbarColor());
-        countDownBossbar.name(Component.text(status.getShowName()));
+        updateTextAndColor(status.getCountDownBossbarColor(), status.getShowName());
+    }
+
+    /**
+     * ボスバーの色と表示テキストを更新
+     *
+     * @param color 色
+     * @param text  テキスト
+     */
+    public void updateTextAndColor(BossBar.Color color, String text) {
+        this.countDownBossbar.color(color);
+        this.countDownBossbar.name(Component.text(text));
     }
 
     /**
      * ボスバーを進行させる
      *
      * @param compTime  経過時間
-     * @param totalTime 1試合の時間
+     * @param totalTime 合計時間
      */
     public void progress(int compTime, int totalTime) {
         float progress = FNMath.clamp((float) compTime / (float) totalTime, 0, 1);

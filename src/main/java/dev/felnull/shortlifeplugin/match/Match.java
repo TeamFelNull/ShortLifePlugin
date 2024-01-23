@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 import static dev.felnull.shortlifeplugin.match.MatchMessageComponents.*;
 import static dev.felnull.shortlifeplugin.match.MatchStatus.*;
 import static org.bukkit.Sound.BLOCK_ANVIL_PLACE;
+import static org.bukkit.Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;
 
 /**
  * 試合インスタンスクラス
@@ -76,7 +77,7 @@ public abstract class Match {
     /**
      * カウントを開始する残り秒数
      */
-    private static final int COUNT_START_REMNANT_SECOND = 10;
+    private static final int COUNT_START_REMNANT_SECOND = 5;
 
     /**
      * 無効な時刻表示テキスト
@@ -252,6 +253,10 @@ public abstract class Match {
 
             this.countDownBossbar.progress(0, 1);
             updateBossbar();
+
+            // マップ決定音
+            allPlayerAudience()
+                    .playSound(Sound.sound(BLOCK_NOTE_BLOCK_XYLOPHONE.key(), Sound.Source.MASTER, 1, 0.5f));
         }
 
         // マップの読み込みに失敗した場合は試合破棄
@@ -290,6 +295,8 @@ public abstract class Match {
             /* マップ決定後 */
             if (this.startRemainingTick >= 0) {
                 this.countDownBossbar.progress(startWaitTick - this.startRemainingTick, startWaitTick);
+            } else {
+                this.countDownBossbar.progress(0, 1);
             }
         }
 
@@ -835,10 +842,20 @@ public abstract class Match {
             dirtyAllInfo();
         }
 
-        if (status == NONE || status == STARTED) {
+        // カウントダウン演出処理
+        if (this.status == NONE || this.status == STARTED) {
+            int countDownTick;
+
+            // 試合前の場合のみ、開始までの残り時間でカウントダウンを確認する
+            if (this.status == NONE) {
+                countDownTick = this.startRemainingTick;
+            } else {
+                countDownTick = remnantTick;
+            }
+
             // カウントダウン音
-            int remnantSecond = remnantTick / 20;
-            if (remnantTick >= 0 && COUNT_START_REMNANT_SECOND >= remnantSecond && remnantTick % 20 == 0) {
+            int countDownSecond = countDownTick / 20;
+            if (countDownTick >= 0 && COUNT_START_REMNANT_SECOND >= countDownSecond && countDownTick % 20 == 0) {
                 allPlayerAudience()
                         .playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_HARP.key(), Sound.Source.MASTER, 1, 0.5f));
             }

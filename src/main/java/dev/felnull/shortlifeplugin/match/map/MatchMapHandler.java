@@ -130,6 +130,8 @@ public class MatchMapHandler {
     @Unmodifiable
     @NotNull
     public List<MatchMap> getAvailableMaps(@NotNull MatchMode matchMode) {
+        Objects.requireNonNull(matchMode);
+
         return getAllMap().values().stream()
                 .filter(it -> it.availableMatchModes().contains(matchMode))
                 .toList();

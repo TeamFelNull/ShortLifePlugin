@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.match;
 
+import com.google.common.collect.ImmutableList;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -7,10 +8,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,10 +31,21 @@ public class MapSelector {
     private static final Random RANDOM = new Random();
 
     /**
+     * 選択肢に選ばれるマップの最大数
+     */
+    private static final int MAX_SELECTABLE_MAP_SIZE = 4;
+
+    /**
      * このマップ選択が対象の試合
      */
     @NotNull
     private final Match match;
+
+    /**
+     * 選択肢に選ばれたマップ
+     */
+    @Nullable
+    private final List<MatchMap> selectableMaps;
 
     /**
      * 選定された試合マップ<br/>
@@ -58,6 +67,7 @@ public class MapSelector {
      */
     protected MapSelector(@NotNull Match match) {
         this.match = match;
+        this.selectableMaps = ImmutableList.copyOf(lotterySelectableMaps());
     }
 
     /**
@@ -117,6 +127,31 @@ public class MapSelector {
     }
 
     /**
+     * 選択肢に表示するマップを抽選する
+     *
+     * @return 選択肢のマップリスト
+     */
+    private List<MatchMap> lotterySelectableMaps() {
+        MatchManager matchManager = MatchManager.getInstance();
+        MatchMapHandler mapHandler = matchManager.getMapHandler();
+        List<MatchMap> maps = mapHandler.getAvailableMaps(this.match.getMatchMode());
+
+        if (maps.size() <= MAX_SELECTABLE_MAP_SIZE) {
+            /* 選択可能なマップ数が最大数より少ない場合 */
+            return maps;
+        } else {
+            List<MatchMap> selectables = new ArrayList<>(maps);
+            List<MatchMap> ret = new LinkedList<>();
+            for (int i = 0; i < MAX_SELECTABLE_MAP_SIZE; i++) {
+                int selectedIndex = RANDOM.nextInt(selectables.size());
+                ret.add(selectables.get(selectedIndex));
+                selectables.remove(selectedIndex);
+            }
+            return ret;
+        }
+    }
+
+    /**
      * マップ抽選処理
      *
      * @return 選ばれたマップ
@@ -171,6 +206,11 @@ public class MapSelector {
     @Nullable
     public MatchMap getSelectedMatchMap() {
         return selectedMatchMap;
+    }
+
+    @Nullable
+    public List<MatchMap> getSelectableMaps() {
+        return selectableMaps;
     }
 
     /**

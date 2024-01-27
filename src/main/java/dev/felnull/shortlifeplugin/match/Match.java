@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin.match;
 import com.google.common.collect.ImmutableList;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.shortlifeplugin.MsgHandler;
+import dev.felnull.shortlifeplugin.gui.KariMapSelectGui;
 import dev.felnull.shortlifeplugin.match.map.*;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -11,7 +12,6 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -126,7 +126,7 @@ public abstract class Match {
     /**
      * 試合マップ選択処理用クラスインスタンス
      */
-    private final MapSelector mapSelector = new MapSelector(this);
+    private final MapSelector mapSelector;
 
     /**
      * 状態
@@ -184,6 +184,7 @@ public abstract class Match {
     protected Match(@NotNull String id, @NotNull MatchMode matchMode) {
         this.id = id;
         this.matchMode = matchMode;
+        this.mapSelector = new MapSelector(this);
     }
 
     /**
@@ -493,7 +494,9 @@ public abstract class Match {
 
         if (this.status == NONE && this.mapSelector.getSelectedMatchMap() == null) {
             // FIXME マップ抽選の仮置き
-            player.sendMessage(Component.text("マップ投票:"));
+            KariMapSelectGui.openGui(this, player);
+
+           /* player.sendMessage(Component.text("マップ投票:"));
 
             MatchManager.getInstance().getMapHandler().getAvailableMaps(this.getMatchMode()).forEach(matchMap -> {
                 Component selectorText = Component.text(String.format("[%s]", matchMap.id())).clickEvent(ClickEvent.callback(audience -> {
@@ -501,7 +504,7 @@ public abstract class Match {
                     player.sendMessage(Component.text("投票しました: " + matchMap.id()));
                 }));
                 player.sendMessage(selectorText);
-            });
+            });*/
         }
 
         // マップ通知
@@ -1229,5 +1232,19 @@ public abstract class Match {
         int secTime = second % 60;
 
         return String.format("%02d:%02d", minTime, secTime);
+    }
+
+    public MapSelector getMapSelector() {
+        return mapSelector;
+    }
+
+    /**
+     * 試合が有効かどうか
+     *
+     * @return 有効ならばture、じゃなければfalse
+     */
+    public boolean isValid() {
+        MatchManager matchManager = MatchManager.getInstance();
+        return matchManager.getAllMatch().containsValue(this);
     }
 }

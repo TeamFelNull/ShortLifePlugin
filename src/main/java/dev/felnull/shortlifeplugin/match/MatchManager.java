@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
+import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
@@ -209,11 +210,12 @@ public final class MatchManager {
      * @return 試合
      */
     public Optional<Match> getMatchByWorld(@NotNull World world) {
-        return Optional.ofNullable(matches.values().stream()
-                .filter(match -> match.getMatchMapInstance().isStrictWorldMatch(world))
-                .limit(1)
-                .findFirst()
-                .orElse(null));
+        return this.matches.values().stream()
+                .filter(match -> {
+                    MatchMapInstance matchMapInstance = match.getMatchMapInstance();
+                    return matchMapInstance != null && matchMapInstance.isStrictWorldMatch(world);
+                })
+                .findFirst();
     }
 
     public MatchMapHandler getMapHandler() {

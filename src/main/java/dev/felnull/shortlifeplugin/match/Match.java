@@ -957,8 +957,11 @@ public abstract class Match {
         if (status == FINISHED) {
             /* 試合終了後 */
             // 試合ワールドにいる場合は無敵
-            Optional<MatchMapWorld> matchMapWorld = matchMapInstance.getMapWorld();
-            return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
+            if (this.matchMapInstance != null) {
+                Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
+                return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
+            }
+
         } else if (status == STARTED) {
             /* 試合中 */
             // スポーン保護状態は無敵

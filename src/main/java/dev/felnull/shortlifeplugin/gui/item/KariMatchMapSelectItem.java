@@ -1,5 +1,6 @@
 package dev.felnull.shortlifeplugin.gui.item;
 
+import dev.felnull.shortlifeplugin.match.MapSelector;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.PlayerInfo;
 import dev.felnull.shortlifeplugin.match.map.MatchMap;
@@ -56,11 +57,14 @@ public class KariMatchMapSelectItem extends AbstractItem {
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent inventoryClickEvent) {
         if (this.match.isValid()) {
-            List<MatchMap> selectableMaps = this.match.getMapSelector().getSelectableMaps();
-            if (selectableMaps != null && selectableMaps.contains(this.matchMap)) {
-                Optional<PlayerInfo> playerInfo = this.match.getPlayerInfo(player);
-                playerInfo.ifPresent(info -> info.getMapSelectorInfo().setVotedMatchMap(matchMap));
-                player.sendMessage(Component.text(matchMap.name() + "に投票しました"));
+            MapSelector mapSelector = this.match.getMapSelector();
+            if (mapSelector.getSelectedMatchMap() == null) {
+                List<MatchMap> selectableMaps = this.match.getMapSelector().getSelectableMaps();
+                if (selectableMaps != null && selectableMaps.contains(this.matchMap)) {
+                    Optional<PlayerInfo> playerInfo = this.match.getPlayerInfo(player);
+                    playerInfo.ifPresent(info -> info.getMapSelectorInfo().setVotedMatchMap(matchMap));
+                    player.sendMessage(Component.text(matchMap.name() + "に投票しました"));
+                }
             }
         }
         getWindows().forEach(Window::close);

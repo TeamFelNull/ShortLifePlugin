@@ -4,7 +4,7 @@ import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchMode;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
+import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -61,10 +61,13 @@ public class MatchModeSelectItem extends AbstractItem {
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
         MatchManager matchManager = MatchManager.getInstance();
+        MatchMapHandler mapHandler = MatchManager.getInstance().getMapHandler();
 
-        MatchManager.getInstance().getMapHandler().getRandomMap(matchMode).ifPresentOrElse(
-                matchMap -> addMatch(player, matchManager, matchMap),
-                () -> player.sendMessage(Component.text(MsgHandler.get("item-no-map-available")).color(NamedTextColor.YELLOW)));
+        if (mapHandler.isAvailableMapExists(this.matchMode)) {
+            addMatch(player, matchManager);
+        } else {
+            player.sendMessage(Component.text(MsgHandler.get("item-no-map-available")).color(NamedTextColor.YELLOW));
+        }
 
         getWindows().forEach(Window::close);
     }
@@ -72,12 +75,11 @@ public class MatchModeSelectItem extends AbstractItem {
     /**
      * MatchManagerに試合を追加する
      *
-     * @param player メッセージ送信対象
+     * @param player       メッセージ送信対象
      * @param matchManager マッチマネージャー
-     * @param matchMap マップ
      */
-    private void addMatch(@NotNull Player player, MatchManager matchManager, MatchMap matchMap) {
-        boolean failure = matchManager.addMatch(matchId, matchMode, matchMap).map(match -> {
+    private void addMatch(@NotNull Player player, MatchManager matchManager) {
+        boolean failure = matchManager.addMatch(matchId, matchMode).map(match -> {
             if (match.join(player, false)) {
                 player.sendMessage(Component.text(MsgHandler.get("item-create-match-and-join")).color(NamedTextColor.WHITE));
                 broadcastMatch(player, match);
@@ -96,7 +98,7 @@ public class MatchModeSelectItem extends AbstractItem {
      * 誰かが試合を作成したとき、一連のメッセージを試合に参加していない人に告知する
      *
      * @param player 試合作成者
-     * @param match 試合
+     * @param match  試合
      */
     private void broadcastMatch(@NotNull Player player, @NotNull Match match) {
         MatchManager matchManager = MatchManager.getInstance();
@@ -109,8 +111,8 @@ public class MatchModeSelectItem extends AbstractItem {
     /**
      * 誰かが試合を作成した情報を試合に参加していない人に告知する
      *
-     * @param player 試合作成者
-     * @param match 試合
+     * @param player     試合作成者
+     * @param match      試合
      * @param sendTarget 試合に参加していない人
      */
     private static void broadcastMatchCreated(@NotNull Player player, @NotNull Match match, Audience sendTarget) {
@@ -122,7 +124,7 @@ public class MatchModeSelectItem extends AbstractItem {
      * 試合作成の告知メッセージを取得
      *
      * @param player プレイヤー
-     * @param match 試合
+     * @param match  試合
      * @return 告知メッセージ
      */
     @NotNull
@@ -137,7 +139,7 @@ public class MatchModeSelectItem extends AbstractItem {
     /**
      * 試合に参加するボタンを試合に参加していない人に告知する
      *
-     * @param match 試合
+     * @param match      試合
      * @param sendTarget 試合に参加していない人
      */
     private static void broadcastJoinMatchButton(@NotNull Match match, Audience sendTarget) {
@@ -165,7 +167,7 @@ public class MatchModeSelectItem extends AbstractItem {
     /**
      * 試合に参加していない全てのプレイヤーを取得
      *
-     * @param player 試合作成者
+     * @param player       試合作成者
      * @param matchManager マッチマネージャ
      * @return 全てのプレイヤー
      */

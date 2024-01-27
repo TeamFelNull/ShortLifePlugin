@@ -2,7 +2,6 @@ package dev.felnull.shortlifeplugin.match;
 
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -29,10 +28,9 @@ public class FFAMatch extends PVPBaseMatch {
      *
      * @param id        試合ID
      * @param matchMode 試合モード
-     * @param matchMap  試合用マップ
      */
-    protected FFAMatch(@NotNull String id, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
-        super(id, matchMode, matchMap);
+    protected FFAMatch(@NotNull String id, @NotNull MatchMode matchMode) {
+        super(id, matchMode);
     }
 
     @Override
@@ -65,7 +63,7 @@ public class FFAMatch extends PVPBaseMatch {
     /**
      * プレイヤーに順位メッセージを表示する
      *
-     * @param rank 順位
+     * @param rank        順位
      * @param rankPlayers 同じ順位の全プレイヤー
      */
     private static void sendRankMessage(int rank, List<Player> rankPlayers) {

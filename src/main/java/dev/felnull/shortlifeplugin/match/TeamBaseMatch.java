@@ -5,7 +5,6 @@ import dev.felnull.shortlifeplugin.MsgHandler;
 import dev.felnull.shortlifeplugin.integration.TABIntegration;
 import dev.felnull.shortlifeplugin.match.map.MapMarker;
 import dev.felnull.shortlifeplugin.match.map.MapMarkerPoints;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -38,10 +37,9 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
      *
      * @param id        試合ID
      * @param matchMode 試合モード
-     * @param matchMap  試合用マップ
      */
-    protected TeamBaseMatch(@NotNull String id, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
-        super(id, matchMode, matchMap);
+    protected TeamBaseMatch(@NotNull String id, @NotNull MatchMode matchMode) {
+        super(id, matchMode);
     }
 
     @Override
@@ -186,7 +184,7 @@ public abstract class TeamBaseMatch extends PVPBaseMatch {
     public static NamedTextColor getTeamColor(@NotNull Player player) {
         return MatchManager.getInstance().getJoinedMatch(player)
                 .stream().filter(match -> match instanceof TeamBaseMatch).findFirst()
-                .map(match -> 
+                .map(match ->
                         ((TeamBaseMatch) match).getTeamByPlayer(player).map(MatchTeam::getColor).orElse(NamedTextColor.WHITE))
                 .orElse(NamedTextColor.WHITE);
     }

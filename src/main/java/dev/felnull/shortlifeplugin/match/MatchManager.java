@@ -3,8 +3,8 @@ package dev.felnull.shortlifeplugin.match;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dev.felnull.shortlifeplugin.ShortLifePlugin;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
 import dev.felnull.shortlifeplugin.match.map.MatchMapHandler;
+import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
@@ -121,15 +121,14 @@ public final class MatchManager {
      *
      * @param matchId   試合ID
      * @param matchMode 試合モード
-     * @param matchMap  試合マップ
      * @return 追加された試合
      */
-    public Optional<Match> addMatch(@NotNull String matchId, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
+    public Optional<Match> addMatch(@NotNull String matchId, @NotNull MatchMode matchMode) {
         if (this.matches.containsKey(matchId)) {
             return Optional.empty();
         }
 
-        Match match = matchMode.matchProvider().provide(matchId, matchMode, matchMap);
+        Match match = matchMode.matchProvider().provide(matchId, matchMode);
         this.matches.put(matchId, match);
         match.init();
         return Optional.of(match);
@@ -211,11 +210,12 @@ public final class MatchManager {
      * @return 試合
      */
     public Optional<Match> getMatchByWorld(@NotNull World world) {
-        return Optional.ofNullable(matches.values().stream()
-                .filter(match -> match.getMatchMapInstance().isStrictWorldMatch(world))
-                .limit(1)
-                .findFirst()
-                .orElse(null));
+        return this.matches.values().stream()
+                .filter(match -> {
+                    MatchMapInstance matchMapInstance = match.getMatchMapInstance();
+                    return matchMapInstance != null && matchMapInstance.isStrictWorldMatch(world);
+                })
+                .findFirst();
     }
 
     public MatchMapHandler getMapHandler() {

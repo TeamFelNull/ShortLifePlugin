@@ -3,13 +3,12 @@ package dev.felnull.shortlifeplugin.match;
 import com.google.common.collect.ImmutableList;
 import com.sk89q.worldedit.math.BlockVector3;
 import dev.felnull.shortlifeplugin.MsgHandler;
-import dev.felnull.shortlifeplugin.match.map.MapMarker;
-import dev.felnull.shortlifeplugin.match.map.MatchMap;
-import dev.felnull.shortlifeplugin.match.map.MatchMapInstance;
-import dev.felnull.shortlifeplugin.match.map.MatchMapWorld;
+import dev.felnull.shortlifeplugin.gui.KariMapSelectGui;
+import dev.felnull.shortlifeplugin.match.map.*;
 import dev.felnull.shortlifeplugin.utils.MatchUtils;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -41,6 +40,7 @@ import java.util.function.Predicate;
 import static dev.felnull.shortlifeplugin.match.MatchMessageComponents.*;
 import static dev.felnull.shortlifeplugin.match.MatchStatus.*;
 import static org.bukkit.Sound.BLOCK_ANVIL_PLACE;
+import static org.bukkit.Sound.BLOCK_NOTE_BLOCK_XYLOPHONE;
 
 /**
  * 試合インスタンスクラス
@@ -67,7 +67,7 @@ public abstract class Match {
     /**
      * 試合が開始するまでの時間(ms)
      */
-    private static final long START_WAIT_TIME = 1000 * 30;
+    private static final long START_WAIT_TIME = 1000 * 10;
 
     /**
      * 試合終了から破棄されるまでの時間(ms)
@@ -77,12 +77,17 @@ public abstract class Match {
     /**
      * カウントを開始する残り秒数
      */
-    private static final int COUNT_START_REMNANT_SECOND = 10;
+    private static final int COUNT_START_REMNANT_SECOND = 5;
 
     /**
      * 無効な時刻表示テキスト
      */
     private static final String TIME_DISPLAY_NONE_TEXT = "--:--";
+
+    /**
+     * マップ投票中の状態テキスト
+     */
+    private static final String MAP_VOTE_STATUS_TEXT = MsgHandler.get("match-status-display-map-vote");
 
     /**
      * 参加しているプレイヤーとプレイヤー情報
@@ -95,8 +100,10 @@ public abstract class Match {
     protected int statusTick;
 
     /**
-     * 試合用マップ
+     * 試合用マップ<br/>
+     * マップが未決定の時はnull
      */
+    @Nullable
     protected MatchMapInstance matchMapInstance;
 
     /**
@@ -112,15 +119,14 @@ public abstract class Match {
     private final MatchMode matchMode;
 
     /**
-     * 試合用マップ
-     */
-    @NotNull
-    private final MatchMap matchMap;
-
-    /**
      * カウントダウン表示用ボスバー
      */
     private final MatchCountDownBossBar countDownBossbar = new MatchCountDownBossBar();
+
+    /**
+     * 試合マップ選択処理用クラスインスタンス
+     */
+    private final MapSelector mapSelector;
 
     /**
      * 状態
@@ -164,24 +170,28 @@ public abstract class Match {
     private boolean ticked;
 
     /**
+     * 試合開始までの残り時間<br/>
+     * カウントダウンを行っていない時は-1
+     */
+    private int startRemainingTick = -1;
+
+    /**
      * コンストラクタ
      *
      * @param id        試合ID
      * @param matchMode 試合モード
-     * @param matchMap  試合用マップ
      */
-    protected Match(@NotNull String id, @NotNull MatchMode matchMode, @NotNull MatchMap matchMap) {
+    protected Match(@NotNull String id, @NotNull MatchMode matchMode) {
         this.id = id;
         this.matchMode = matchMode;
-        this.matchMap = matchMap;
+        this.mapSelector = new MapSelector(this);
     }
 
     /**
      * 初期化処理
      */
     protected void init() {
-        countDownBossbar.updateCountDownStatus(status);
-        this.matchMapInstance = MatchManager.getInstance().getMapHandler().createMapInstance(this, this.id, this.matchMap);
+        updateBossbar();
         SLUtils.getLogger().info(MsgHandler.getFormatted("match-created", getId()));
     }
 
@@ -228,9 +238,30 @@ public abstract class Match {
      * 試合開始前のTick処理
      */
     protected void beforeStartTick() {
+        MatchManager matchManager = MatchManager.getInstance();
+        MatchMapHandler mapHandler = matchManager.getMapHandler();
+
+        this.mapSelector.tick();
+
+        MatchMap selectedMatchMap = this.mapSelector.getSelectedMatchMap();
+        if (this.matchMapInstance == null && selectedMatchMap != null) {
+            /* マップが未読み込み時に選定されたマップが存在する場合 */
+
+            // マップインスタンスを作成
+            this.matchMapInstance = mapHandler.createMapInstance(this, this.id, selectedMatchMap);
+
+            this.players.keySet().forEach(this::sendMapInfoMessage);
+
+            this.countDownBossbar.progress(0, 1);
+            updateBossbar();
+
+            // マップ決定音
+            allPlayerAudience()
+                    .playSound(Sound.sound(BLOCK_NOTE_BLOCK_XYLOPHONE.key(), Sound.Source.MASTER, 1, 0.5f));
+        }
 
         // マップの読み込みに失敗した場合は試合破棄
-        if (this.matchMapInstance.isLoadFailed()) {
+        if (this.matchMapInstance != null && this.matchMapInstance.isLoadFailed()) {
             broadcast(MATCH_CANCEL_FAILED_LOAD_WORLD_MESSAGE.get());
 
             Optional<Throwable> mapWorldError = this.matchMapInstance.getMapWordLoadError();
@@ -245,20 +276,73 @@ public abstract class Match {
             return;
         }
 
-        boolean startFlag = false;
+        // カウントダウン処理
+        updateCountDownTime(this.statusTick, SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME), false);
 
-        int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
-        updateCountDownTime(this.statusTick, totalTime);
+        int startWaitTick = SLUtils.toTick(TimeUnit.MILLISECONDS, START_WAIT_TIME);
+
+        // ボスバー処理
+        if (this.matchMapInstance == null) {
+            /* マップ決定前 */
+            int deadlineTime = this.mapSelector.getDeadlineTime();
+
+            if (deadlineTime >= 0) {
+                int deadlineTotalTick = SLUtils.toTick(TimeUnit.MILLISECONDS, MapSelector.SELECTED_DEADLINE_TIME);
+                this.countDownBossbar.progress(deadlineTotalTick - deadlineTime, deadlineTotalTick);
+            } else {
+                this.countDownBossbar.progress(0, 1);
+            }
+        } else {
+            /* マップ決定後 */
+            if (this.startRemainingTick >= 0) {
+                this.countDownBossbar.progress(startWaitTick - this.startRemainingTick, startWaitTick);
+            } else {
+                this.countDownBossbar.progress(0, 1);
+            }
+        }
 
         // マップの読み込みが終わった場合
-        if (!loadMapCompletion && matchMapInstance.isReady()) {
+        if (!loadMapCompletion && this.matchMapInstance != null && this.matchMapInstance.isReady()) {
             loadMapCompletion = true;
             dirtyAllInfo();
         }
 
-        if (this.statusTick >= totalTime) {
+        // 試合開始カウントダウン処理
+        int preStartRemainingTick = this.startRemainingTick;
+
+        if (this.matchMapInstance != null && this.players.size() >= this.getMatchMode().minPlayerCount()) {
+            /* マップが決定済みで、最低参加人数を超えていれば */
+            if (this.startRemainingTick == -1) {
+                this.startRemainingTick = startWaitTick;
+            } else {
+                this.startRemainingTick--;
+            }
+        } else {
+            this.startRemainingTick = -1;
+        }
+
+        boolean sidebarDirty = false;
+
+        if (this.startRemainingTick != preStartRemainingTick) {
+            if (this.startRemainingTick <= -1) {
+                sidebarDirty = preStartRemainingTick > -1;
+            } else if (preStartRemainingTick <= -1) {
+                sidebarDirty = true;
+            } else if (this.startRemainingTick / 20 != preStartRemainingTick / 20) {
+                sidebarDirty = true;
+            }
+        }
+
+        if (sidebarDirty) {
+            this.dirtyAllInfo();
+        }
+
+        // 試合開始処理
+        boolean startFlag = false;
+
+        if (this.startRemainingTick == 0) {
             // 開始待機時間が過ぎた場合の処理
-            if (matchMapInstance.isReady()) {
+            if (this.matchMapInstance != null && this.matchMapInstance.isReady()) {
                 // マップの準備が終わっていれば試合開始
                 startFlag = true;
             } else if (!waitLoadMapNotified) {
@@ -282,7 +366,7 @@ public abstract class Match {
         boolean finishFlag = false;
 
         int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, getMatchMode().limitTime());
-        updateCountDownTime(this.statusTick, totalTime);
+        updateCountDownTime(this.statusTick, totalTime, true);
 
         if (players.size() < getMatchMode().minPlayerCount()) {
             // 参加プレイヤーの人数が、最低参加人数より少なければ試合を終了
@@ -305,15 +389,18 @@ public abstract class Match {
     protected void afterFinishTick() {
 
         int totalTime = SLUtils.toTick(TimeUnit.MILLISECONDS, FINISH_WAIT_FOR_TELEPORT);
-        updateCountDownTime(this.statusTick, totalTime);
+        updateCountDownTime(this.statusTick, totalTime, true);
 
         // 終了後のテレポート
         if (!finishTeleport && this.statusTick >= totalTime) {
             finishTeleport = true;
 
-            Optional<World> leaveWorld = this.matchMapInstance.getMapWorld().map(MatchMapWorld::getWorld);
-            players.keySet()
-                    .forEach(player -> MatchUtils.teleportToLeave(player, leaveWorld));
+            if (this.matchMapInstance != null) {
+                Optional<World> leaveWorld = this.matchMapInstance.getMapWorld().map(MatchMapWorld::getWorld);
+                players.keySet()
+                        .forEach(player -> MatchUtils.teleportToLeave(player, leaveWorld));
+            }
+
         }
 
         // 破棄されるまでしばらく待機
@@ -343,9 +430,14 @@ public abstract class Match {
         }
 
         if (this.status != NONE) {
-            Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
 
-            return matchMapWorld.isEmpty() || matchMapWorld.get().getWorld() == player.getWorld();
+            if (this.matchMapInstance != null) {
+                Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
+
+                return matchMapWorld.isEmpty() || matchMapWorld.get().getWorld() == player.getWorld();
+            }
+
+            return false;
         }
 
         return true;
@@ -393,13 +485,32 @@ public abstract class Match {
         if (sendMessage) {
             player.sendMessage(MATCH_JOIN_MESSAGE.get());
         }
-        sendMapInfoMessage(player);
 
         player.playSound(Sound.sound(org.bukkit.Sound.UI_BUTTON_CLICK.key(), Sound.Source.MASTER, 1, 1.1f));
 
         broadcast(
                 Component.text(MsgHandler.getFormatted("match-other-player-joined", player.getName())).color(NamedTextColor.WHITE),
                 pl -> pl != player);
+
+        if (this.status == NONE && this.mapSelector.getSelectedMatchMap() == null) {
+            // FIXME マップ抽選の仮置き
+            KariMapSelectGui.openGui(this, player);
+
+           /* player.sendMessage(Component.text("マップ投票:"));
+
+            MatchManager.getInstance().getMapHandler().getAvailableMaps(this.getMatchMode()).forEach(matchMap -> {
+                Component selectorText = Component.text(String.format("[%s]", matchMap.id())).clickEvent(ClickEvent.callback(audience -> {
+                    playerInfo.getMapSelectorInfo().setVotedMatchMap(matchMap);
+                    player.sendMessage(Component.text("投票しました: " + matchMap.id()));
+                }));
+                player.sendMessage(selectorText);
+            });*/
+        }
+
+        // マップ通知
+        if (this.status == NONE && this.matchMapInstance != null) {
+            sendMapInfoMessage(player);
+        }
 
         playerInfo.updateInfo(this::appendSidebarMatchInfo);
 
@@ -463,9 +574,11 @@ public abstract class Match {
         }
 
         // 試合用ワールドにいる場合、ワールド外にテレポート
-        Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
-        if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
-            MatchUtils.teleportToLeave(player, matchMapWorld.map(MatchMapWorld::getWorld));
+        if (this.matchMapInstance != null) {
+            Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
+            if (matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld()) {
+                MatchUtils.teleportToLeave(player, matchMapWorld.map(MatchMapWorld::getWorld));
+            }
         }
 
         if (sendMessage) {
@@ -514,8 +627,8 @@ public abstract class Match {
             return false;
         }
 
-        // マップの準備中、もしくは読み込み失敗の場合は開始不可
-        if (!this.matchMapInstance.isReady() || this.matchMapInstance.isLoadFailed()) {
+        // マップが未決定、準備中、もしくは読み込み失敗の場合は開始不可
+        if (this.matchMapInstance == null || !this.matchMapInstance.isReady() || this.matchMapInstance.isLoadFailed()) {
             return false;
         }
 
@@ -558,7 +671,7 @@ public abstract class Match {
         potionEffects.forEach(potionEffect -> player.removePotionEffect(potionEffect.getType()));
 
         // プレイヤーを試合用ワールドにテレポート
-        if (this.matchMapInstance.isReady()) {
+        if (this.matchMapInstance != null && this.matchMapInstance.isReady()) {
             if (!teleportToJoin(player)) {
                 SLUtils.reportError(new RuntimeException(MsgHandler.getFormatted("system-player-cannot-spawn", player.getName())));
             }
@@ -684,9 +797,18 @@ public abstract class Match {
         return status;
     }
 
-    @NotNull
+    /**
+     * 試合マップを取得
+     *
+     * @return 試合マップ
+     */
+    @Nullable
     public MatchMap getMatchMap() {
-        return matchMap;
+        if (this.matchMapInstance != null) {
+            return this.matchMapInstance.getMatchMap();
+        } else {
+            return null;
+        }
     }
 
     private void changeStatus(@NotNull MatchStatus matchStatus) {
@@ -699,11 +821,23 @@ public abstract class Match {
         this.status = matchStatus;
         this.statusTick = 0;
 
-        countDownBossbar.updateCountDownStatus(status);
+        updateBossbar();
     }
 
-    private void updateCountDownTime(int compTime, int totalTime) {
-        countDownBossbar.progress(compTime, totalTime);
+    private void updateBossbar() {
+        if (this.status == NONE && this.matchMapInstance == null) {
+            /* マップ選択期間 */
+            this.countDownBossbar.updateTextAndColor(BossBar.Color.WHITE, MAP_VOTE_STATUS_TEXT);
+        } else {
+            this.countDownBossbar.updateCountDownStatus(this.status);
+        }
+    }
+
+    private void updateCountDownTime(int compTime, int totalTime, boolean updateBossbar) {
+
+        if (updateBossbar) {
+            this.countDownBossbar.progress(compTime, totalTime);
+        }
 
         int remnantTick = getRemnantTick(compTime, totalTime);
         countDownTime.update(remnantTick);
@@ -711,10 +845,20 @@ public abstract class Match {
             dirtyAllInfo();
         }
 
-        if (status == NONE || status == STARTED) {
+        // カウントダウン演出処理
+        if (this.status == NONE || this.status == STARTED) {
+            int countDownTick;
+
+            // 試合前の場合のみ、開始までの残り時間でカウントダウンを確認する
+            if (this.status == NONE) {
+                countDownTick = this.startRemainingTick;
+            } else {
+                countDownTick = remnantTick;
+            }
+
             // カウントダウン音
-            int remnantSecond = remnantTick / 20;
-            if (remnantTick >= 0 && COUNT_START_REMNANT_SECOND >= remnantSecond && remnantTick % 20 == 0) {
+            int countDownSecond = countDownTick / 20;
+            if (countDownTick >= 0 && COUNT_START_REMNANT_SECOND >= countDownSecond && countDownTick % 20 == 0) {
                 allPlayerAudience()
                         .playSound(Sound.sound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_HARP.key(), Sound.Source.MASTER, 1, 0.5f));
             }
@@ -778,6 +922,10 @@ public abstract class Match {
      */
     public Optional<Location> lotterySpawnLocation(@NotNull Player player) {
 
+        if (this.matchMapInstance == null) {
+            return Optional.empty();
+        }
+
         return this.matchMapInstance.getMapWorld().flatMap(matchMapWorld ->
                 // マップが読み込み済みならばスポーン地点を抽選する
                 getSpawnMaker(matchMapWorld, player).map(mapMarker -> {
@@ -809,8 +957,11 @@ public abstract class Match {
         if (status == FINISHED) {
             /* 試合終了後 */
             // 試合ワールドにいる場合は無敵
-            Optional<MatchMapWorld> matchMapWorld = matchMapInstance.getMapWorld();
-            return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
+            if (this.matchMapInstance != null) {
+                Optional<MatchMapWorld> matchMapWorld = this.matchMapInstance.getMapWorld();
+                return matchMapWorld.isPresent() && matchMapWorld.get().getWorld() == player.getWorld();
+            }
+
         } else if (status == STARTED) {
             /* 試合中 */
             // スポーン保護状態は無敵
@@ -819,7 +970,7 @@ public abstract class Match {
         return false;
     }
 
-    public MatchMapInstance getMatchMapInstance() {
+    public @Nullable MatchMapInstance getMatchMapInstance() {
         return matchMapInstance;
     }
 
@@ -936,15 +1087,18 @@ public abstract class Match {
     }
 
     private void sendMapInfoMessage(Audience audience) {
-        Component mapInfoText = Component.text(MsgHandler.get("match-map-info-header")).appendNewline();
-        mapInfoText = mapInfoText.append(Component.text(matchMap.name())).appendNewline();
+        if (this.matchMapInstance != null) {
 
-        // TODO 作者等を表示
+            Component mapInfoText = Component.text(MsgHandler.get("match-map-info-header")).appendNewline();
+            mapInfoText = mapInfoText.append(Component.text(this.matchMapInstance.getMatchMap().name())).appendNewline();
+
+            // TODO 作者等を表示
 
     /*    mapInfoText = mapInfoText.append(Component.text("作者: ").append(Component.text("N/A"))).appendNewline();
         mapInfoText = mapInfoText.append(Component.text("説明: ").append(Component.text("TEST"))).appendNewline();*/
-        mapInfoText = mapInfoText.append(Component.text(MsgHandler.get("match-map-info-footer")));
-        audience.sendMessage(mapInfoText);
+            mapInfoText = mapInfoText.append(Component.text(MsgHandler.get("match-map-info-footer")));
+            audience.sendMessage(mapInfoText);
+        }
     }
 
     /**
@@ -999,14 +1153,16 @@ public abstract class Match {
         sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-stats")).color(NamedTextColor.AQUA)
                 .append(Component.text(Match.this.getStatus().getShowName()).color(Match.this.getStatus().getColor())));
 
-        String mapText = matchMap.name();
+        if (this.matchMapInstance != null) {
+            String mapText = this.matchMapInstance.getMatchMap().name();
 
-        if (!matchMapInstance.isReady()) {
-            mapText += MsgHandler.get("match-sidebar-loading");
+            if (!this.matchMapInstance.isReady()) {
+                mapText += MsgHandler.get("match-sidebar-loading");
+            }
+
+            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-map")).color(NamedTextColor.AQUA)
+                    .append(Component.text(mapText).color(NamedTextColor.WHITE)));
         }
-
-        sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-map")).color(NamedTextColor.AQUA)
-                .append(Component.text(mapText).color(NamedTextColor.WHITE)));
 
         int participantPlayerCount = players.size();
         int participantPlayerMax = matchMode.maxPlayerCount();
@@ -1026,8 +1182,31 @@ public abstract class Match {
                         .append(Component.text(participantPlayerMax))
                         .color(participantPlayerColor)));
 
-        // 試合中もしくは、開始前のみ表示
-        if (getStatus() == NONE || getStatus() == STARTED) {
+        getSidebarTimeText().ifPresent(sidebarInfos::add);
+    }
+
+    private Optional<Component> getSidebarTimeText() {
+
+        if (getStatus() == NONE) {
+            /* 試合前 */
+            if (this.matchMapInstance != null) {
+                /* マップ決定後 */
+                if (this.startRemainingTick >= 0) {
+                    return Optional.of(Component.text(MsgHandler.get("match-sidebar-time-start")).color(NamedTextColor.AQUA)
+                            .append(Component.text(getTimeDisplayText(this.startRemainingTick / 20)).color(NamedTextColor.WHITE)));
+                }
+            } else {
+                /* マップ決定前 */
+                int deadlineTime = this.mapSelector.getDeadlineTime();
+
+                // 締め切りカウントダウンが開始していれば表示
+                if (deadlineTime >= 0) {
+                    return Optional.of(Component.text(MsgHandler.get("match-sidebar-time-vote")).color(NamedTextColor.AQUA)
+                            .append(Component.text(getTimeDisplayText(deadlineTime / 20)).color(NamedTextColor.WHITE)));
+                }
+            }
+        } else if (getStatus() == STARTED) {
+            /* 試合中 */
             int remainingTimeSecond = this.ticked ? countDownTime.getSecond() : -1;
             TextColor remainingTimeColor;
             // 残り時間テキストの色選定
@@ -1039,9 +1218,11 @@ public abstract class Match {
                 remainingTimeColor = (remainingTimeSecond % 2 == 0) ? NamedTextColor.RED : NamedTextColor.DARK_RED;
             }
 
-            sidebarInfos.add(Component.text(MsgHandler.get("match-sidebar-time-left")).color(NamedTextColor.AQUA)
+            return Optional.of(Component.text(MsgHandler.get("match-sidebar-time-left")).color(NamedTextColor.AQUA)
                     .append(Component.text(getTimeDisplayText(remainingTimeSecond)).color(remainingTimeColor)));
         }
+
+        return Optional.empty();
     }
 
     private String getTimeDisplayText(int second) {
@@ -1054,5 +1235,19 @@ public abstract class Match {
         int secTime = second % 60;
 
         return String.format("%02d:%02d", minTime, secTime);
+    }
+
+    public MapSelector getMapSelector() {
+        return mapSelector;
+    }
+
+    /**
+     * 試合が有効かどうか
+     *
+     * @return 有効ならばture、じゃなければfalse
+     */
+    public boolean isValid() {
+        MatchManager matchManager = MatchManager.getInstance();
+        return matchManager.getAllMatch().containsValue(this);
     }
 }

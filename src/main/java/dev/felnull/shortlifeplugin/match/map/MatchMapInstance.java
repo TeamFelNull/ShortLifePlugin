@@ -57,12 +57,20 @@ public class MatchMapInstance {
     private final String id;
 
     /**
+     * 試合マップ
+     */
+    @NotNull
+    private final MatchMap matchMap;
+
+    /**
      * コンストラクタ
      *
-     * @param id ID
+     * @param id       ID
+     * @param matchMap 試合マップ
      */
-    protected MatchMapInstance(@NotNull String id) {
+    protected MatchMapInstance(@NotNull String id, @NotNull MatchMap matchMap) {
         this.id = id;
+        this.matchMap = matchMap;
     }
 
     /**
@@ -177,7 +185,13 @@ public class MatchMapInstance {
         return worldFileLock;
     }
 
+    @NotNull
     public String getId() {
         return id;
+    }
+
+    @NotNull
+    public MatchMap getMatchMap() {
+        return matchMap;
     }
 }

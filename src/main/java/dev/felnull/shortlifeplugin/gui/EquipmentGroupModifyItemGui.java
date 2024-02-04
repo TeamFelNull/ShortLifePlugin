@@ -9,11 +9,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import xyz.xenondevs.invui.gui.Gui;
+import xyz.xenondevs.invui.gui.PagedGui;
 import xyz.xenondevs.invui.gui.SlotElement;
+import xyz.xenondevs.invui.gui.structure.Markers;
 import xyz.xenondevs.invui.inventory.VirtualInventory;
 import xyz.xenondevs.invui.inventory.VirtualInventoryManager;
 import xyz.xenondevs.invui.window.Window;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +25,7 @@ import java.util.stream.IntStream;
 /**
  * 装備グループアイテム変更のGUI
  *
- * @author MORIMORI0317, Quarri6343
+ * @author MORIMORI0317, Quarri6343, nin8995
  */
 public class EquipmentGroupModifyItemGui {
 
@@ -30,6 +33,11 @@ public class EquipmentGroupModifyItemGui {
      * アイテム変更スロットの列数
      */
     private static final int MODIFY_ITEM_COLUMN = 5;
+
+    /**
+     * ページごとのアイテム数
+     */
+    private static final int ITEM_PER_PAGE = MODIFY_ITEM_COLUMN * 9;
 
     /**
      * 誰かがアイテム編集GUIを開いてるかどうか
@@ -67,56 +75,67 @@ public class EquipmentGroupModifyItemGui {
     private static Window provide(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup) {
 
         openItemModifyGui = true;
-        VirtualInventory virtualInventory = VirtualInventoryManager.getInstance().createNew(UUID.randomUUID(), MODIFY_ITEM_COLUMN * 9);
 
-        setItemStacksToInv(equipmentGroup, virtualInventory);
+        int pages = equipmentGroup.itemStacks().size() / ITEM_PER_PAGE + 2;
+        VirtualInventory inv = createInventory(equipmentGroup, pages);
 
-        String[] structure = getStructure();
+        List<Gui> guis = IntStream.range(0, pages).mapToObj(page -> {
+            Gui gui = Gui.normal().setStructure(getStructure()).build();
+            for (int i = 0; i < gui.getSize(); i++) {
+                gui.setSlotElement(i, new SlotElement.InventorySlotElement(inv, i + page * ITEM_PER_PAGE));
+            }
+            return gui;
+        }).toList();
 
-        Gui gui = Gui.normal()
-                .setStructure(structure)
-                .build();
-
-        int size = gui.getSize();
-        for (int i = 0; i < size; i++) {
-            gui.setSlotElement(i, new SlotElement.InventorySlotElement(virtualInventory, i));
-        }
-
-        return buildWindow(player, equipmentGroup, virtualInventory, gui);
+        return buildWindow(player, equipmentGroup, buildGuiFromPages(guis), inv);
     }
 
-    private static void setItemStacksToInv(@NotNull EquipmentGroup equipmentGroup, VirtualInventory virtualInventory) {
-        for (int i = 0; i < virtualInventory.getSize(); i++) {
-            virtualInventory.setMaxStackSize(i, 1);
+    private static VirtualInventory createInventory(@NotNull EquipmentGroup equipmentGroup, int pages) {
+        VirtualInventory inv = VirtualInventoryManager.getInstance().createNew(UUID.randomUUID(), pages * ITEM_PER_PAGE);
+
+        for (int i = 0; i < inv.getSize(); i++) {
+            inv.setMaxStackSize(i, 1);
         }
 
-        List<ItemStack> stacks = equipmentGroup.itemStacks().stream()
-                .limit(MODIFY_ITEM_COLUMN * 9)
-                .toList();
+        List<ItemStack> stacks = equipmentGroup.itemStacks();
 
         for (int i = 0; i < stacks.size(); i++) {
             ItemStack stack = stacks.get(i).clone();
             stack.setAmount(1);
-            virtualInventory.setItemSilently(i, stack);
+            inv.setItemSilently(i, stack);
         }
+
+        return inv;
     }
 
     @NotNull
     private static String[] getStructure() {
         return IntStream.range(0, MODIFY_ITEM_COLUMN)
-                .mapToObj(it -> "#########")
+                .mapToObj(it -> "xxxxxxxxx").toList()
                 .toArray(String[]::new);
     }
 
     @NotNull
-    private static Window buildWindow(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup, VirtualInventory virtualInventory, Gui gui) {
+    private static Gui buildGuiFromPages(List<Gui> pages) {
+        ArrayList<String> structure = new ArrayList<>(Arrays.asList(getStructure()));
+        structure.add("###<#>###");
+
+        return PagedGui.guis()
+                .setStructure(structure.toArray(String[]::new))
+                .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
+                .setContent(pages)
+                .build();
+    }
+
+    @NotNull
+    private static Window buildWindow(@NotNull Player player, @NotNull EquipmentGroup equipmentGroup, Gui gui, VirtualInventory inv) {
         return Window.single()
                 .setViewer(player)
                 .setTitle(MsgHandler.getFormatted("gui-equip-group-change-title", equipmentGroup.id()))
                 .setGui(gui)
                 .addCloseHandler(() -> {
-                    saveItems(player, equipmentGroup, virtualInventory);
-                    VirtualInventoryManager.getInstance().remove(virtualInventory);
+                    saveItems(player, equipmentGroup, inv);
+                    VirtualInventoryManager.getInstance().remove(inv);
                     openItemModifyGui = false;
                 })
                 .build();

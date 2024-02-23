@@ -58,4 +58,22 @@ public final class SLFiles {
     public static File rewardCommandConfigJson() {
         return new File(SLUtils.getSLPlugin().getDataFolder(), "rewardCommandConfig.json");
     }
+
+    /**
+     * キャッシュ保存先フォルダ
+     *
+     * @return キャッシュ保存先ファイル
+     */
+    public static File cacheFolder() {
+        return new File(SLUtils.getSLPlugin().getDataFolder(), "cache");
+    }
+
+    /**
+     * テクスチャリリースキャッシュ保存先フォルダ
+     *
+     * @return テクスチャリリースキャッシュ保存先ファイル
+     */
+    public static File textureReleaseCacheFolder() {
+        return new File(cacheFolder(), "textureRelease");
+    }
 }

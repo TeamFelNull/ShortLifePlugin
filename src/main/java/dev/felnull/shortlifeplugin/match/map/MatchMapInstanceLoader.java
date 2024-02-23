@@ -37,12 +37,12 @@ import dev.felnull.fnjl.concurrent.IkisugiExecutors;
 import dev.felnull.fnjl.concurrent.InvokeExecutor;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.MsgHandler;
+import dev.felnull.shortlifeplugin.SLExecutors;
 import dev.felnull.shortlifeplugin.match.MatchMode;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
@@ -55,7 +55,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static dev.felnull.shortlifeplugin.match.map.MatchMapHandler.WORLD_NAME_PREFIX;
@@ -104,30 +106,6 @@ public class MatchMapInstanceLoader {
     private final Cache<HashCode, MapMarkerSet> mapMarkerCache = CacheBuilder.newBuilder()
             .maximumSize(30)
             .build();
-
-    /**
-     * 非同期で処理を行うExecutor
-     */
-    private final ExecutorService asyncExecutor = Executors.newFixedThreadPool(Math.max(Runtime.getRuntime().availableProcessors(), 1),
-            new BasicThreadFactory.Builder().namingPattern("map-loader-worker-%d").daemon(true).build());
-
-    /**
-     * 非同期処理用Executorを停止
-     */
-    public void stopAsyncExecutor() {
-        this.asyncExecutor.shutdown();
-        try {
-            if (!this.asyncExecutor.awaitTermination(194, TimeUnit.SECONDS)) {
-                this.asyncExecutor.shutdownNow();
-                if (!this.asyncExecutor.awaitTermination(194, TimeUnit.SECONDS)) {
-                    SLUtils.getLogger().warning(MsgHandler.get("system-async-executor-stop-failed"));
-                }
-            }
-        } catch (InterruptedException e) {
-            this.asyncExecutor.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
-    }
 
     /**
      * Tick処理
@@ -287,7 +265,9 @@ public class MatchMapInstanceLoader {
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のスケマティック読み込み完了", worldId));
 
             return Pair.of(clipboard, hashCode);
-        }, asyncExecutor).thenApplyAsync(clipboardAndHashCode -> {
+
+            // ハッシュの計算があり重いため、デフォルトエクスキューターで実行
+        }, SLExecutors.DEFAULT).thenApplyAsync(clipboardAndHashCode -> {
             /* 非同期でマーカーの集まりを取得する */
 
             assertNoDestroyedInstance(matchMapInstance);
@@ -319,7 +299,7 @@ public class MatchMapInstanceLoader {
 
             SLUtils.getLogger().info(String.format("試合用マップインスタンス(%s)のマーカー読み込み完了", worldId));
             return Pair.of(clipboard, markerSet);
-        }, asyncExecutor);
+        }, SLExecutors.DEFAULT);
     }
 
     /**
@@ -388,7 +368,7 @@ public class MatchMapInstanceLoader {
             }
 
             return worldFolder;
-        }, asyncExecutor).thenApplyAsync(worldFolder -> {
+        }, SLExecutors.IO).thenApplyAsync(worldFolder -> {
             /* Tick同期でワールドを生成 */
 
             assertNoDestroyedInstance(matchMapInstance);
@@ -550,7 +530,7 @@ public class MatchMapInstanceLoader {
             }
 
             return tmpWorldFolder;
-        }, asyncExecutor);
+        }, SLExecutors.IO);
     }
 
     private WorldCreator matchWorldCreator(String worldName, String worldId) {

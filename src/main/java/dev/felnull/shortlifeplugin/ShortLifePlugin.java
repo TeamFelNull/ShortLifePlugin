@@ -38,10 +38,16 @@ public final class ShortLifePlugin extends JavaPlugin {
      */
     private EquipmentGroupManager equipmentGroupManager;
 
+
+    /**
+     * ShortLifeTextureの監視
+     */
+    private TextureReleaseWatcher textureWatcher;
+
     @Override
     public void onEnable() {
         MsgHandler.load(this);
-        
+
         SLConfig.init(this);
         versionCheck();
 
@@ -51,8 +57,11 @@ public final class ShortLifePlugin extends JavaPlugin {
         SLUtils.clearTmpFolder(true);
         SLGuis.init();
         MatchModes.init();
-        
+
         initEventListeners();
+
+        this.textureWatcher = new TextureReleaseWatcher();
+        this.textureWatcher.init(this);
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);
@@ -66,7 +75,7 @@ public final class ShortLifePlugin extends JavaPlugin {
     /**
      * IKISUGI LOG
      *
-     * @param key 起動メッセージ
+     * @param key       起動メッセージ
      * @param colorType 色の種類
      */
     private void setUpLogger(String key, IkisugiLogger.ColorType colorType) {
@@ -143,6 +152,11 @@ public final class ShortLifePlugin extends JavaPlugin {
         // リロード後に補完が動かなくなるため、必ずコマンドを登録解除してください。
         SLCommands.unregisterAll();
 
+        if (this.textureWatcher != null) {
+            this.textureWatcher.dispose();
+            this.textureWatcher = null;
+        }
+
         if (this.matchManager != null) {
             this.matchManager.dispose();
             this.matchManager = null;
@@ -152,6 +166,8 @@ public final class ShortLifePlugin extends JavaPlugin {
             this.equipmentGroupManager.dispose();
             this.equipmentGroupManager = null;
         }
+
+        SLExecutors.dispose();
 
         SLUtils.clearTmpFolder(false);
         getLogger().info(MsgHandler.get("system-plugin-stopped"));
@@ -164,5 +180,4 @@ public final class ShortLifePlugin extends JavaPlugin {
     public EquipmentGroupManager getEquipmentGroupManager() {
         return equipmentGroupManager;
     }
-
 }

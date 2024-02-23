@@ -8,6 +8,7 @@ import dev.felnull.shortlifeplugin.decoration.BloodExpression;
 import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
+import dev.felnull.shortlifeplugin.utils.SLUtils;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
 import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
@@ -31,6 +32,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -170,8 +173,8 @@ public class CommonListener implements Listener {
      */
     private void sendDeathMessage(PlayerDeathEvent e, Player killed, Player killer) {
         ItemStack stack = killer.getEquipment().getItemInMainHand();
-        Component weapon = !stack.isEmpty() 
-                ? stack.displayName() 
+        Component weapon = !stack.isEmpty()
+                ? stack.displayName()
                 : Component.text(MsgHandler.get("event-death-bare-hand")).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
         NamedTextColor killedColor = TeamBaseMatch.getTeamColor(killed);
         NamedTextColor killerColor = TeamBaseMatch.getTeamColor(killer);
@@ -290,5 +293,22 @@ public class CommonListener implements Listener {
         message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-4")));
 
         player.sendMessage(message);
+    }
+
+    /**
+     * 新しいテクスチャがリリースされた際、もしくは起動時に呼び出し<br/>
+     * Tickスレッドで実行
+     *
+     * @param lastVersion    更新前の最終バージョン (起動時や初回取得時はnull)
+     * @param version        リリースされたバージョンと
+     * @param texturePackUrl テクスチャパックのダウンロードリンク
+     * @param packMapUrl     リソースマッピングのダウンロードリンク
+     */
+    public static void onTextureRelease(@Nullable String lastVersion, @NotNull String version, @Nullable String texturePackUrl, @Nullable String packMapUrl) {
+        if (lastVersion != null) {
+            SLUtils.getLogger().info(String.format("新しいバージョンのShortLifeテクスチャがリリースされました: %s -> %s", lastVersion, version));
+        } else {
+            SLUtils.getLogger().info(String.format("ShortLifeテクスチャを取得しました: %s", version));
+        }
     }
 }

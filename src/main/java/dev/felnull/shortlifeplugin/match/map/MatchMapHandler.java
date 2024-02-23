@@ -90,7 +90,6 @@ public class MatchMapHandler {
      * 破棄処理
      */
     public void dispose() {
-        mapInstanceLoader.stopAsyncExecutor();
         mapFolderHandler.clearMatchWorldFolder();
     }
 

@@ -3,6 +3,7 @@ package dev.felnull.shortlifeplugin;
 import com.google.gson.*;
 import dev.felnull.fnjl.util.FNDataUtil;
 import dev.felnull.shortlifeplugin.listener.CommonListener;
+import dev.felnull.shortlifeplugin.utils.JsonUtils;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import org.bukkit.Bukkit;
@@ -17,6 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +93,11 @@ public class TextureReleaseWatcher {
     private String lastVersion;
 
     /**
+     * リリース確認中フラグ
+     */
+    private boolean releaseChecking = false;
+
+    /**
      * コンストラクタ
      */
     protected TextureReleaseWatcher() {
@@ -98,6 +105,21 @@ public class TextureReleaseWatcher {
                 .connectTimeout(Duration.of(10, ChronoUnit.SECONDS))
                 .executor(SLExecutors.IO)
                 .build();
+    }
+
+    /**
+     * インスタンス取得
+     *
+     * @return テクスチャリリース監視システム
+     */
+    public static TextureReleaseWatcher getInstance() {
+        TextureReleaseWatcher instance = SLUtils.getSLPlugin().getTextureReleaseWatcher();
+
+        if (instance == null) {
+            throw new IllegalStateException("インスタンスが作成されていません");
+        }
+
+        return instance;
     }
 
     /**
@@ -134,12 +156,12 @@ public class TextureReleaseWatcher {
                     lastResJo = GSON.fromJson(reader, JsonObject.class);
                 }
 
-                String version = lastResJo.getAsJsonPrimitive("version").getAsString();
-                String texturePackUrl = lastResJo.getAsJsonPrimitive("texture_pack_url").getAsString();
-                String packMapUrl = lastResJo.getAsJsonPrimitive("pack_map_url").getAsString();
+                String version = Objects.requireNonNull(JsonUtils.getString(lastResJo, "version", null));
+                String texturePackUrl = JsonUtils.getString(lastResJo, "texture_pack_url", null);
+                String packMapUrl = JsonUtils.getString(lastResJo, "pack_map_url", null);
 
                 return new ReleaseInfo(version, texturePackUrl, packMapUrl);
-            } catch (IOException | JsonSyntaxException e) {
+            } catch (IOException | RuntimeException e) {
                 SLUtils.reportError(e, "前回終了時の最終リリース情報取得に失敗");
             }
         }
@@ -158,8 +180,14 @@ public class TextureReleaseWatcher {
         JsonObject lastResJo = new JsonObject();
 
         lastResJo.addProperty("version", version);
-        lastResJo.addProperty("texture_pack_url", texturePackUrl);
-        lastResJo.addProperty("pack_map_url", packMapUrl);
+
+        if (texturePackUrl != null) {
+            lastResJo.addProperty("texture_pack_url", texturePackUrl);
+        }
+
+        if (packMapUrl != null) {
+            lastResJo.addProperty("pack_map_url", packMapUrl);
+        }
 
         FNDataUtil.wishMkdir(LAST_RELEASE_INFO_FILE.getParentFile());
 
@@ -178,6 +206,11 @@ public class TextureReleaseWatcher {
      * リリース確認
      */
     private void releaseCheck() {
+        if (releaseChecking) {
+            throw new RuntimeException("既にリリース確認中です");
+        }
+        this.releaseChecking = true;
+
         try {
             // 非同期監視実行
             releaseCheckAsync(this.lastVersion)
@@ -198,6 +231,7 @@ public class TextureReleaseWatcher {
                                 this.lastVersion = ret.version();
                             }
                             this.watchTask = addReleaseCheckTask(SLUtils.getSLPlugin());
+                            this.releaseChecking = false;
                         }
 
                     }, this.tickExecutor);
@@ -205,6 +239,7 @@ public class TextureReleaseWatcher {
             /* タスク実行時にエラーが発生した場合 */
             SLUtils.reportError(ex, "リリース監視タスク実行に失敗");
             this.watchTask = addReleaseCheckTask(SLUtils.getSLPlugin());
+            this.releaseChecking = false;
         }
     }
 
@@ -248,10 +283,10 @@ public class TextureReleaseWatcher {
                         throw new RuntimeException(retJson.get("message").getAsString());
                     }
 
-                    String version = retJson.getAsJsonPrimitive("tag_name").getAsString();
+                    String version = JsonUtils.getString(retJson, "tag_name", null);
 
-                    // バージョンがvから始まるか確認  例: v1.0
-                    if (!version.startsWith("v")) {
+                    // バージョンがnullではないか、vから始まるか確認  例: v1.0
+                    if (version == null || !version.startsWith("v")) {
                         return null;
                     }
 
@@ -270,14 +305,12 @@ public class TextureReleaseWatcher {
                     // テクスチャとマッピングのJsonを取得
                     for (JsonElement je : assetsJa) {
                         if (je instanceof JsonObject jo) {
-                            if (jo.has("name")
-                                    && jo.get("name").isJsonPrimitive() && jo.getAsJsonPrimitive("name").isString()) {
-                                String name = jo.getAsJsonPrimitive("name").getAsString();
-                                if (TEXTURE_PACK_NAME.equals(name)) {
-                                    textureAssetsJo = jo;
-                                } else if (PACK_MAPPING_NAME.equals(name)) {
-                                    mappingAssetsJo = jo;
-                                }
+                            String name = JsonUtils.getString(jo, "name", null);
+
+                            if (TEXTURE_PACK_NAME.equals(name)) {
+                                textureAssetsJo = jo;
+                            } else if (PACK_MAPPING_NAME.equals(name)) {
+                                mappingAssetsJo = jo;
                             }
                         }
 
@@ -286,8 +319,8 @@ public class TextureReleaseWatcher {
                         }
                     }
 
-                    String texturePackUrl = textureAssetsJo == null ? null : textureAssetsJo.getAsJsonPrimitive("browser_download_url").getAsString();
-                    String packMapUrl = mappingAssetsJo == null ? null : mappingAssetsJo.getAsJsonPrimitive("browser_download_url").getAsString();
+                    String texturePackUrl = textureAssetsJo == null ? null : JsonUtils.getString(textureAssetsJo, "browser_download_url", null);
+                    String packMapUrl = mappingAssetsJo == null ? null : JsonUtils.getString(mappingAssetsJo, "browser_download_url", null);
 
                     return new ReleaseInfo(version, texturePackUrl, packMapUrl);
                 }, SLExecutors.DEFAULT).thenApplyAsync(ret -> {
@@ -304,6 +337,34 @@ public class TextureReleaseWatcher {
 
                     return ret;
                 }, SLExecutors.IO);
+    }
+
+    /**
+     * 現在リリース確認中かどうか
+     *
+     * @return リリース確認中かどうか
+     */
+    public boolean isReleaseChecking() {
+        return this.releaseChecking;
+    }
+
+    /**
+     * 手動でリリースを確認
+     *
+     * @return 実行できたどうか
+     */
+    public boolean manualReleaseCheck() {
+        if (releaseChecking) {
+            return false;
+        }
+
+        if (this.watchTask != null) {
+            this.watchTask.cancel();
+        }
+
+        releaseCheck();
+
+        return true;
     }
 
     /**

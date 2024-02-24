@@ -310,5 +310,7 @@ public class CommonListener implements Listener {
         } else {
             SLUtils.getLogger().info(String.format("ShortLifeテクスチャを取得しました: %s", version));
         }
+
+
     }
 }

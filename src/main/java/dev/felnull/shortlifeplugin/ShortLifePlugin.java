@@ -42,7 +42,7 @@ public final class ShortLifePlugin extends JavaPlugin {
     /**
      * ShortLifeTextureの監視
      */
-    private TextureReleaseWatcher textureWatcher;
+    private TextureReleaseWatcher textureReleaseWatcher;
 
     @Override
     public void onEnable() {
@@ -60,8 +60,8 @@ public final class ShortLifePlugin extends JavaPlugin {
 
         initEventListeners();
 
-        this.textureWatcher = new TextureReleaseWatcher();
-        this.textureWatcher.init(this);
+        this.textureReleaseWatcher = new TextureReleaseWatcher();
+        this.textureReleaseWatcher.init(this);
 
         this.matchManager = new MatchManager();
         this.matchManager.init(this);
@@ -152,9 +152,9 @@ public final class ShortLifePlugin extends JavaPlugin {
         // リロード後に補完が動かなくなるため、必ずコマンドを登録解除してください。
         SLCommands.unregisterAll();
 
-        if (this.textureWatcher != null) {
-            this.textureWatcher.dispose();
-            this.textureWatcher = null;
+        if (this.textureReleaseWatcher != null) {
+            this.textureReleaseWatcher.dispose();
+            this.textureReleaseWatcher = null;
         }
 
         if (this.matchManager != null) {
@@ -179,5 +179,9 @@ public final class ShortLifePlugin extends JavaPlugin {
 
     public EquipmentGroupManager getEquipmentGroupManager() {
         return equipmentGroupManager;
+    }
+
+    public TextureReleaseWatcher getTextureReleaseWatcher() {
+        return textureReleaseWatcher;
     }
 }

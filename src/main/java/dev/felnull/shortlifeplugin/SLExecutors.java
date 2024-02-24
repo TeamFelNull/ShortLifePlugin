@@ -33,6 +33,7 @@ public class SLExecutors {
     }
 
     private SLExecutors() {
+        throw new AssertionError();
     }
 
     private static ThreadFactory createThreadFactory(String namingPattern) {

@@ -91,6 +91,17 @@ public enum SLCommandsList {
             }
             return rewardCommand;
         }
+    },
+
+    TEXTURE("sltexture") {
+        @Override
+        public CommandAPICommand create() {
+            return new CommandAPICommand(name)
+                    .withAliases("slt")
+                    .withPermission(SLPermissions.COMMANDS_TEXTURE.get())
+                    .withSubcommands(new CommandAPICommand("reload")
+                            .executes(TextureCommand::reload));
+        }
     };
 
     /**

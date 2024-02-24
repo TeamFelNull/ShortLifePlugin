@@ -30,13 +30,18 @@ public enum SLPermissions {
     /**
      * 報酬コマンド用パーミッション<br/>
      */
-    COMMANDS_REWARD("hortlifeplugin.commands.reward");
+    COMMANDS_REWARD("shortlifeplugin.commands.reward"),
+
+    /**
+     * テクスチャコマンド用パーミッション<br/>
+     */
+    COMMANDS_TEXTURE("shortlifeplugin.commands.sltexture");
 
     /**
      * パーミッション名
      */
     private final String name;
-    
+
     SLPermissions(String name) {
         this.name = name;
     }

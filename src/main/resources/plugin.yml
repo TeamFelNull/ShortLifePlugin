@@ -23,3 +23,6 @@ permissions:
   shortlifeplugin.commands.reward:
     description: "Reward command permission"
     default: op
+  shortlifeplugin.commands.sltexture:
+    description: "SLTexture command permission"
+    default: op

@@ -97,9 +97,12 @@ cmd-room-failed-to-join: "参加できませんでした"
 cmd-room-match-not-joined: "試合に参加していません"
 cmd-room-match-failed-to-leave: "退出できませんでした"
 
+cmd-texture-reload-start: "再読み込みを実行します..."
+cmd-texture-reload-failure: "再読み込みできませんでした"
+cmd-texture-reload-already: "再読み込み中です"
+
 cmd-general-player-only: "プレイヤーのみ実行可能です"
 cmd-general-need-player-selector: "プレイヤーセレクタを指定しない場合は、プレイヤーのみ実行可能です"
-
 
 #装備グループ
 equip-id: "ID: "

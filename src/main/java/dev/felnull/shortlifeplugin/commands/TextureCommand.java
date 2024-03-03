@@ -1,7 +1,7 @@
 package dev.felnull.shortlifeplugin.commands;
 
 import dev.felnull.shortlifeplugin.MsgHandler;
-import dev.felnull.shortlifeplugin.TextureReleaseWatcher;
+import dev.felnull.shortlifeplugin.resources.TextureReleaseWatcher;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 

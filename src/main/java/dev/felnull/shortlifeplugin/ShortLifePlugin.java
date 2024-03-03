@@ -6,6 +6,8 @@ import dev.felnull.shortlifeplugin.gui.SLGuis;
 import dev.felnull.shortlifeplugin.listener.*;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.MatchModes;
+import dev.felnull.shortlifeplugin.resources.ResourceSyncManager;
+import dev.felnull.shortlifeplugin.resources.TextureReleaseWatcher;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
 import net.kunmc.lab.ikisugilogger.IkisugiLogger;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -44,6 +46,11 @@ public final class ShortLifePlugin extends JavaPlugin {
      */
     private TextureReleaseWatcher textureReleaseWatcher;
 
+    /**
+     * リソース同期マネージャー
+     */
+    private ResourceSyncManager resourceSyncManager;
+
     @Override
     public void onEnable() {
         MsgHandler.load(this);
@@ -59,6 +66,9 @@ public final class ShortLifePlugin extends JavaPlugin {
         MatchModes.init();
 
         initEventListeners();
+
+        this.resourceSyncManager = new ResourceSyncManager();
+        this.resourceSyncManager.init();
 
         this.textureReleaseWatcher = new TextureReleaseWatcher();
         this.textureReleaseWatcher.init(this);
@@ -183,5 +193,9 @@ public final class ShortLifePlugin extends JavaPlugin {
 
     public TextureReleaseWatcher getTextureReleaseWatcher() {
         return textureReleaseWatcher;
+    }
+
+    public ResourceSyncManager getResourceSyncManager() {
+        return resourceSyncManager;
     }
 }

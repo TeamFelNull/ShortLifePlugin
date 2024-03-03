@@ -1,8 +1,12 @@
-package dev.felnull.shortlifeplugin;
+package dev.felnull.shortlifeplugin.resources;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import dev.felnull.fnjl.util.FNDataUtil;
-import dev.felnull.shortlifeplugin.listener.CommonListener;
+import dev.felnull.shortlifeplugin.SLExecutors;
+import dev.felnull.shortlifeplugin.ShortLifePlugin;
 import dev.felnull.shortlifeplugin.utils.JsonUtils;
 import dev.felnull.shortlifeplugin.utils.SLFiles;
 import dev.felnull.shortlifeplugin.utils.SLUtils;
@@ -25,7 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * テクスチャのリリースを監視するシステム
+ * テクスチャのリリースを監視するシステム<br/>
+ * 外部からのアクセスはサーバーTickのみ想定
  *
  * @author MORIMORI0317
  */
@@ -100,7 +105,7 @@ public class TextureReleaseWatcher {
     /**
      * コンストラクタ
      */
-    protected TextureReleaseWatcher() {
+    public TextureReleaseWatcher() {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.of(10, ChronoUnit.SECONDS))
                 .executor(SLExecutors.IO)
@@ -137,8 +142,7 @@ public class TextureReleaseWatcher {
             SLUtils.getLogger().info(String.format("前回起動時の最終リリース情報を読み込みました: %s", lastStartupReleaseInfo.version()));
 
             this.lastVersion = lastStartupReleaseInfo.version();
-            CommonListener.onTextureRelease(null,
-                    lastStartupReleaseInfo.version(), lastStartupReleaseInfo.texturePackUrl(), lastStartupReleaseInfo.packMapUrl());
+            onTextureRelease(null, lastStartupReleaseInfo.version(), lastStartupReleaseInfo.texturePackUrl(), lastStartupReleaseInfo.packMapUrl());
         }
 
         releaseCheck();
@@ -222,7 +226,7 @@ public class TextureReleaseWatcher {
                             if (error != null) {
                                 SLUtils.reportError(error, "リリース監視タスク実行中にエラーが発生");
                             } else if (ret != null) {
-                                CommonListener.onTextureRelease(this.lastVersion, ret.version(), ret.texturePackUrl(), ret.packMapUrl());
+                                onTextureRelease(this.lastVersion, ret.version(), ret.texturePackUrl(), ret.packMapUrl());
                             }
                         } catch (Exception ex) {
                             SLUtils.reportError(ex, "リリース監視の結果処理に失敗");
@@ -385,6 +389,30 @@ public class TextureReleaseWatcher {
         if (this.disposed.get()) {
             throw new RuntimeException("破棄済みです");
         }
+    }
+
+    /**
+     * 新しいテクスチャがリリースされた際、もしくは起動時に呼び出し<br/>
+     * Tickスレッドで実行
+     *
+     * @param lastVersion    更新前の最終バージョン (起動時や初回取得時はnull)
+     * @param version        リリースされたバージョンと
+     * @param texturePackUrl テクスチャパックのダウンロードリンク
+     * @param packMapUrl     リソースマッピングのダウンロードリンク
+     */
+    public static void onTextureRelease(@Nullable String lastVersion, @NotNull String version, @Nullable String texturePackUrl, @Nullable String packMapUrl) {
+        if (lastVersion != null) {
+            SLUtils.getLogger().info(String.format("新しいバージョンのShortLifeテクスチャがリリースされました: %s -> %s", lastVersion, version));
+        } else {
+            SLUtils.getLogger().info(String.format("ShortLifeテクスチャを取得しました: %s", version));
+        }
+
+        ResourceSyncManager resourceSyncManager = ResourceSyncManager.getInstance();
+
+        if (packMapUrl != null) {
+            resourceSyncManager.loadAsync(version, packMapUrl);
+        }
+
     }
 
     /**

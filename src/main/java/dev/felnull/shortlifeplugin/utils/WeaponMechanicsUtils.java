@@ -1,11 +1,12 @@
 package dev.felnull.shortlifeplugin.utils;
 
-import me.deecaad.core.compatibility.CompatibilityAPI;
 import me.deecaad.core.file.Configuration;
 import me.deecaad.weaponmechanics.WeaponMechanics;
 import me.deecaad.weaponmechanics.weapon.damage.DamagePoint;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,11 @@ import java.util.Optional;
  * @author MORIMORI0317
  */
 public class WeaponMechanicsUtils {
+
+    /**
+     * 銃ダメージイベントの間だけ付与されるメタデータ名
+     */
+    private static final String WEAPON_DAMAGE_EVENT_METADATA = "doing-weapon-damage";
 
     private WeaponMechanicsUtils() {
         throw new AssertionError();
@@ -42,7 +48,7 @@ public class WeaponMechanicsUtils {
 
         Configuration basicConfiguration = WeaponMechanics.getBasicConfigurations();
         EntityType type = livingEntity.getType();
-        double entityHeight = CompatibilityAPI.getEntityCompatibility().getHeight(livingEntity);
+        double entityHeight = livingEntity.getHeight(); // CompatibilityAPI.getEntityCompatibility().getHeight(livingEntity);
         BoundingBox boundingBox = livingEntity.getBoundingBox();
         Vector boxMin = boundingBox.getMin();
         Vector boxMax = boundingBox.getMax();
@@ -88,5 +94,18 @@ public class WeaponMechanicsUtils {
         }
 
         return Optional.ofNullable(ret);
+    }
+
+    /**
+     * 銃のダメージイベントかどうか確認<br/>
+     * 銃ダメージでのイベント中のみ特定のメタデータが付与される仕様<br/>
+     * もし今後この仕様が変更された場合は、{@link me.deecaad.weaponmechanics.weapon.damage.DamageUtil}を参照
+     *
+     * @param e ダメージイベント
+     * @return 銃ダメージでのイベントかどうか
+     */
+    public static boolean isDoingWeaponDamageEvent(EntityDamageEvent e) {
+        Entity entity = e.getEntity();
+        return entity.hasMetadata(WEAPON_DAMAGE_EVENT_METADATA);
     }
 }

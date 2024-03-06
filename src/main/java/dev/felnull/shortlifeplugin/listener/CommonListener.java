@@ -9,7 +9,6 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
-import me.deecaad.weaponmechanics.events.WeaponMechanicsEntityDamageByEntityEvent;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -90,7 +89,7 @@ public class CommonListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamage(EntityDamageEvent e) {
         // WeaponMechanicsのダメージ以外
-        if (!(e instanceof WeaponMechanicsEntityDamageByEntityEvent) && e.getEntity() instanceof LivingEntity livingEntity
+        if (!WeaponMechanicsUtils.isDoingWeaponDamageEvent(e) && e.getEntity() instanceof LivingEntity livingEntity
                 && BloodExpression.isSpawnDamageParticle(livingEntity, e.getDamage())) {
             spawnDamageParticle(e, livingEntity);
         }
@@ -170,8 +169,8 @@ public class CommonListener implements Listener {
      */
     private void sendDeathMessage(PlayerDeathEvent e, Player killed, Player killer) {
         ItemStack stack = killer.getEquipment().getItemInMainHand();
-        Component weapon = !stack.isEmpty() 
-                ? stack.displayName() 
+        Component weapon = !stack.isEmpty()
+                ? stack.displayName()
                 : Component.text(MsgHandler.get("event-death-bare-hand")).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
         NamedTextColor killedColor = TeamBaseMatch.getTeamColor(killed);
         NamedTextColor killerColor = TeamBaseMatch.getTeamColor(killer);

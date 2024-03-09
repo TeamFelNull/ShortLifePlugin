@@ -68,7 +68,7 @@ public final class ShortLifePlugin extends JavaPlugin {
         initEventListeners();
 
         this.resourceSyncManager = new ResourceSyncManager();
-        this.resourceSyncManager.init();
+        this.resourceSyncManager.init(this);
 
         this.textureReleaseWatcher = new TextureReleaseWatcher();
         this.textureReleaseWatcher.init(this);

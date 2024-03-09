@@ -102,6 +102,8 @@ public class ResourceSyncManager {
 
     /**
      * 初期化
+     *
+     * @param plugin プラグイン
      */
     public void init(ShortLifePlugin plugin) {
         this.tickExecutor = Bukkit.getScheduler().getMainThreadExecutor(plugin);

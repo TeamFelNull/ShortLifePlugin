@@ -1,12 +1,20 @@
 package dev.felnull.shortlifeplugin.utils;
 
 import me.deecaad.core.file.Configuration;
+import me.deecaad.core.mechanics.Mechanics;
 import me.deecaad.weaponmechanics.WeaponMechanics;
+import me.deecaad.weaponmechanics.utils.CustomTag;
 import me.deecaad.weaponmechanics.weapon.damage.DamagePoint;
+import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponReloadEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +25,7 @@ import java.util.Optional;
 /**
  * WeaponMechanics関係のユーティリティクライアント
  *
- * @author MORIMORI0317
+ * @author MORIMORI0317, nin8995
  */
 public class WeaponMechanicsUtils {
 
@@ -107,5 +115,27 @@ public class WeaponMechanicsUtils {
     public static boolean isDoingWeaponDamageEvent(EntityDamageEvent e) {
         Entity entity = e.getEntity();
         return entity.hasMetadata(WEAPON_DAMAGE_EVENT_METADATA);
+    }
+
+    /**
+     * プレイヤーのインベントリ内の銃を全てリロードする
+     *
+     * @param player リロードされるプレイヤー
+     */
+    public static void reloadAllWeapons(Player player) {
+        Inventory inv = player.getInventory();
+        //inv.forEach(item -> {});だと１番のアイテムと同じアイテムしか出てこない謎
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack item = inv.getItem(i);
+            if (item != null) {
+                String title = CustomTag.WEAPON_TITLE.getString(item);
+                if (title != null && !CustomTag.AMMO_TITLE.hasString(item)) {
+                    Configuration config = WeaponMechanics.getConfigurations();
+                    WeaponReloadEvent reloadEvent = new WeaponReloadEvent(title, item, player, EquipmentSlot.HAND, 0, 0, config.getInt(title + ".Reload.Magazine_Size"), 0, 0, config.getObject(title + ".Reload.Start_Mechanics", Mechanics.class));
+                    Bukkit.getPluginManager().callEvent(reloadEvent);
+                    CustomTag.AMMO_LEFT.setInteger(item, reloadEvent.getMagazineSize());
+                }
+            }
+        }
     }
 }

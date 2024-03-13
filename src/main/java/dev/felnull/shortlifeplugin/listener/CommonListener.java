@@ -9,7 +9,14 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
+import me.deecaad.core.file.Configuration;
+import me.deecaad.core.mechanics.Mechanics;
+import me.deecaad.weaponmechanics.WeaponMechanics;
+import me.deecaad.weaponmechanics.listeners.WeaponListeners;
+import me.deecaad.weaponmechanics.utils.CustomTag;
+import me.deecaad.weaponmechanics.weapon.WeaponHandler;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
+import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponReloadEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -27,6 +34,8 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
@@ -158,6 +167,7 @@ public class CommonListener implements Listener {
         }
 
         sendDeathMessage(e, killed, killer);
+        WeaponMechanicsUtils.reloadAllWeapons(killed);
     }
 
     /**
@@ -260,6 +270,8 @@ public class CommonListener implements Listener {
             if (matchManager.getJoinedMatch(player).stream().noneMatch(match -> match == worldMatch)) {
                 sendUnexpectedMatchJoinMessage(player, worldMatch);
             }
+            //銃をリロード
+            WeaponMechanicsUtils.reloadAllWeapons(player);
         });
     }
 

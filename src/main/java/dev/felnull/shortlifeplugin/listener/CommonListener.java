@@ -9,14 +9,7 @@ import dev.felnull.shortlifeplugin.match.Match;
 import dev.felnull.shortlifeplugin.match.MatchManager;
 import dev.felnull.shortlifeplugin.match.TeamBaseMatch;
 import dev.felnull.shortlifeplugin.utils.WeaponMechanicsUtils;
-import me.deecaad.core.file.Configuration;
-import me.deecaad.core.mechanics.Mechanics;
-import me.deecaad.weaponmechanics.WeaponMechanics;
-import me.deecaad.weaponmechanics.listeners.WeaponListeners;
-import me.deecaad.weaponmechanics.utils.CustomTag;
-import me.deecaad.weaponmechanics.weapon.WeaponHandler;
 import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponDamageEntityEvent;
-import me.deecaad.weaponmechanics.weapon.weaponevents.WeaponReloadEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -34,8 +27,6 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MinecraftFont;
 import org.bukkit.util.BoundingBox;
@@ -67,18 +58,6 @@ public class CommonListener implements Listener {
     }
 
     /**
-     * プレイヤーが参加した際のイベント
-     *
-     * @param e プレイヤー参加イベント
-     */
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onJoin(PlayerJoinEvent e) {
-        if (SLConfig.isTestMode()) {
-            sendTestMessage(e.getPlayer());
-        }
-    }
-
-    /**
      * プレイヤーにテストモードであるというメッセージを送信
      *
      * @param player プレイヤー
@@ -88,20 +67,6 @@ public class CommonListener implements Listener {
         message = message.appendNewline().append(Component.text(MsgHandler.get("system-test-mode-2")));
         message = message.color(NamedTextColor.GREEN);
         player.sendMessage(message);
-    }
-
-    /**
-     * エンティティがダメージを受けた際の処理
-     *
-     * @param e エンティティダメージイベント
-     */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onDamage(EntityDamageEvent e) {
-        // WeaponMechanicsのダメージ以外
-        if (!WeaponMechanicsUtils.isDoingWeaponDamageEvent(e) && e.getEntity() instanceof LivingEntity livingEntity
-                && BloodExpression.isSpawnDamageParticle(livingEntity, e.getDamage())) {
-            spawnDamageParticle(e, livingEntity);
-        }
     }
 
     /**
@@ -128,6 +93,91 @@ public class CommonListener implements Listener {
     }
 
     /**
+     * 武器によるダメージパーティクルを表示させる
+     *
+     * @param e            イベント
+     * @param livingEntity エンティティ
+     * @param damage       ダメージ
+     */
+    private static void spawnDamageParticle(WeaponDamageEntityEvent e, LivingEntity livingEntity, double damage) {
+        Optional<BoundingBox> damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
+        BloodExpression.spawnDamageParticle(livingEntity, livingEntity.getBoundingBox(), damagePointBox, damage);
+    }
+
+    /**
+     * 殺害した際の効果音を鳴らす
+     *
+     * @param killer 殺害者
+     */
+    private static void playKillSound(Player killer) {
+        killer.playSound(killer, ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 0.6f, 0.5f);
+        killer.playSound(killer, ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 0.5f);
+    }
+
+    /**
+     * サーバー参加メッセージを送る
+     *
+     * @param e 参加イベント
+     */
+    private static void sendWelcomeMessage(PlayerJoinEvent e) {
+        e.getPlayer().sendMessage(Component.text(MsgHandler.get("event-join-welcome")).color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+    }
+
+    /**
+     * プレイヤーが試合に非正規の方法で参加したメッセージを送る
+     *
+     * @param player     プレイヤー
+     * @param worldMatch 試合
+     */
+    private static void sendUnexpectedMatchJoinMessage(Player player, Match worldMatch) {
+        Component message = Component.text(MsgHandler.get("event-unexpected-join-in-game-1")).color(NamedTextColor.RED)
+                .append(worldMatch.createDisplayComponent().color(NamedTextColor.GOLD))
+                .append(Component.text(MsgHandler.get("event-unexpected-join-in-game-2")));
+
+        message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-3")));
+
+        // 権限がある場合は、参加用メッセージを追加
+        if (player.hasPermission(SLPermissions.COMMANDS_MATCH.get())) {
+            Component clickHere = Component.text(MsgHandler.get("event-unexpected-join-click-here-1"))
+                    .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + worldMatch.getId())).build());
+
+            message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-click-here-2"))
+                    .append(clickHere)
+                    .append(Component.text(MsgHandler.get("event-unexpected-join-click-here-3"))));
+        }
+
+        message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-4")));
+
+        player.sendMessage(message);
+    }
+
+    /**
+     * プレイヤーが参加した際のイベント
+     *
+     * @param e プレイヤー参加イベント
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(PlayerJoinEvent e) {
+        if (SLConfig.isTestMode()) {
+            sendTestMessage(e.getPlayer());
+        }
+    }
+
+    /**
+     * エンティティがダメージを受けた際の処理
+     *
+     * @param e エンティティダメージイベント
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDamage(EntityDamageEvent e) {
+        // WeaponMechanicsのダメージ以外
+        if (!WeaponMechanicsUtils.isDoingWeaponDamageEvent(e) && e.getEntity() instanceof LivingEntity livingEntity
+                && BloodExpression.isSpawnDamageParticle(livingEntity, e.getDamage())) {
+            spawnDamageParticle(e, livingEntity);
+        }
+    }
+
+    /**
      * WeaponMechanicsの武器ダメージを受けた際の処理
      *
      * @param e 武器ダメージイベント
@@ -139,18 +189,6 @@ public class CommonListener implements Listener {
         if (BloodExpression.isSpawnDamageParticle(livingEntity, damage)) {
             spawnDamageParticle(e, livingEntity, damage);
         }
-    }
-
-    /**
-     * 武器によるダメージパーティクルを表示させる
-     *
-     * @param e            イベント
-     * @param livingEntity エンティティ
-     * @param damage       ダメージ
-     */
-    private static void spawnDamageParticle(WeaponDamageEntityEvent e, LivingEntity livingEntity, double damage) {
-        Optional<BoundingBox> damagePointBox = WeaponMechanicsUtils.getDamagePointBox(livingEntity, e.getPoint());
-        BloodExpression.spawnDamageParticle(livingEntity, livingEntity.getBoundingBox(), damagePointBox, damage);
     }
 
     /**
@@ -205,7 +243,6 @@ public class CommonListener implements Listener {
         return spaceToAdd + name;
     }
 
-
     /**
      * 何らかのエンティティーを殺害した際に発生するイベント
      *
@@ -220,30 +257,11 @@ public class CommonListener implements Listener {
     }
 
     /**
-     * 殺害した際の効果音を鳴らす
-     *
-     * @param killer 殺害者
-     */
-    private static void playKillSound(Player killer) {
-        killer.playSound(killer, ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 0.6f, 0.5f);
-        killer.playSound(killer, ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 0.5f);
-    }
-
-    /**
      * @param e PlayerJoin event
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onServerJoin(PlayerJoinEvent e) {
         sendWelcomeMessage(e);
-    }
-
-    /**
-     * サーバー参加メッセージを送る
-     *
-     * @param e 参加イベント
-     */
-    private static void sendWelcomeMessage(PlayerJoinEvent e) {
-        e.getPlayer().sendMessage(Component.text(MsgHandler.get("event-join-welcome")).color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
     }
 
     /**
@@ -273,33 +291,5 @@ public class CommonListener implements Listener {
             //銃をリロード
             WeaponMechanicsUtils.reloadAllWeapons(player);
         });
-    }
-
-    /**
-     * プレイヤーが試合に非正規の方法で参加したメッセージを送る
-     *
-     * @param player     プレイヤー
-     * @param worldMatch 試合
-     */
-    private static void sendUnexpectedMatchJoinMessage(Player player, Match worldMatch) {
-        Component message = Component.text(MsgHandler.get("event-unexpected-join-in-game-1")).color(NamedTextColor.RED)
-                .append(worldMatch.createDisplayComponent().color(NamedTextColor.GOLD))
-                .append(Component.text(MsgHandler.get("event-unexpected-join-in-game-2")));
-
-        message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-3")));
-
-        // 権限がある場合は、参加用メッセージを追加
-        if (player.hasPermission(SLPermissions.COMMANDS_MATCH.get())) {
-            Component clickHere = Component.text(MsgHandler.get("event-unexpected-join-click-here-1"))
-                    .style(Style.style().color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/match join " + worldMatch.getId())).build());
-
-            message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-click-here-2"))
-                    .append(clickHere)
-                    .append(Component.text(MsgHandler.get("event-unexpected-join-click-here-3"))));
-        }
-
-        message = message.appendNewline().append(Component.text(MsgHandler.get("event-unexpected-join-in-game-4")));
-
-        player.sendMessage(message);
     }
 }

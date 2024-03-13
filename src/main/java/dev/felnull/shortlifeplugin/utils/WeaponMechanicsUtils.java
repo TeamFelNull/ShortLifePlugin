@@ -131,7 +131,10 @@ public class WeaponMechanicsUtils {
                 String title = CustomTag.WEAPON_TITLE.getString(item);
                 if (title != null && !CustomTag.AMMO_TITLE.hasString(item)) {
                     Configuration config = WeaponMechanics.getConfigurations();
-                    WeaponReloadEvent reloadEvent = new WeaponReloadEvent(title, item, player, EquipmentSlot.HAND, 0, 0, config.getInt(title + ".Reload.Magazine_Size"), 0, 0, config.getObject(title + ".Reload.Start_Mechanics", Mechanics.class));
+                    WeaponReloadEvent reloadEvent = new WeaponReloadEvent(title, item, player, EquipmentSlot.HAND,
+                            0, 0, config.getInt(title + ".Reload.Magazine_Size"),
+                            0, 0, config.getObject(title + ".Reload.Start_Mechanics",
+                            Mechanics.class));
                     Bukkit.getPluginManager().callEvent(reloadEvent);
                     CustomTag.AMMO_LEFT.setInteger(item, reloadEvent.getMagazineSize());
                 }

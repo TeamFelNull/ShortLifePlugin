@@ -167,6 +167,11 @@ public final class ShortLifePlugin extends JavaPlugin {
             this.textureReleaseWatcher = null;
         }
 
+        if (this.resourceSyncManager != null) {
+            this.resourceSyncManager.dispose();
+            this.resourceSyncManager = null;
+        }
+
         if (this.matchManager != null) {
             this.matchManager.dispose();
             this.matchManager = null;

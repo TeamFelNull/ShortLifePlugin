@@ -55,11 +55,6 @@ public class ResourceSyncManager {
     private final Map<String, CustomModel> customModels = new HashMap<>();
 
     /**
-     * マッピングキャッシュファイルのロックオブジェクト
-     */
-    private final Object mappingCacheFileLock = new Object();
-
-    /**
      * 最後に読み込んだリリースバージョン
      */
     private String lastReleaseVersion;
@@ -219,6 +214,15 @@ public class ResourceSyncManager {
     }
 
     /**
+     * 破棄処理
+     */
+    public void dispose() {
+        if (this.mappingLoader != null) {
+            this.mappingLoader.destory();
+        }
+    }
+
+    /**
      * カスタムモデルのエントリ
      *
      * @param model  モデルのロケーション
@@ -302,7 +306,9 @@ public class ResourceSyncManager {
                 /* 非同期(IO)でキャッシュファイルを作成 */
                 assertDestory();
 
-                synchronized (mappingCacheFileLock) {
+                // 破棄後もしくは破棄中に保存されることを避ける
+                synchronized (this.destroyed) {
+                    assertDestory();
                     try (Writer writer = new BufferedWriter(new FileWriter(MAPPING_CACHE_FILE))) {
                         JsonObject jo = new JsonObject();
                         jo.addProperty("release_version", this.version);
@@ -347,7 +353,9 @@ public class ResourceSyncManager {
         }
 
         private void destory() {
-            this.destroyed.set(true);
+            synchronized (this.destroyed) {
+                this.destroyed.set(true);
+            }
         }
 
         protected boolean isDone() {

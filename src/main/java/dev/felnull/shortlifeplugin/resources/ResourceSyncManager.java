@@ -70,6 +70,11 @@ public class ResourceSyncManager {
     private Executor tickExecutor;
 
     /**
+     * 更新カウント
+     */
+    private int updateCount = 0;
+
+    /**
      * コンストラクタ
      */
     public ResourceSyncManager() {
@@ -172,6 +177,8 @@ public class ResourceSyncManager {
      * @param loadResult 読み込み結果
      */
     private void setResult(ResourceMappingLoadResult loadResult) {
+        this.updateCount++;
+
         this.customModels.clear();
         this.customModels.putAll(loadResult.customModels());
     }
@@ -220,6 +227,15 @@ public class ResourceSyncManager {
         if (this.mappingLoader != null) {
             this.mappingLoader.destory();
         }
+    }
+
+    /**
+     * 更新カウントを取得
+     *
+     * @return 更新カウント
+     */
+    public int getUpdateCount() {
+        return updateCount;
     }
 
     /**
